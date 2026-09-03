@@ -6,6 +6,8 @@ import com.moduxi.monexi.domain.model.TransactionType
 import com.moduxi.monexi.domain.usecase.CalculateBalanceUseCase
 import com.moduxi.monexi.domain.usecase.CalculateExpenseUseCase
 import com.moduxi.monexi.domain.usecase.CalculateIncomeUseCase
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class HomeViewModel : ViewModel() {
     private val calculateIncomeUseCase = CalculateIncomeUseCase()
@@ -41,10 +43,14 @@ class HomeViewModel : ViewModel() {
         )
     )
 
-    val uiState = HomeUiState(
-        balance = calculateBalanceUseCase(transactions),
-        totalIncome = calculateIncomeUseCase(transactions),
-        totalExpense = calculateExpenseUseCase(transactions),
-        transactions = transactions
+    private val _uiState = MutableStateFlow(
+        HomeUiState(
+            balance = calculateBalanceUseCase(transactions),
+            totalIncome = calculateIncomeUseCase(transactions),
+            totalExpense = calculateExpenseUseCase(transactions),
+            transactions = transactions
+        )
     )
+
+    val uiState = _uiState.asStateFlow()
 }

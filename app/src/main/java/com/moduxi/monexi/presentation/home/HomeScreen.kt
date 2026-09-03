@@ -20,6 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.moduxi.monexi.domain.model.Transaction
 import com.moduxi.monexi.domain.model.TransactionType
@@ -32,8 +34,10 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+
     HomeContent(
-        uiState = viewModel.uiState,
+        uiState = uiState,
         modifier = modifier
     )
 }
