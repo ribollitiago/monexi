@@ -1,4 +1,6 @@
 package com.moduxi.monexi.presentation.transaction
 
-class TransactionViewModel {
+import androidx.lifecycle.ViewModel
+
+class TransactionViewModel : ViewModel() {
 }
