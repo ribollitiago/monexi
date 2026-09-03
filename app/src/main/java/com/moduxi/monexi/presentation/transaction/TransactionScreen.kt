@@ -10,8 +10,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -26,7 +37,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
+import com.moduxi.monexi.domain.model.Transaction
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 
 @Composable
@@ -35,7 +51,7 @@ fun TransactionScreen (
     viewModel: TransactionViewModel = viewModel()
 ) {
     // 1. Comentei a linha que está dando erro
-    // val uiState by viewModel.uiState.collectAsState()
+    //val uiState by viewModel.uiState.collectAsState()
 
     // 2. Criei um estado "falso" temporário só para a tela compilar e o Preview funcionar
     val uiState = TransactionUiState()
@@ -46,12 +62,22 @@ fun TransactionScreen (
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TransactionContent (
     uiState: TransactionUiState,
     modifier: Modifier = Modifier
 ) {
     var selectedIndex by remember { mutableStateOf(0) }
+    var description by remember { mutableStateOf("") }
+
+    var showDatePicker by remember { mutableStateOf(false) }
+    var date by remember { mutableStateOf("") }
+    val datePickerState = rememberDatePickerState()
+    var valueDate by remember { mutableStateOf("")}
+
+    var selectedPayment by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf("") }
 
     LazyColumn(
         modifier = modifier
@@ -68,13 +94,13 @@ private fun TransactionContent (
         }
 
         item {
-            val botoes = listOf("Receita", "A Receber", "Custo", "Despesa")
+            val buttons = listOf("Receita", "A Receber", "Custo", "Despesa")
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                botoes.forEachIndexed { index, label ->
+                buttons.forEachIndexed { index, label ->
                     val isSelected = selectedIndex == index
 
                     Box(
@@ -100,6 +126,132 @@ private fun TransactionContent (
                         )
                     }
                 }
+            }
+        }
+        item {
+            OutlinedTextField(
+                value = description,
+                onValueChange = {
+                    newDescription -> description = newDescription
+                },
+                label = { Text("Descrição") },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+        item {
+            OutlinedTextField(
+                value = date,
+                onValueChange = {},
+                label = { Text("Data") },
+                readOnly = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {showDatePicker = true}
+            )
+        }
+        item {
+            OutlinedTextField(
+                value = valueDate,
+                onValueChange = { newValue -> valueDate = newValue },
+                label = { Text("Valor")},
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        item {
+            DropdownField(
+                label = "Forma de Pagamento",
+                options = listOf("Dinheiro", "Pix"),
+                selectedOption = selectedPayment,
+                onOptionSelected = { selectedPayment = it },
+                optionLabel = { it }
+            )
+        }
+
+        item {
+            DropdownField(
+                label = "Categoria",
+                options = listOf("Débito", "Pix", "Cartão de Crédito"),
+                selectedOption = selectedCategory,
+                onOptionSelected = { selectedCategory = it },
+                optionLabel = { it }
+            )
+        }
+
+        item {
+            Button(
+                onClick = {
+
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+            ) {
+                Text(text = "Salvar Alterações")
+            }
+        }
+
+    }
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { millis ->
+                            date = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(millis))
+                        }
+                        showDatePicker = false
+                    }
+                ) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun <T> DropdownField(
+    label: String,
+    options: List<T>,
+    selectedOption: T?,
+    onOptionSelected: (T) -> Unit,
+    optionLabel: (T) -> String
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        OutlinedTextField(
+            value = selectedOption?.let { optionLabel(it) } ?: "",
+            onValueChange = {},
+            label = { Text(label) },
+            readOnly = true,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier
+                .menuAnchor()
+                .fillMaxWidth()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = {expanded = false}
+        ) {
+            options.forEach { selectionOption ->
+                DropdownMenuItem(
+                    text = { Text(optionLabel(selectionOption))},
+                    onClick = {
+                        onOptionSelected(selectionOption)
+                        expanded = false
+                    }
+                )
             }
         }
     }
