@@ -53,4 +53,15 @@ class HomeViewModel : ViewModel() {
     )
 
     val uiState = _uiState.asStateFlow()
+
+    fun addTransaction(transaction: Transaction) {
+        val updatedTransactions = _uiState.value.transactions + transaction
+
+        _uiState.value = HomeUiState(
+            balance = calculateBalanceUseCase(updatedTransactions),
+            totalIncome = calculateIncomeUseCase(updatedTransactions),
+            totalExpense = calculateExpenseUseCase(updatedTransactions),
+            transactions = updatedTransactions
+        )
+    }
 }

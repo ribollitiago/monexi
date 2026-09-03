@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -38,6 +39,18 @@ fun HomeScreen(
 
     HomeContent(
         uiState = uiState,
+        onAddTransactionClick = {
+            viewModel.addTransaction(
+                Transaction(
+                    id = System.currentTimeMillis(),
+                    title = "Nova despesa",
+                    amount = 50.0,
+                    type = TransactionType.EXPENSE,
+                    category = "Teste",
+                    date = System.currentTimeMillis()
+                )
+            )
+        },
         modifier = modifier
     )
 }
@@ -45,6 +58,7 @@ fun HomeScreen(
 @Composable
 private fun HomeContent(
     uiState: HomeUiState,
+    onAddTransactionClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -69,6 +83,14 @@ private fun HomeContent(
             )
         }
 
+        item {
+            Button(
+                onClick = onAddTransactionClick,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(text = "Adicionar despesa teste")
+            }
+        }
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -186,7 +208,8 @@ private fun HomeScreenPreview() {
                     Transaction(1, "Salario", 3200.0, TransactionType.INCOME, "Trabalho", 0L),
                     Transaction(2, "Mercado", 280.0, TransactionType.EXPENSE, "Alimentacao", 0L)
                 )
-            )
+            ),
+            onAddTransactionClick = {}
         )
     }
 }
