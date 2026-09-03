@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -47,72 +48,57 @@ import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import com.moduxi.monexi.domain.model.Category
 import com.moduxi.monexi.domain.model.PaymentMethod
+import com.moduxi.monexi.domain.model.TransactionType
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
 @Composable
-fun TransactionScreen (
+fun TransactionScreen(
     modifier: Modifier = Modifier,
     viewModel: TransactionViewModel = viewModel()
 ) {
-    // 1. Comentei a linha que está dando erro
-    //val uiState by viewModel.uiState.collectAsState()
-
-    // 2. Criei um estado "falso" temporário só para a tela compilar e o Preview funcionar
-    val uiState = TransactionUiState()
+    val uiState by viewModel.uiState.collectAsState()
 
     TransactionContent(
         uiState = uiState,
+        onTypeChange = viewModel::onTypeChange,
+        onDescriptionChange = viewModel::onDescriptionChange,
+        onAmountChange = viewModel::onAmountChange,
+        onDateChange = viewModel::onDateChange,
+        onCategoryChange = viewModel::onCategoryChange,
+        onPaymentMethodChange = viewModel::onPaymentMethodChange,
+        onSaveClick = {
+            val transaction = viewModel.createTransaction()
+
+            if (transaction != null) {
+                //enviar dados para home
+            }
+        },
         modifier = modifier
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TransactionContent (
+private fun TransactionContent(
     uiState: TransactionUiState,
+    onTypeChange: (TransactionType) -> Unit,
+    onDescriptionChange: (String) -> Unit,
+    onAmountChange: (String) -> Unit,
+    onDateChange: (Long) -> Unit,
+    onCategoryChange: (Category) -> Unit,
+    onPaymentMethodChange: (PaymentMethod) -> Unit,
+    onSaveClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedIndex by remember { mutableStateOf(0) }
-    var description by remember { mutableStateOf("") }
-
     var showDatePicker by remember { mutableStateOf(false) }
 
     val focusManager = LocalFocusManager.current
 
-    val currentDateMillis = remember {
-        System.currentTimeMillis()
-    }
-
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = currentDateMillis
-    )
-
-    var date by remember {
-        mutableStateOf(currentDateMillis.toBrazilianDateFormat())
-    }
-
-    var amountDigits by remember { mutableStateOf("") }
-
-    var selectedPayment by remember { mutableStateOf<PaymentMethod?>(null) }
-    var selectedCategory by remember { mutableStateOf<Category?>(null) }
-
-    //Temporário
-    val categories = listOf(
-        Category(id = 1, name = "Alimentacao", isDefault = true),
-        Category(id = 2, name = "Transporte", isDefault = true),
-        Category(id = 3, name = "Casa", isDefault = true),
-        Category(id = 4, name = "Trabalho", isDefault = true)
-    )
-
-    //Temporário
-    val paymentMethods = listOf(
-        PaymentMethod(id = 1, name = "Dinheiro", isDefault = true),
-        PaymentMethod(id = 2, name = "Pix", isDefault = true),
-        PaymentMethod(id = 3, name = "Cartao de debito", isDefault = true),
-        PaymentMethod(id = 4, name = "Cartao de credito", isDefault = true)
+        initialSelectedDateMillis = uiState.dateMillis
     )
 
     Column(
@@ -135,14 +121,16 @@ private fun TransactionContent (
             }
 
             item {
-                val buttons = listOf("Receita", "A Receber", "Custo", "Despesa")
-
+                val transactionTypes = listOf(
+                    TransactionType.INCOME to "Receita",
+                    TransactionType.EXPENSE to "Despesa"
+                )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    buttons.forEachIndexed { index, label ->
-                        val isSelected = selectedIndex == index
+                    transactionTypes.forEach { (type, label) ->
+                        val isSelected = uiState.type == type
 
                         Box(
                             modifier = Modifier
@@ -153,7 +141,7 @@ private fun TransactionContent (
                                     else MaterialTheme.colorScheme.surfaceVariant
                                 )
                                 .clickable {
-                                    selectedIndex = index
+                                    onTypeChange(type)
                                 }
                                 .padding(vertical = 12.dp),
                             contentAlignment = Alignment.Center
@@ -171,17 +159,15 @@ private fun TransactionContent (
             }
             item {
                 OutlinedTextField(
-                    value = description,
-                    onValueChange = { newDescription ->
-                        description = newDescription
-                    },
+                    value = uiState.description,
+                    onValueChange = onDescriptionChange,
                     label = { Text("Descrição") },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
             item {
                 OutlinedTextField(
-                    value = date,
+                    value = uiState.dateMillis.toBrazilianDateFormat(),
                     onValueChange = {},
                     label = { Text("Data") },
                     readOnly = true,
@@ -197,12 +183,8 @@ private fun TransactionContent (
             }
             item {
                 OutlinedTextField(
-                    value = amountDigits,
-                    onValueChange = { newValue ->
-                        amountDigits = newValue
-                            .filter { it.isDigit() }
-                            .take(12)
-                    },
+                    value = uiState.amountDigits,
+                    onValueChange = onAmountChange,
                     label = { Text("Valor") },
                     placeholder = { Text("0,00") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -214,9 +196,9 @@ private fun TransactionContent (
             item {
                 DropdownField(
                     label = "Forma de Pagamento",
-                    options = paymentMethods,
-                    selectedOption = selectedPayment,
-                    onOptionSelected = { selectedPayment = it },
+                    options = uiState.paymentMethods,
+                    selectedOption = uiState.selectedPaymentMethod,
+                    onOptionSelected = onPaymentMethodChange,
                     optionLabel = { it.name }
                 )
             }
@@ -224,22 +206,30 @@ private fun TransactionContent (
             item {
                 DropdownField(
                     label = "Categoria",
-                    options = categories,
-                    selectedOption = selectedCategory,
-                    onOptionSelected = { selectedCategory = it },
+                    options = uiState.categories,
+                    selectedOption = uiState.selectedCategory,
+                    onOptionSelected = onCategoryChange,
                     optionLabel = { it.name }
                 )
             }
+
+            uiState.error?.let { error ->
+                item {
+                    Text(
+                        text = error,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
         }
         Button(
-            onClick = {
-
-            },
+            onClick = onSaveClick,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 8.dp)
         ) {
-            Text(text = "Enviar")
+            Text(text = "Salvar")
         }
     }
 
@@ -250,7 +240,7 @@ private fun TransactionContent (
                 Button(
                     onClick = {
                         datePickerState.selectedDateMillis?.let { millis ->
-                            date = millis.toBrazilianDateFormat()
+                            onDateChange(millis)
                         }
                         showDatePicker = false
                     }
@@ -272,7 +262,7 @@ private fun TransactionContent (
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun <T> DropdownField(
+private fun <T> DropdownField(
     label: String,
     options: List<T>,
     selectedOption: T?,
@@ -316,8 +306,15 @@ fun <T> DropdownField(
 @Composable
 private fun TransactionScreenPreview() {
     MaterialTheme {
-        TransactionContent (
-            uiState = TransactionUiState()
+        TransactionContent(
+            uiState = TransactionUiState(),
+            onTypeChange = {},
+            onDescriptionChange = {},
+            onAmountChange = {},
+            onDateChange = {},
+            onCategoryChange = {},
+            onPaymentMethodChange = {},
+            onSaveClick = {}
         )
     }
 }
@@ -332,22 +329,6 @@ private fun Long.toBrazilianDateFormat(
         timeZone = TimeZone.getTimeZone("GMT")
     }
     return formatter.format(date)
-}
-
-private fun String.toCurrencyInput(): String {
-    val digits = filter { it.isDigit() }
-
-    if (digits.isBlank()) {
-        return ""
-    }
-
-    val value = digits.toLong() / 100.0
-
-    return String.format(
-        Locale.forLanguageTag("pt-BR"),
-        "%.2f",
-        value
-    )
 }
 
 private class CurrencyVisualTransformation : VisualTransformation {
