@@ -33,23 +33,15 @@ import java.util.Locale
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = viewModel()
+    viewModel: HomeViewModel = viewModel(),
+    onNavigateToTransaction: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     HomeContent(
         uiState = uiState,
         onAddTransactionClick = {
-            viewModel.addTransaction(
-                Transaction(
-                    id = System.currentTimeMillis(),
-                    title = "Nova despesa",
-                    amount = 50.0,
-                    type = TransactionType.EXPENSE,
-                    category = "Teste",
-                    date = System.currentTimeMillis()
-                )
-            )
+            onNavigateToTransaction()
         },
         modifier = modifier
     )
