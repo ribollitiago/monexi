@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.moduxi.monexi.domain.model.Category
+import com.moduxi.monexi.domain.model.PaymentMethod
 import com.moduxi.monexi.domain.model.Transaction
 import com.moduxi.monexi.domain.model.TransactionType
 import com.moduxi.monexi.ui.theme.MonexiTheme
@@ -158,7 +160,7 @@ private fun TransactionItem(transaction: Transaction) {
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = transaction.category,
+                    text = transaction.category.name,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -197,8 +199,35 @@ private fun HomeScreenPreview() {
                 totalIncome = 3200.0,
                 totalExpense = 400.0,
                 transactions = listOf(
-                    Transaction(1, "Salario", 3200.0, TransactionType.INCOME, "Trabalho", 0L),
-                    Transaction(2, "Mercado", 280.0, TransactionType.EXPENSE, "Alimentacao", 0L)
+                    Transaction(
+                        1,
+                        "Salario",
+                        3200.0,
+                        TransactionType.INCOME,
+                        Category(
+                            id = 1,
+                            name = "Alimentação"
+                        ),
+                        PaymentMethod(
+                            id = 1,
+                            name = "Pix"
+                        ),
+                        System.currentTimeMillis()
+                    ),
+                    Transaction(
+                        2,
+                        "Mercado",
+                        280.0,
+                        TransactionType.EXPENSE,
+                        Category(
+                            id = 1,
+                            name = "Alimentação"
+                        ),
+                        PaymentMethod(
+                            id = 1,
+                            name = "Pix"
+                        ),
+                        System.currentTimeMillis())
                 )
             ),
             onAddTransactionClick = {}

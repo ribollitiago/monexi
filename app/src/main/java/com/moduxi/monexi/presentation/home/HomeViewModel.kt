@@ -1,6 +1,8 @@
 package com.moduxi.monexi.presentation.home
 
 import androidx.lifecycle.ViewModel
+import com.moduxi.monexi.domain.model.Category
+import com.moduxi.monexi.domain.model.PaymentMethod
 import com.moduxi.monexi.domain.model.Transaction
 import com.moduxi.monexi.domain.model.TransactionType
 import com.moduxi.monexi.domain.usecase.CalculateBalanceUseCase
@@ -22,7 +24,14 @@ class HomeViewModel : ViewModel() {
             title = "Salario",
             amount = 3200.0,
             type = TransactionType.INCOME,
-            category = "Trabalho",
+            category = Category(
+                id = 1,
+                name = "Trabalho"
+            ),
+            paymentMethod = PaymentMethod(
+                id = 1,
+                name = "Pix"
+            ),
             date = System.currentTimeMillis()
         ),
         Transaction(
@@ -30,7 +39,14 @@ class HomeViewModel : ViewModel() {
             title = "Mercado",
             amount = 280.0,
             type = TransactionType.EXPENSE,
-            category = "Alimentacao",
+            category = Category(
+                id = 2,
+                name = "Alimentacao"
+            ),
+            paymentMethod = PaymentMethod(
+                id = 2,
+                name = "Debito"
+            ),
             date = System.currentTimeMillis()
         ),
         Transaction(
@@ -38,7 +54,14 @@ class HomeViewModel : ViewModel() {
             title = "Internet",
             amount = 120.0,
             type = TransactionType.EXPENSE,
-            category = "Casa",
+            category = Category(
+                id = 3,
+                name = "Casa"
+            ),
+            paymentMethod = PaymentMethod(
+                id = 3,
+                name = "Cartao de credito"
+            ),
             date = System.currentTimeMillis()
         )
     )

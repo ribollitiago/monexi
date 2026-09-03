@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,7 +25,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -39,11 +39,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
-import com.moduxi.monexi.domain.model.Transaction
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import com.moduxi.monexi.domain.model.Category
+import com.moduxi.monexi.domain.model.PaymentMethod
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
 
 @Composable
 fun TransactionScreen (
@@ -76,122 +78,140 @@ private fun TransactionContent (
     val datePickerState = rememberDatePickerState()
     var valueDate by remember { mutableStateOf("")}
 
-    var selectedPayment by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf("") }
+    var selectedPayment by remember { mutableStateOf<PaymentMethod?>(null) }
+    var selectedCategory by remember { mutableStateOf<Category?>(null) }
 
-    LazyColumn(
+    //Temporário
+    val categories = listOf(
+        Category(id = 1, name = "Alimentacao", isDefault = true),
+        Category(id = 2, name = "Transporte", isDefault = true),
+        Category(id = 3, name = "Casa", isDefault = true),
+        Category(id = 4, name = "Trabalho", isDefault = true)
+    )
+
+    //Temporário
+    val paymentMethods = listOf(
+        PaymentMethod(id = 1, name = "Dinheiro", isDefault = true),
+        PaymentMethod(id = 2, name = "Pix", isDefault = true),
+        PaymentMethod(id = 3, name = "Cartao de debito", isDefault = true),
+        PaymentMethod(id = 4, name = "Cartao de credito", isDefault = true)
+    )
+
+    Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ){
-        item {
-            Text(
-                text = "Nova Transação",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-        }
+            .padding(16.dp)
+    ) {
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item {
+                Text(
+                    text = "Nova Transação",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
 
-        item {
-            val buttons = listOf("Receita", "A Receber", "Custo", "Despesa")
+            item {
+                val buttons = listOf("Receita", "A Receber", "Custo", "Despesa")
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                buttons.forEachIndexed { index, label ->
-                    val isSelected = selectedIndex == index
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    buttons.forEachIndexed { index, label ->
+                        val isSelected = selectedIndex == index
 
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(
-                                if(isSelected) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.surfaceVariant
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(
+                                    if (isSelected) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.surfaceVariant
+                                )
+                                .clickable {
+                                    selectedIndex = index
+                                }
+                                .padding(vertical = 12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = label,
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 13.sp,
+                                textAlign = TextAlign.Center
                             )
-                            .clickable {
-                                selectedIndex = index
-                            }
-                            .padding(vertical = 12.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = label,
-                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary
-                                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 13.sp,
-                            textAlign =  TextAlign.Center
-                        )
+                        }
                     }
                 }
             }
-        }
-        item {
-            OutlinedTextField(
-                value = description,
-                onValueChange = {
-                    newDescription -> description = newDescription
-                },
-                label = { Text("Descrição") },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-        item {
-            OutlinedTextField(
-                value = date,
-                onValueChange = {},
-                label = { Text("Data") },
-                readOnly = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {showDatePicker = true}
-            )
-        }
-        item {
-            OutlinedTextField(
-                value = valueDate,
-                onValueChange = { newValue -> valueDate = newValue },
-                label = { Text("Valor")},
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
+            item {
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { newDescription ->
+                        description = newDescription
+                    },
+                    label = { Text("Descrição") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            item {
+                OutlinedTextField(
+                    value = date,
+                    onValueChange = {},
+                    label = { Text("Data") },
+                    readOnly = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showDatePicker = true }
+                )
+            }
+            item {
+                OutlinedTextField(
+                    value = valueDate,
+                    onValueChange = { newValue -> valueDate = newValue },
+                    label = { Text("Valor") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
 
-        item {
-            DropdownField(
-                label = "Forma de Pagamento",
-                options = listOf("Dinheiro", "Pix"),
-                selectedOption = selectedPayment,
-                onOptionSelected = { selectedPayment = it },
-                optionLabel = { it }
-            )
-        }
+            item {
+                DropdownField(
+                    label = "Forma de Pagamento",
+                    options = paymentMethods,
+                    selectedOption = selectedPayment,
+                    onOptionSelected = { selectedPayment = it },
+                    optionLabel = { it.name }
+                )
+            }
 
-        item {
-            DropdownField(
-                label = "Categoria",
-                options = listOf("Débito", "Pix", "Cartão de Crédito"),
-                selectedOption = selectedCategory,
-                onOptionSelected = { selectedCategory = it },
-                optionLabel = { it }
-            )
-        }
-
-        item {
-            Button(
-                onClick = {
-
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
-            ) {
-                Text(text = "Salvar Alterações")
+            item {
+                DropdownField(
+                    label = "Categoria",
+                    options = categories,
+                    selectedOption = selectedCategory,
+                    onOptionSelected = { selectedCategory = it },
+                    optionLabel = { it.name }
+                )
             }
         }
+        Button(
+            onClick = {
 
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+        ) {
+            Text(text = "Salvar Alterações")
+        }
     }
 
     if (showDatePicker) {
