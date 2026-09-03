@@ -39,13 +39,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
+import androidx.compose.ui.focus.onFocusEvent
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
 import com.moduxi.monexi.domain.model.Category
 import com.moduxi.monexi.domain.model.PaymentMethod
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 @Composable
 fun TransactionScreen (
@@ -74,9 +79,22 @@ private fun TransactionContent (
     var description by remember { mutableStateOf("") }
 
     var showDatePicker by remember { mutableStateOf(false) }
-    var date by remember { mutableStateOf("") }
-    val datePickerState = rememberDatePickerState()
-    var valueDate by remember { mutableStateOf("")}
+
+    val focusManager = LocalFocusManager.current
+
+    val currentDateMillis = remember {
+        System.currentTimeMillis()
+    }
+
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = currentDateMillis
+    )
+
+    var date by remember {
+        mutableStateOf(currentDateMillis.toBrazilianDateFormat())
+    }
+
+    var amountDigits by remember { mutableStateOf("") }
 
     var selectedPayment by remember { mutableStateOf<PaymentMethod?>(null) }
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
@@ -169,15 +187,26 @@ private fun TransactionContent (
                     readOnly = true,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { showDatePicker = true }
+                        .onFocusEvent {
+                            if (it.isFocused) {
+                                showDatePicker = true
+                                focusManager.clearFocus(force = true)
+                            }
+                        }
                 )
             }
             item {
                 OutlinedTextField(
-                    value = valueDate,
-                    onValueChange = { newValue -> valueDate = newValue },
+                    value = amountDigits,
+                    onValueChange = { newValue ->
+                        amountDigits = newValue
+                            .filter { it.isDigit() }
+                            .take(12)
+                    },
                     label = { Text("Valor") },
+                    placeholder = { Text("0,00") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    visualTransformation = CurrencyVisualTransformation(),
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -210,7 +239,7 @@ private fun TransactionContent (
                 .fillMaxWidth()
                 .padding(top = 8.dp)
         ) {
-            Text(text = "Salvar Alterações")
+            Text(text = "Enviar")
         }
     }
 
@@ -218,17 +247,23 @@ private fun TransactionContent (
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
-                TextButton(
+                Button(
                     onClick = {
                         datePickerState.selectedDateMillis?.let { millis ->
-                            date = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(millis))
+                            date = millis.toBrazilianDateFormat()
                         }
                         showDatePicker = false
                     }
-                ) { Text("OK") }
+                ) {
+                    Text(text = "Escolher data")
+                }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
+                TextButton(
+                    onClick = { showDatePicker = false }
+                ) {
+                    Text("Cancelar")
+                }
             }
         ) {
             DatePicker(state = datePickerState)
@@ -285,4 +320,77 @@ private fun TransactionScreenPreview() {
             uiState = TransactionUiState()
         )
     }
+}
+
+private fun Long.toBrazilianDateFormat(
+    pattern: String = "dd/MM/yyyy"
+): String {
+    val date = Date(this)
+    val formatter = SimpleDateFormat(
+        pattern, Locale.forLanguageTag("pt-BR")
+    ).apply {
+        timeZone = TimeZone.getTimeZone("GMT")
+    }
+    return formatter.format(date)
+}
+
+private fun String.toCurrencyInput(): String {
+    val digits = filter { it.isDigit() }
+
+    if (digits.isBlank()) {
+        return ""
+    }
+
+    val value = digits.toLong() / 100.0
+
+    return String.format(
+        Locale.forLanguageTag("pt-BR"),
+        "%.2f",
+        value
+    )
+}
+
+private class CurrencyVisualTransformation : VisualTransformation {
+
+    override fun filter(text: AnnotatedString): TransformedText {
+        val digits = text.text.filter { it.isDigit() }
+
+        if (digits.isBlank()) {
+            return TransformedText(
+                text = AnnotatedString(""),
+                offsetMapping = OffsetMapping.Identity
+            )
+        }
+
+        val formatted = digits.toCurrencyDisplay()
+
+        return TransformedText(
+            text = AnnotatedString(formatted),
+            offsetMapping = object : OffsetMapping {
+                override fun originalToTransformed(offset: Int): Int {
+                    return formatted.length
+                }
+
+                override fun transformedToOriginal(offset: Int): Int {
+                    return digits.length
+                }
+            }
+        )
+    }
+}
+
+private fun String.toCurrencyDisplay(): String {
+    if (isBlank()) {
+        return ""
+    }
+
+    val cents = toLongOrNull() ?: return ""
+
+    val amount = cents / 100.0
+
+    return String.format(
+        Locale.forLanguageTag("pt-BR"),
+        "%.2f",
+        amount
+    )
 }
