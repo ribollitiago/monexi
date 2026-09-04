@@ -100,7 +100,7 @@ private fun HomeContent(
         item {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Ultimas transacoes",
+                text = "Ultimas transações",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )

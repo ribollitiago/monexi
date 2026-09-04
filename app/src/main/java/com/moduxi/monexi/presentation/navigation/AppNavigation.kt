@@ -19,15 +19,19 @@ import com.moduxi.monexi.presentation.transaction.TransactionScreen
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.getValue
+import com.moduxi.monexi.data.repository.local.ThemeManager
+import com.moduxi.monexi.presentation.settings.SettingsScreen
 
 sealed class BottomNavItem(val route: String, val label: String, val icon: ImageVector) {
     object Home : BottomNavItem("home", "Início", Icons.Default.Home)
     object Transaction : BottomNavItem("transaction", "Adicionar", Icons.Default.Add)
+    object Settings : BottomNavItem("settings", "Configurações", Icons.Default.Settings)
 }
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(themeManager: ThemeManager) {
     val navController = rememberNavController()
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -36,7 +40,7 @@ fun AppNavigation() {
     Scaffold(
         bottomBar = {
             NavigationBar {
-                val items = listOf(BottomNavItem.Home, BottomNavItem.Transaction)
+                val items = listOf(BottomNavItem.Home, BottomNavItem.Transaction, BottomNavItem.Settings)
                 items.forEach { item ->
                     NavigationBarItem(
                         selected = currentRoute == item.route,
@@ -49,7 +53,7 @@ fun AppNavigation() {
                                 restoreState = true
                             }
                         },
-                        icon = { Icon(item.icon, contentDescription = item.label) },
+                        icon = { Icon(item.icon , contentDescription = item.label) },
                         label = { Text(item.label) }
                     )
                 }
@@ -64,7 +68,7 @@ fun AppNavigation() {
             composable("home") {
                 HomeScreen(
                     onNavigateToTransaction = {
-                        navController.navigate("transaction")
+                        navController.navigate("home")
                     }
                 )
             }
@@ -76,6 +80,12 @@ fun AppNavigation() {
                     }
                 )
             }
+            composable("settings") {
+                SettingsScreen(
+                    themeManager = themeManager
+                )
+            }
+
         }
     }
 

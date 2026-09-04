@@ -50,6 +50,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.ui)
     implementation("androidx.compose.material:material-icons-extended")
+    implementation(libs.androidx.datastore.preferences)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
