@@ -36,7 +36,11 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("transaction") {
-                            TransactionScreen()
+                            TransactionScreen(
+                                onTransactionSaved = {
+                                    navController.popBackStack()
+                                }
+                            )
                         }
                     }
                 }

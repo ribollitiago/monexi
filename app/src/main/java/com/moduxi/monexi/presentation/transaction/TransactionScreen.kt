@@ -56,6 +56,7 @@ import java.util.TimeZone
 
 @Composable
 fun TransactionScreen(
+    onTransactionSaved: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TransactionViewModel = viewModel()
 ) {
@@ -70,10 +71,10 @@ fun TransactionScreen(
         onCategoryChange = viewModel::onCategoryChange,
         onPaymentMethodChange = viewModel::onPaymentMethodChange,
         onSaveClick = {
-            val transaction = viewModel.createTransaction()
+            val saved = viewModel.saveTransaction()
 
-            if (transaction != null) {
-                //enviar dados para home
+            if (saved) {
+                onTransactionSaved()
             }
         },
         modifier = modifier

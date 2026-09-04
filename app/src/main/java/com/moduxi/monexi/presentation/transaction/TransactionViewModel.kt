@@ -1,14 +1,18 @@
 package com.moduxi.monexi.presentation.transaction
 
 import androidx.lifecycle.ViewModel
+import com.moduxi.monexi.data.repository.InMemoryTransactionRepository
 import com.moduxi.monexi.domain.model.Category
 import com.moduxi.monexi.domain.model.PaymentMethod
 import com.moduxi.monexi.domain.model.Transaction
 import com.moduxi.monexi.domain.model.TransactionType
+import com.moduxi.monexi.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class TransactionViewModel : ViewModel() {
+class TransactionViewModel(
+    private val transactionRepository: TransactionRepository = InMemoryTransactionRepository
+    ) : ViewModel() {
     private val defaultCategories = listOf(
         Category(id = 1, name = "Alimentacao", isDefault = true),
         Category(id = 2, name = "Transporte", isDefault = true),
@@ -72,24 +76,24 @@ class TransactionViewModel : ViewModel() {
         )
     }
 
-    fun createTransaction(): Transaction? {
+    fun saveTransaction(): Boolean {
         val state = _uiState.value
 
-        val category = state.selectedCategory ?: return null
-        val paymentMethod = state.selectedPaymentMethod ?: return null
+        val category = state.selectedCategory ?: return false
+        val paymentMethod = state.selectedPaymentMethod ?: return false
         val amount = (state.amountDigits.toLongOrNull() ?: 0L) / 100.0
 
         if (state.description.isBlank()) {
             _uiState.value = state.copy(error = "Informe a descrição")
-            return null
+            return false
         }
 
         if (amount <= 0.0) {
             _uiState.value = state.copy(error = "Informe um valor válido")
-            return null
+            return false
         }
 
-        return Transaction(
+        val transaction = Transaction(
             id = System.currentTimeMillis(),
             title = state.description,
             amount = amount,
@@ -98,5 +102,9 @@ class TransactionViewModel : ViewModel() {
             paymentMethod = paymentMethod,
             date = state.dateMillis
         )
+
+        transactionRepository.addTransaction(transaction)
+
+        return true
     }
 }
