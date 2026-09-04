@@ -1,6 +1,9 @@
 package com.moduxi.monexi.presentation.transaction
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.data.repository.InMemoryTransactionRepository
 import com.moduxi.monexi.domain.model.Category
 import com.moduxi.monexi.domain.model.PaymentMethod
@@ -37,6 +40,14 @@ class TransactionViewModel(
     )
 
     val uiState = _uiState.asStateFlow()
+
+    companion object {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                TransactionViewModel(InMemoryTransactionRepository)
+            }
+        }
+    }
 
     fun onTypeChange(type: TransactionType) {
         _uiState.value = _uiState.value.copy(

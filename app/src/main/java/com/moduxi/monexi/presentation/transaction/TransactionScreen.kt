@@ -58,7 +58,7 @@ import java.util.TimeZone
 fun TransactionScreen(
     onTransactionSaved: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: TransactionViewModel = viewModel()
+    viewModel: TransactionViewModel = viewModel(factory = TransactionViewModel.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsState()
 

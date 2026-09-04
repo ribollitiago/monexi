@@ -78,14 +78,6 @@ private fun HomeContent(
         }
 
         item {
-            Button(
-                onClick = onAddTransactionClick,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = "Adicionar despesa teste")
-            }
-        }
-        item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
