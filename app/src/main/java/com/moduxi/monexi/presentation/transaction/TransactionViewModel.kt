@@ -4,38 +4,31 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.moduxi.monexi.data.repository.InMemoryCategoryRepository
+import com.moduxi.monexi.data.repository.InMemoryPaymentMethodRepository
 import com.moduxi.monexi.data.repository.InMemoryTransactionRepository
 import com.moduxi.monexi.domain.model.Category
 import com.moduxi.monexi.domain.model.PaymentMethod
 import com.moduxi.monexi.domain.model.Transaction
 import com.moduxi.monexi.domain.model.TransactionType
+import com.moduxi.monexi.domain.repository.CategoryRepository
+import com.moduxi.monexi.domain.repository.PaymentMethodRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 class TransactionViewModel(
-    private val transactionRepository: TransactionRepository = InMemoryTransactionRepository
+    private val transactionRepository: TransactionRepository = InMemoryTransactionRepository,
+    private val categoryRepository: CategoryRepository = InMemoryCategoryRepository,
+    private val paymentMethodRepository: PaymentMethodRepository = InMemoryPaymentMethodRepository
     ) : ViewModel() {
-    private val defaultCategories = listOf(
-        Category(id = 1, name = "Alimentacao", isDefault = true),
-        Category(id = 2, name = "Transporte", isDefault = true),
-        Category(id = 3, name = "Casa", isDefault = true),
-        Category(id = 4, name = "Trabalho", isDefault = true)
-    )
-
-    private val defaultPaymentMethods = listOf(
-        PaymentMethod(id = 1, name = "Dinheiro", isDefault = true),
-        PaymentMethod(id = 2, name = "Pix", isDefault = true),
-        PaymentMethod(id = 3, name = "Cartao de debito", isDefault = true),
-        PaymentMethod(id = 4, name = "Cartao de credito", isDefault = true)
-    )
 
     private val _uiState = MutableStateFlow(
         TransactionUiState(
-            categories = defaultCategories,
-            paymentMethods = defaultPaymentMethods,
-            selectedCategory = defaultCategories.firstOrNull(),
-            selectedPaymentMethod = defaultPaymentMethods.firstOrNull()
+            categories = categoryRepository.categories.value,
+            paymentMethods = paymentMethodRepository.paymentMethods.value,
+            selectedCategory = categoryRepository.categories.value.firstOrNull(),
+            selectedPaymentMethod = paymentMethodRepository.paymentMethods.value.firstOrNull()
         )
     )
 
@@ -44,7 +37,11 @@ class TransactionViewModel(
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                TransactionViewModel(InMemoryTransactionRepository)
+                TransactionViewModel(
+                    transactionRepository = InMemoryTransactionRepository,
+                    categoryRepository = InMemoryCategoryRepository,
+                    paymentMethodRepository = InMemoryPaymentMethodRepository
+                )
             }
         }
     }

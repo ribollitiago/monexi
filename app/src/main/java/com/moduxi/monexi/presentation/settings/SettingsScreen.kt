@@ -32,7 +32,7 @@ import com.moduxi.monexi.ui.theme.MonexiTheme
 @Composable
 fun SettingsScreen (
     themeManager: ThemeManager,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier
 ){
     val viewModel: SettingsViewModel = viewModel(
         factory = SettingsViewModelFactory(themeManager)
