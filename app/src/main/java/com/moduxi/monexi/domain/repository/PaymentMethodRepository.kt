@@ -7,5 +7,6 @@ interface PaymentMethodRepository {
     val paymentMethods: StateFlow<List<PaymentMethod>>
 
     fun addPaymentMethod(paymentMethod: PaymentMethod)
+    fun updatePaymentMethod(paymentMethod: PaymentMethod)
     fun deletePaymentMethod(paymentMethod: PaymentMethod)
 }

@@ -24,6 +24,12 @@ object InMemoryPaymentMethodRepository : PaymentMethodRepository {
         _paymentMethods.value += paymentMethod
     }
 
+    override fun updatePaymentMethod(paymentMethod: PaymentMethod) {
+        _paymentMethods.value = _paymentMethods.value.map {
+            if (it.id == paymentMethod.id) paymentMethod else it
+        }
+    }
+
     override fun deletePaymentMethod(paymentMethod: PaymentMethod) {
         _paymentMethods.value -= paymentMethod
     }

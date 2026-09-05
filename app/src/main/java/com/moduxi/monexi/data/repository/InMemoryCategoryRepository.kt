@@ -23,7 +23,19 @@ object InMemoryCategoryRepository : CategoryRepository{
         _categories.value += category
     }
 
+    override fun updateCategory(category: Category) {
+        if (category.isDefault) return
+
+        _categories.value = _categories.value.map { currentCategory ->
+            if (currentCategory.id == category.id) category else currentCategory
+        }
+    }
+
     override fun deleteCategory(category: Category) {
-        _categories.value -= category
+        if (category.isDefault) return
+
+        _categories.value = _categories.value.filterNot { currentCategory ->
+            currentCategory.id == category.id
+        }
     }
 }

@@ -7,5 +7,6 @@ interface CategoryRepository {
     val categories: StateFlow<List<Category>>
 
     fun addCategory(category: Category)
+    fun updateCategory(category: Category)
     fun deleteCategory(category: Category)
 }
