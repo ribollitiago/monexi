@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 class CategoriesViewModel(
     private val categoryRepository: CategoryRepository = InMemoryCategoryRepository
@@ -26,7 +27,7 @@ class CategoriesViewModel(
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = CategoriesUiState(categories = categoryRepository.categories.value)
+        initialValue = CategoriesUiState()
     )
 
     fun onNewCategoryNameChange(name: String) {
@@ -45,7 +46,7 @@ class CategoriesViewModel(
             return
         }
 
-        val alreadyExists = categoryRepository.categories.value.any { category ->
+        val alreadyExists = uiState.value.categories.any { category ->
             category.name.equals(name, ignoreCase = true)
         }
 
@@ -54,18 +55,20 @@ class CategoriesViewModel(
             return
         }
 
-        categoryRepository.addCategory(
-            Category(
-                id = System.currentTimeMillis(),
-                name = name,
-                isDefault = false
+        viewModelScope.launch {
+            categoryRepository.addCategory(
+                Category(
+                    id = System.currentTimeMillis(),
+                    name = name,
+                    isDefault = false
+                )
             )
-        )
 
-        formState.value = state.copy(
-            newCategoryName = "",
-            error = null
-        )
+            formState.value = state.copy(
+                newCategoryName = "",
+                error = null
+            )
+        }
     }
 
     fun startEditing(category: Category) {
@@ -95,7 +98,7 @@ class CategoriesViewModel(
             return
         }
 
-        val alreadyExists = categoryRepository.categories.value.any { currentCategory ->
+        val alreadyExists = uiState.value.categories.any { currentCategory ->
             currentCategory.id != category.id &&
                     currentCategory.name.equals(name, ignoreCase = true)
         }
@@ -105,15 +108,17 @@ class CategoriesViewModel(
             return
         }
 
-        categoryRepository.updateCategory(
-            category.copy(name = name)
-        )
+        viewModelScope.launch {
+            categoryRepository.updateCategory(
+                category.copy(name = name)
+            )
 
-        formState.value = state.copy(
-            editingCategory = null,
-            editingCategoryName = "",
-            error = null
-        )
+            formState.value = state.copy(
+                editingCategory = null,
+                editingCategoryName = "",
+                error = null
+            )
+        }
     }
 
     fun cancelEditing() {
@@ -127,6 +132,8 @@ class CategoriesViewModel(
     fun deleteCategory(category: Category) {
         if (category.isDefault) return
 
-        categoryRepository.deleteCategory(category)
+        viewModelScope.launch {
+            categoryRepository.deleteCategory(category)
+        }
     }
 }

@@ -19,11 +19,11 @@ object InMemoryCategoryRepository : CategoryRepository{
 
     override val categories: StateFlow<List<Category>> = _categories.asStateFlow()
 
-    override fun addCategory(category: Category) {
+    override suspend fun addCategory(category: Category) {
         _categories.value += category
     }
 
-    override fun updateCategory(category: Category) {
+    override suspend fun updateCategory(category: Category) {
         if (category.isDefault) return
 
         _categories.value = _categories.value.map { currentCategory ->
@@ -31,7 +31,7 @@ object InMemoryCategoryRepository : CategoryRepository{
         }
     }
 
-    override fun deleteCategory(category: Category) {
+    override suspend fun deleteCategory(category: Category) {
         if (category.isDefault) return
 
         _categories.value = _categories.value.filterNot { currentCategory ->

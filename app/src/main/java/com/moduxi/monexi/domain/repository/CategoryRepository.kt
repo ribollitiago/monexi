@@ -1,12 +1,13 @@
 package com.moduxi.monexi.domain.repository
 
 import com.moduxi.monexi.domain.model.Category
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 interface CategoryRepository {
-    val categories: StateFlow<List<Category>>
+    val categories: Flow<List<Category>>
 
-    fun addCategory(category: Category)
-    fun updateCategory(category: Category)
-    fun deleteCategory(category: Category)
+    suspend fun addCategory(category: Category)
+    suspend fun updateCategory(category: Category)
+    suspend fun deleteCategory(category: Category)
 }
