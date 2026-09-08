@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import com.moduxi.monexi.data.repository.local.ThemeManager
 import com.moduxi.monexi.presentation.settings.SettingsScreen
 import com.moduxi.monexi.presentation.settings.categories.CategoriesScreen
+import com.moduxi.monexi.presentation.settings.payment.PaymentMethodScreen
 
 sealed class BottomNavItem(val route: String, val label: String, val icon: ImageVector) {
     object Home : BottomNavItem("home", "Início", Icons.Default.Home)
@@ -88,11 +89,22 @@ fun AppNavigation(themeManager: ThemeManager) {
                     themeManager = themeManager,
                     onNavigateToCategories = {
                         navController.navigate("categories")
+                    },
+                    onNavigateToPaymentMethods = {
+                        navController.navigate("paymentMethods")
                     }
+
                 )
             }
             composable("categories") {
                 CategoriesScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable ("paymentMethods") {
+                PaymentMethodScreen(
                     onNavigateBack = {
                         navController.popBackStack()
                     }

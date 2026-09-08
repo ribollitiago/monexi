@@ -33,6 +33,7 @@ import com.moduxi.monexi.ui.theme.MonexiTheme
 fun SettingsScreen (
     themeManager: ThemeManager,
     onNavigateToCategories: () -> Unit,
+    onNavigateToPaymentMethods: () -> Unit,
     modifier: Modifier = Modifier
 ){
     val viewModel: SettingsViewModel = viewModel(
@@ -55,7 +56,7 @@ fun SettingsScreen (
                 title = "Métodos de Pagamento",
                 subtitle = "Cartão, Dinheiro, Pix",
                 icon = Icons.Default.Payment,
-                onClick = {}
+                onClick = onNavigateToPaymentMethods
             )
         }
         item { HorizontalDivider() }
@@ -122,7 +123,8 @@ fun SettingsScreenPreview() {
     MonexiTheme {
         SettingsScreen(
             ThemeManager(LocalContext.current),
-            onNavigateToCategories = {}
+            onNavigateToCategories = {},
+            onNavigateToPaymentMethods = {}
         )
     }
 }

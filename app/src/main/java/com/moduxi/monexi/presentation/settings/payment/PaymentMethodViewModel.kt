@@ -1,0 +1,132 @@
+package com.moduxi.monexi.presentation.settings.payment
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.moduxi.monexi.data.repository.InMemoryPaymentMethodRepository
+import com.moduxi.monexi.domain.model.PaymentMethod
+import com.moduxi.monexi.domain.repository.PaymentMethodRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+
+class PaymentMethodViewModel(
+    private val paymentMethodRepository: PaymentMethodRepository = InMemoryPaymentMethodRepository
+) : ViewModel() {
+
+    private val formState = MutableStateFlow(PaymentMethodUiState())
+
+    val uiState = combine(
+        paymentMethodRepository.paymentMethods,
+        formState
+    ) { paymentMethods, form ->
+        form.copy(
+            paymentMethods = paymentMethods
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = PaymentMethodUiState(paymentMethods = paymentMethodRepository.paymentMethods.value)
+    )
+
+    fun onNewPaymentMethodNameChange(name: String) {
+        formState.value = formState.value.copy(
+            newPaymentMethodName = name,
+            error = null
+        )
+    }
+
+    fun addPaymentMethod() {
+        val state = formState.value
+        val name = state.newPaymentMethodName.trim()
+
+        if (name.isBlank()) {
+            formState.value = state.copy(error = "Informe o nome do método de pagamento")
+            return
+        }
+
+        val alreadyExists = paymentMethodRepository.paymentMethods.value.any { paymentMethod ->
+            paymentMethod.name.equals(name, ignoreCase = true)
+        }
+
+        if (alreadyExists) {
+            formState.value = state.copy(error = "Método de pagamento já existe")
+            return
+        }
+
+        paymentMethodRepository.addPaymentMethod(
+            PaymentMethod(
+                id = System.currentTimeMillis(),
+                name = name,
+                isDefault = false
+            )
+        )
+
+        formState.value = state.copy(
+            newPaymentMethodName = "",
+            error = null
+        )
+    }
+
+    fun startEditing(paymentMethod: PaymentMethod) {
+        if (paymentMethod.isDefault) return
+
+        formState.value = formState.value.copy(
+            editingPaymentMethod = paymentMethod,
+            editingPaymentMethodName = paymentMethod.name,
+            error = null
+        )
+    }
+
+    fun onEditingPaymentMethodChange(name: String) {
+        formState.value = formState.value.copy(
+            editingPaymentMethodName = name,
+            error = null
+        )
+    }
+
+    fun saveEditing() {
+        val state = formState.value
+        val paymentMethod = state.editingPaymentMethod ?: return
+        val name = state.editingPaymentMethodName.trim()
+
+        if (name.isBlank()) {
+            formState.value = state.copy(error = "Informe o nome do método de pagamento")
+            return
+        }
+
+        val alreadyExists = paymentMethodRepository.paymentMethods.value.any { currentPaymentMethod ->
+            currentPaymentMethod.id != paymentMethod.id &&
+                    currentPaymentMethod.name.equals(name, ignoreCase = true)
+        }
+
+        if (alreadyExists) {
+            formState.value = state.copy(error = "Método de pagamento já existe")
+            return
+        }
+
+        paymentMethodRepository.updatePaymentMethod(
+            paymentMethod.copy(name = name)
+        )
+
+        formState.value = state.copy(
+            editingPaymentMethod = null,
+            editingPaymentMethodName = "",
+            error = null
+        )
+    }
+
+    fun cancelEditing() {
+        formState.value = formState.value.copy(
+            editingPaymentMethod = null,
+            editingPaymentMethodName = "",
+            error = null
+        )
+    }
+
+    fun deletePaymentMethod(paymentMethod: PaymentMethod) {
+        if (paymentMethod.isDefault) return
+
+        paymentMethodRepository.deletePaymentMethod(paymentMethod)
+    }
+}
