@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.getValue
 import com.moduxi.monexi.data.repository.local.ThemeManager
 import com.moduxi.monexi.presentation.settings.SettingsScreen
+import com.moduxi.monexi.presentation.settings.categories.CategoriesScreen
 
 sealed class BottomNavItem(val route: String, val label: String, val icon: ImageVector) {
     object Home : BottomNavItem("home", "Início", Icons.Default.Home)
@@ -43,14 +44,16 @@ fun AppNavigation(themeManager: ThemeManager) {
                 val items = listOf(BottomNavItem.Home, BottomNavItem.Transaction, BottomNavItem.Settings)
                 items.forEach { item ->
                     NavigationBarItem(
-                        selected = currentRoute == item.route,
+                        selected = when (item.route) {
+                            "settings" -> currentRoute == "settings" || currentRoute == "categories" || currentRoute == "paymentMethod"
+                            else -> currentRoute == item.route
+                        },
                         onClick = {
                             navController.navigate(item.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+                                popUpTo("home") {
+                                    inclusive = false
                                 }
                                 launchSingleTop = true
-                                restoreState = true
                             }
                         },
                         icon = { Icon(item.icon , contentDescription = item.label) },
@@ -68,7 +71,7 @@ fun AppNavigation(themeManager: ThemeManager) {
             composable("home") {
                 HomeScreen(
                     onNavigateToTransaction = {
-                        navController.navigate("home")
+                        navController.navigate("transaction")
                     }
                 )
             }
@@ -82,10 +85,19 @@ fun AppNavigation(themeManager: ThemeManager) {
             }
             composable("settings") {
                 SettingsScreen(
-                    themeManager = themeManager
+                    themeManager = themeManager,
+                    onNavigateToCategories = {
+                        navController.navigate("categories")
+                    }
                 )
             }
-
+            composable("categories") {
+                CategoriesScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
         }
     }
 

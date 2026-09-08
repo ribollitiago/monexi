@@ -32,6 +32,7 @@ import com.moduxi.monexi.ui.theme.MonexiTheme
 @Composable
 fun SettingsScreen (
     themeManager: ThemeManager,
+    onNavigateToCategories: () -> Unit,
     modifier: Modifier = Modifier
 ){
     val viewModel: SettingsViewModel = viewModel(
@@ -46,7 +47,7 @@ fun SettingsScreen (
                 title = "Categorias",
                 subtitle = "Gerencie suas categorias de gastos",
                 icon = Icons.Default.Category,
-                onClick = { /* Navegar para tela de categorias */ }
+                onClick = onNavigateToCategories
             )
         }
         item {
@@ -120,7 +121,8 @@ fun SettingsSectionTitle(title: String) {
 fun SettingsScreenPreview() {
     MonexiTheme {
         SettingsScreen(
-            ThemeManager(LocalContext.current)
+            ThemeManager(LocalContext.current),
+            onNavigateToCategories = {}
         )
     }
 }

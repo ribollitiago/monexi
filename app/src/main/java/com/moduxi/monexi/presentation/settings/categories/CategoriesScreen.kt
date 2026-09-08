@@ -8,8 +8,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -17,6 +21,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -27,6 +32,7 @@ import com.moduxi.monexi.ui.theme.MonexiTheme
 
 @Composable
 fun CategoriesScreen(
+    onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CategoriesViewModel = viewModel()
 ) {
@@ -41,6 +47,7 @@ fun CategoriesScreen(
         onEditingCategoryNameChange = viewModel::onEditingCategoryNameChange,
         onSaveEditingClick = viewModel::saveEditing,
         onCancelEditingClick = viewModel::cancelEditing,
+        onNavigateBack = onNavigateBack,
         modifier = modifier
     )
 }
@@ -55,6 +62,7 @@ private fun CategoriesContent(
     onEditingCategoryNameChange: (String) -> Unit,
     onSaveEditingClick: () -> Unit,
     onCancelEditingClick: () -> Unit,
+    onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column (
@@ -63,11 +71,25 @@ private fun CategoriesContent(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-       Text (
-           text = "Categorias",
-           style = MaterialTheme.typography.headlineMedium,
-           fontWeight = FontWeight.Bold
-       )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = onNavigateBack
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Voltar"
+                )
+            }
+            Text (
+                text = "Categorias",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
 
         Row (
             modifier = Modifier.fillMaxWidth(),
@@ -199,7 +221,8 @@ private fun CategoriesScreenPreview() {
             onDeleteCategoryClick = {},
             onEditingCategoryNameChange = {},
             onSaveEditingClick = {},
-            onCancelEditingClick = {}
+            onCancelEditingClick = {},
+            onNavigateBack = {}
         )
     }
 }
