@@ -46,7 +46,7 @@ fun AppNavigation(themeManager: ThemeManager) {
                 items.forEach { item ->
                     NavigationBarItem(
                         selected = when (item.route) {
-                            "settings" -> currentRoute == "settings" || currentRoute == "categories" || currentRoute == "paymentMethod"
+                            "settings" -> currentRoute == "settings" || currentRoute == "categories" || currentRoute == "paymentMethods"
                             else -> currentRoute == item.route
                         },
                         onClick = {

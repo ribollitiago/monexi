@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
-import com.moduxi.monexi.data.repository.InMemoryCategoryRepository
 import com.moduxi.monexi.domain.model.Category
 import com.moduxi.monexi.domain.model.TransactionType
 import com.moduxi.monexi.domain.repository.CategoryRepository

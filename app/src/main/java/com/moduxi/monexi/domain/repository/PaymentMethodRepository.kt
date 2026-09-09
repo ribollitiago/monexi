@@ -2,7 +2,6 @@ package com.moduxi.monexi.domain.repository
 
 import com.moduxi.monexi.domain.model.PaymentMethod
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.StateFlow
 
 interface PaymentMethodRepository {
     val paymentMethods: Flow<List<PaymentMethod>>
