@@ -44,7 +44,7 @@ object InMemoryTransactionRepository : TransactionRepository {
     private val _transactions = MutableStateFlow(initialTransactions)
     override val transactions: StateFlow<List<Transaction>> = _transactions.asStateFlow()
 
-    override fun addTransaction(transaction: Transaction) {
+    override suspend fun addTransaction(transaction: Transaction) {
         _transactions.value += transaction
     }
 }

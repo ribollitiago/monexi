@@ -7,8 +7,10 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.moduxi.monexi.data.local.dao.CategoryDao
 import com.moduxi.monexi.data.local.dao.PaymentMethodDao
+import com.moduxi.monexi.data.local.dao.TransactionDao
 import com.moduxi.monexi.data.local.entity.CategoryEntity
 import com.moduxi.monexi.data.local.entity.PaymentMethodEntity
+import com.moduxi.monexi.data.local.entity.TransactionEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -16,7 +18,8 @@ import kotlinx.coroutines.launch
 @Database(
     entities = [
         CategoryEntity::class,
-        PaymentMethodEntity::class
+        PaymentMethodEntity::class,
+        TransactionEntity::class
     ],
     version = 1,
     exportSchema = false
@@ -24,6 +27,7 @@ import kotlinx.coroutines.launch
 abstract class MonexiDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun paymentMethodDao(): PaymentMethodDao
+    abstract fun transactionDao(): TransactionDao
 
     companion object {
         @Volatile

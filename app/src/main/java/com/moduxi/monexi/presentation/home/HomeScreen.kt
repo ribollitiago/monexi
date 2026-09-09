@@ -35,7 +35,7 @@ import java.util.Locale
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = viewModel(),
+    viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
     onNavigateToTransaction: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()

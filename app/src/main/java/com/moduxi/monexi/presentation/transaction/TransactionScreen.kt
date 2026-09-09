@@ -71,11 +71,9 @@ fun TransactionScreen(
         onCategoryChange = viewModel::onCategoryChange,
         onPaymentMethodChange = viewModel::onPaymentMethodChange,
         onSaveClick = {
-            val saved = viewModel.saveTransaction()
-
-            if (saved) {
-                onTransactionSaved()
-            }
+            viewModel.saveTransaction(
+                onSaved = onTransactionSaved
+            )
         },
         modifier = modifier
     )

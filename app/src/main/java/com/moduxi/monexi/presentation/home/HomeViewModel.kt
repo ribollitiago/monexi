@@ -1,7 +1,11 @@
 package com.moduxi.monexi.presentation.home
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.moduxi.monexi.MonexiApplication
 import com.moduxi.monexi.data.repository.InMemoryTransactionRepository
 import com.moduxi.monexi.domain.model.Category
 import com.moduxi.monexi.domain.model.PaymentMethod
@@ -18,7 +22,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 class HomeViewModel(
-    private val transactionRepository: TransactionRepository = InMemoryTransactionRepository
+    private val transactionRepository: TransactionRepository
     ) : ViewModel() {
     private val calculateIncomeUseCase = CalculateIncomeUseCase()
     private val calculateExpenseUseCase = CalculateExpenseUseCase()
@@ -42,4 +46,13 @@ class HomeViewModel(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = HomeUiState()
         )
+
+    companion object {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MonexiApplication
+                HomeViewModel(application.transactionRepository)
+            }
+        }
+    }
 }

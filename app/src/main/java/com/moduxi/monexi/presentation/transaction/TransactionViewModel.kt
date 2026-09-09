@@ -4,8 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.moduxi.monexi.data.repository.InMemoryCategoryRepository
-import com.moduxi.monexi.data.repository.InMemoryPaymentMethodRepository
 import com.moduxi.monexi.data.repository.InMemoryTransactionRepository
 import com.moduxi.monexi.domain.model.Category
 import com.moduxi.monexi.domain.model.PaymentMethod
@@ -15,12 +13,12 @@ import com.moduxi.monexi.domain.repository.CategoryRepository
 import com.moduxi.monexi.domain.repository.PaymentMethodRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import androidx.lifecycle.viewModelScope
 import com.moduxi.monexi.MonexiApplication
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 class TransactionViewModel(
     private val transactionRepository: TransactionRepository,
@@ -52,7 +50,7 @@ class TransactionViewModel(
             initializer {
                 val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MonexiApplication)
                 TransactionViewModel(
-                    transactionRepository = InMemoryTransactionRepository,
+                    transactionRepository = application.transactionRepository,
                     categoryRepository = application.categoryRepository,
                     paymentMethodRepository = application.paymentMethodRepository
                 )
@@ -98,25 +96,43 @@ class TransactionViewModel(
         )
     }
 
-    fun saveTransaction(): Boolean {
+    fun saveTransaction(onSaved: () -> Unit) {
         val state = uiState.value
 
-        val category = state.selectedCategory ?: return false
-        val paymentMethod = state.selectedPaymentMethod ?: return false
+        val category = state.selectedCategory
+        val paymentMethod = state.selectedPaymentMethod
         val amount = (state.amountDigits.toLongOrNull() ?: 0L) / 100.0
 
+        if (category == null) {
+            formState.value = formState.value.copy(
+                error = "Selecione uma categoria"
+            )
+            return
+        }
+
+        if (paymentMethod == null) {
+            formState.value = formState.value.copy(
+                error = "Selecione uma forma de pagamento"
+            )
+            return
+        }
+
         if (state.description.isBlank()) {
-            formState.value = state.copy(error = "Informe a descrição")
-            return false
+            formState.value = formState.value.copy(
+                error = "Informe a descrição"
+            )
+            return
         }
 
         if (amount <= 0.0) {
-            formState.value = state.copy(error = "Informe um valor válido")
-            return false
+            formState.value = formState.value.copy(
+                error = "Informe um valor válido"
+            )
+            return
         }
 
         val transaction = Transaction(
-            id = System.currentTimeMillis(),
+            id = 0,
             title = state.description,
             amount = amount,
             type = state.type,
@@ -125,8 +141,9 @@ class TransactionViewModel(
             date = state.dateMillis
         )
 
-        transactionRepository.addTransaction(transaction)
-
-        return true
+        viewModelScope.launch {
+            transactionRepository.addTransaction(transaction)
+            onSaved()
+        }
     }
 }

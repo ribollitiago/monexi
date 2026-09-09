@@ -1,4 +1,17 @@
 package com.moduxi.monexi.data.local.dao
 
-class TransactionDao {
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import com.moduxi.monexi.data.local.entity.TransactionEntity
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface TransactionDao {
+    @Query("SELECT * FROM transactions ORDER BY date DESC")
+    fun observeTransaction(): Flow<List<TransactionEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTransaction(transaction: TransactionEntity)
 }
