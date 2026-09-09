@@ -1,12 +1,13 @@
 package com.moduxi.monexi.domain.repository
 
 import com.moduxi.monexi.domain.model.PaymentMethod
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 interface PaymentMethodRepository {
-    val paymentMethods: StateFlow<List<PaymentMethod>>
+    val paymentMethods: Flow<List<PaymentMethod>>
 
-    fun addPaymentMethod(paymentMethod: PaymentMethod)
-    fun updatePaymentMethod(paymentMethod: PaymentMethod)
-    fun deletePaymentMethod(paymentMethod: PaymentMethod)
+    suspend fun addPaymentMethod(paymentMethod: PaymentMethod)
+    suspend fun updatePaymentMethod(paymentMethod: PaymentMethod)
+    suspend fun deletePaymentMethod(paymentMethod: PaymentMethod)
 }
