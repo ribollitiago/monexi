@@ -61,6 +61,5 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp("androidx.room:room-compiler:2.8.0")
+    ksp(libs.androidx.room.compiler)
 }
