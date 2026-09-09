@@ -1,6 +1,9 @@
 package com.moduxi.monexi.presentation.settings.categories
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -23,11 +27,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.moduxi.monexi.domain.model.Category
+import com.moduxi.monexi.domain.model.TransactionType
 import com.moduxi.monexi.ui.theme.MonexiTheme
 
 @Composable
@@ -48,6 +56,7 @@ fun CategoriesScreen(
         onSaveEditingClick = viewModel::saveEditing,
         onCancelEditingClick = viewModel::cancelEditing,
         onNavigateBack = onNavigateBack,
+        onTypeChange = viewModel::onTypeChange,
         modifier = modifier
     )
 }
@@ -63,8 +72,13 @@ private fun CategoriesContent(
     onSaveEditingClick: () -> Unit,
     onCancelEditingClick: () -> Unit,
     onNavigateBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onTypeChange: (TransactionType) -> Unit
 ) {
+    val visibleCategories = uiState.categories.filter { category ->
+        category.type == uiState.selectedType
+    }
+
     Column (
         modifier = modifier
             .fillMaxSize()
@@ -89,6 +103,43 @@ private fun CategoriesContent(
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            val transactionTypes = listOf(
+                TransactionType.INCOME to "Receita",
+                TransactionType.EXPENSE to "Despesa"
+            )
+
+            transactionTypes.forEach { (type, label) ->
+                val isSelected = uiState.selectedType == type
+
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(
+                            if (isSelected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.surfaceVariant
+                        )
+                        .clickable {
+                            onTypeChange(type)
+                        }
+                        .padding(vertical = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = label,
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 13.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
         }
 
         Row (
@@ -120,7 +171,7 @@ private fun CategoriesContent(
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(uiState.categories) { category ->
+            items(visibleCategories) { category ->
                 CategoryItem(
                     category = category,
                     isEditing = uiState.editingCategory?.id == category.id,
@@ -210,9 +261,19 @@ private fun CategoriesScreenPreview() {
         CategoriesContent(
             uiState = CategoriesUiState(
                 categories = listOf(
-                    Category(id = 1, name = "Alimentacao", isDefault = true),
-                    Category(id = 2, name = "Transporte", isDefault = true),
-                    Category(id = 3, name = "Viagem", isDefault = false)
+                    Category(
+                        id = 1,
+                        name = "Alimentacao",
+                        type = TransactionType.EXPENSE,
+                        isDefault = true
+                    ),
+                    Category(
+                        id = 2,
+                        name = "Transporte",
+                        TransactionType.EXPENSE,
+                        isDefault = true
+                    ),
+                    Category(id = 3, name = "Viagem", TransactionType.EXPENSE, isDefault = false)
                 )
             ),
             onNewCategoryNameChange = {},
@@ -222,7 +283,8 @@ private fun CategoriesScreenPreview() {
             onEditingCategoryNameChange = {},
             onSaveEditingClick = {},
             onCancelEditingClick = {},
-            onNavigateBack = {}
+            onNavigateBack = {},
+            onTypeChange = {}
         )
     }
 }

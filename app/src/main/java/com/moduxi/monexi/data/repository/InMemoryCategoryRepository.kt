@@ -1,6 +1,7 @@
 package com.moduxi.monexi.data.repository
 
 import com.moduxi.monexi.domain.model.Category
+import com.moduxi.monexi.domain.model.TransactionType
 import com.moduxi.monexi.domain.repository.CategoryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -10,10 +11,10 @@ object InMemoryCategoryRepository : CategoryRepository{
 
     private val _categories = MutableStateFlow(
         listOf(
-            Category(id = 1, name = "Alimentacao", isDefault = true),
-            Category(id = 2, name = "Transporte", isDefault = true),
-            Category(id = 3, name = "Casa", isDefault = true),
-            Category(id = 4, name = "Trabalho", isDefault = true)
+            Category(id = 1, name = "Alimentacao", type = TransactionType.EXPENSE, isDefault = true),
+            Category(id = 2, name = "Transporte", type = TransactionType.EXPENSE, isDefault = true),
+            Category(id = 3, name = "Casa", type = TransactionType.EXPENSE, isDefault = true),
+            Category(id = 4, name = "Trabalho", type = TransactionType.EXPENSE, isDefault = true)
         )
     )
 

@@ -21,14 +21,21 @@ fun Transaction.toEntity(): TransactionEntity {
 fun TransactionEntity.toDomain(
     categories: List<Category>,
     paymentMethods: List<PaymentMethod>
-): Transaction {
+): Transaction? {
+    val category = categories.firstOrNull { it.id == categoryId }
+    val paymentMethod = paymentMethods.firstOrNull { it.id == paymentMethodId }
+
+    if (category == null || paymentMethod == null) {
+        return null
+    }
+
     return Transaction(
         id = id,
         title = title,
         amount = amount,
         type = TransactionType.valueOf(type),
-        category = categories.first { it.id == categoryId },
-        paymentMethod = paymentMethods.first { it.id == paymentMethodId },
+        category = category,
+        paymentMethod = paymentMethod,
         date = date
     )
 }

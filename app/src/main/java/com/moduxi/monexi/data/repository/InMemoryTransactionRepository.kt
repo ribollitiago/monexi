@@ -17,7 +17,7 @@ object InMemoryTransactionRepository : TransactionRepository {
             title = "Salario",
             amount = 3200.0,
             type = TransactionType.INCOME,
-            category = Category(id = 1, name = "Trabalho", isDefault = true),
+            category = Category(id = 1, name = "Trabalho", type = TransactionType.EXPENSE, isDefault = true),
             paymentMethod = PaymentMethod(id = 2, name = "Pix", isDefault = true),
             date = System.currentTimeMillis()
         ),
@@ -26,7 +26,7 @@ object InMemoryTransactionRepository : TransactionRepository {
             title = "Mercado",
             amount = 280.0,
             type = TransactionType.EXPENSE,
-            category = Category(id = 2, name = "Alimentacao", isDefault = true),
+            category = Category(id = 2, name = "Alimentacao", type = TransactionType.EXPENSE, isDefault = true),
             paymentMethod = PaymentMethod(id = 3, name = "Cartao de debito", isDefault = true),
             date = System.currentTimeMillis()
         ),
@@ -35,7 +35,7 @@ object InMemoryTransactionRepository : TransactionRepository {
             title = "Internet",
             amount = 120.0,
             type = TransactionType.EXPENSE,
-            category = Category(id = 3, name = "Casa", isDefault = true),
+            category = Category(id = 3, name = "Casa", type = TransactionType.EXPENSE, isDefault = true),
             paymentMethod = PaymentMethod(id = 2, name = "Pix", isDefault = true),
             date = System.currentTimeMillis()
         )

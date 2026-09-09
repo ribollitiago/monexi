@@ -198,7 +198,8 @@ private fun HomeScreenPreview() {
                         TransactionType.INCOME,
                         Category(
                             id = 1,
-                            name = "Alimentação"
+                            name = "Alimentação",
+                            type = TransactionType.INCOME
                         ),
                         PaymentMethod(
                             id = 1,
@@ -213,7 +214,8 @@ private fun HomeScreenPreview() {
                         TransactionType.EXPENSE,
                         Category(
                             id = 1,
-                            name = "Alimentação"
+                            name = "Alimentação",
+                            type = TransactionType.EXPENSE
                         ),
                         PaymentMethod(
                             id = 1,

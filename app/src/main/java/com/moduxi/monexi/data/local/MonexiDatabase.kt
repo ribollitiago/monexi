@@ -11,6 +11,7 @@ import com.moduxi.monexi.data.local.dao.TransactionDao
 import com.moduxi.monexi.data.local.entity.CategoryEntity
 import com.moduxi.monexi.data.local.entity.PaymentMethodEntity
 import com.moduxi.monexi.data.local.entity.TransactionEntity
+import com.moduxi.monexi.domain.model.TransactionType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -21,7 +22,7 @@ import kotlinx.coroutines.launch
         PaymentMethodEntity::class,
         TransactionEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class MonexiDatabase : RoomDatabase() {
@@ -42,10 +43,13 @@ abstract class MonexiDatabase : RoomDatabase() {
                         val categoryDao = database.categoryDao()
                         categoryDao.insertCategories(
                             listOf(
-                                CategoryEntity(name = "Alimentação", isDefault = true),
-                                CategoryEntity(name = "Transporte", isDefault = true),
-                                CategoryEntity(name = "Casa", isDefault = true),
-                                CategoryEntity(name = "Trabalho", isDefault = true)
+                                CategoryEntity(name = "Alimentação", type = TransactionType.EXPENSE.name, isDefault = true),
+                                CategoryEntity(name = "Transporte", type = TransactionType.EXPENSE.name, isDefault = true),
+                                CategoryEntity(name = "Casa", type = TransactionType.EXPENSE.name, isDefault = true),
+                                CategoryEntity(name = "Saúde", type = TransactionType.EXPENSE.name, isDefault = true),
+                                CategoryEntity(name = "Salário", type = TransactionType.INCOME.name, isDefault = true),
+                                CategoryEntity(name = "Freelance", type = TransactionType.INCOME.name, isDefault = true),
+                                CategoryEntity(name = "Investimentos", type = TransactionType.INCOME.name, isDefault = true)
                             )
                         )
 
@@ -70,6 +74,7 @@ abstract class MonexiDatabase : RoomDatabase() {
                     MonexiDatabase::class.java,
                     "monexi.db"
                 )
+                    .fallbackToDestructiveMigration(true)
                     .addCallback(databaseCallback)
                     .build().also { database ->
                     INSTANCE = database

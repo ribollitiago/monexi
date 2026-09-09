@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.moduxi.monexi.data.repository.InMemoryTransactionRepository
 import com.moduxi.monexi.domain.model.Category
 import com.moduxi.monexi.domain.model.PaymentMethod
 import com.moduxi.monexi.domain.model.Transaction
@@ -28,15 +27,23 @@ class TransactionViewModel(
 
     private val formState = MutableStateFlow(TransactionUiState())
 
+
+
     val uiState = combine(
         categoryRepository.categories,
         paymentMethodRepository.paymentMethods,
         formState
     ) { categories, paymentMethods, form ->
+        val filteredCategories = categories.filter { category ->
+            category.type == form.type
+        }
+
         form.copy(
-            categories = categories,
+            categories = filteredCategories,
             paymentMethods = paymentMethods,
-            selectedCategory = form.selectedCategory ?: categories.firstOrNull(),
+            selectedCategory = form.selectedCategory
+                ?.takeIf { it.type == form.type }
+                ?: filteredCategories.firstOrNull(),
             selectedPaymentMethod = form.selectedPaymentMethod ?: paymentMethods.firstOrNull()
         )
     }.stateIn(

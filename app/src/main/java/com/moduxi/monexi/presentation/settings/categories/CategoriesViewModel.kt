@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
 import com.moduxi.monexi.data.repository.InMemoryCategoryRepository
 import com.moduxi.monexi.domain.model.Category
+import com.moduxi.monexi.domain.model.TransactionType
 import com.moduxi.monexi.domain.repository.CategoryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -51,7 +52,8 @@ class CategoriesViewModel(
         }
 
         val alreadyExists = uiState.value.categories.any { category ->
-            category.name.equals(name, ignoreCase = true)
+            category.type == state.selectedType &&
+                    category.name.equals(name, ignoreCase = true)
         }
 
         if (alreadyExists) {
@@ -64,6 +66,7 @@ class CategoriesViewModel(
                 Category(
                     id = 0,
                     name = name,
+                    type = state.selectedType,
                     isDefault = false
                 )
             )
@@ -88,6 +91,13 @@ class CategoriesViewModel(
     fun onEditingCategoryNameChange(name: String) {
         formState.value = formState.value.copy(
             editingCategoryName = name,
+            error = null
+        )
+    }
+
+    fun onTypeChange(type: TransactionType) {
+        formState.value = formState.value.copy(
+            selectedType = type,
             error = null
         )
     }

@@ -17,22 +17,15 @@ class RoomTransactionRepository(
 ) : TransactionRepository {
 
     override val transactions: Flow<List<Transaction>> = combine(
-        transactionDao.observeTransaction(),
+        transactionDao.observeTransactions(),
         categoryRepository.categories,
         paymentMethodRepository.paymentMethods
     ) { transactions, categories, paymentMethods ->
         transactions.mapNotNull { transaction ->
-            val hasCategory = categories.any { it.id == transaction.categoryId }
-            val hasPaymentMethod = paymentMethods.any { it.id == transaction.paymentMethodId }
-
-            if (hasCategory && hasPaymentMethod) {
-                transaction.toDomain(
-                    categories = categories,
-                    paymentMethods = paymentMethods
-                )
-            } else {
-                null
-            }
+            transaction.toDomain(
+                categories = categories,
+                paymentMethods = paymentMethods
+            )
         }
     }
 

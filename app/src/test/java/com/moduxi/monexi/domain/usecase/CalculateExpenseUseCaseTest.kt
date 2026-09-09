@@ -12,7 +12,8 @@ class CalculateExpenseUseCaseTest {
 
     private val category = Category(
         id = 1,
-        name = "Teste"
+        name = "Teste",
+        type = TransactionType.EXPENSE
     )
 
     private val paymentMethod = PaymentMethod(
