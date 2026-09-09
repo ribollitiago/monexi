@@ -27,8 +27,8 @@ import com.moduxi.monexi.presentation.settings.categories.CategoriesScreen
 import com.moduxi.monexi.presentation.settings.payment.PaymentMethodScreen
 
 sealed class BottomNavItem(val route: String, val label: String, val icon: ImageVector) {
-    object Home : BottomNavItem("home", "Início", Icons.Default.Home)
-    object Transaction : BottomNavItem("transaction", "Adicionar", Icons.Default.Add)
+    object Home : BottomNavItem("home", "Resumo", Icons.Default.Home)
+    object Transaction : BottomNavItem("transaction", "Lançamento", Icons.Default.Add)
     object Settings : BottomNavItem("settings", "Configurações", Icons.Default.Settings)
 }
 
