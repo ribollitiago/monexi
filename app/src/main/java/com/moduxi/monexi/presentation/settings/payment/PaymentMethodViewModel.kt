@@ -1,7 +1,11 @@
 package com.moduxi.monexi.presentation.settings.payment
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.moduxi.monexi.MonexiApplication
 import com.moduxi.monexi.data.repository.InMemoryPaymentMethodRepository
 import com.moduxi.monexi.domain.model.PaymentMethod
 import com.moduxi.monexi.domain.repository.PaymentMethodRepository
@@ -9,9 +13,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 class PaymentMethodViewModel(
-    private val paymentMethodRepository: PaymentMethodRepository = InMemoryPaymentMethodRepository
+    private val paymentMethodRepository: PaymentMethodRepository
 ) : ViewModel() {
 
     private val formState = MutableStateFlow(PaymentMethodUiState())
@@ -26,7 +31,7 @@ class PaymentMethodViewModel(
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = PaymentMethodUiState(paymentMethods = paymentMethodRepository.paymentMethods.value)
+        initialValue = PaymentMethodUiState()
     )
 
     fun onNewPaymentMethodNameChange(name: String) {
@@ -44,8 +49,7 @@ class PaymentMethodViewModel(
             formState.value = state.copy(error = "Informe o nome do método de pagamento")
             return
         }
-
-        val alreadyExists = paymentMethodRepository.paymentMethods.value.any { paymentMethod ->
+        val alreadyExists = uiState.value.paymentMethods.any { paymentMethod ->
             paymentMethod.name.equals(name, ignoreCase = true)
         }
 
@@ -54,18 +58,20 @@ class PaymentMethodViewModel(
             return
         }
 
-        paymentMethodRepository.addPaymentMethod(
-            PaymentMethod(
-                id = System.currentTimeMillis(),
-                name = name,
-                isDefault = false
+        viewModelScope.launch{
+            paymentMethodRepository.addPaymentMethod(
+                PaymentMethod(
+                    id = 0,
+                    name = name,
+                    isDefault = false
+                )
             )
-        )
 
-        formState.value = state.copy(
-            newPaymentMethodName = "",
-            error = null
-        )
+            formState.value = state.copy(
+                newPaymentMethodName = "",
+                error = null
+            )
+        }
     }
 
     fun startEditing(paymentMethod: PaymentMethod) {
@@ -95,7 +101,7 @@ class PaymentMethodViewModel(
             return
         }
 
-        val alreadyExists = paymentMethodRepository.paymentMethods.value.any { currentPaymentMethod ->
+        val alreadyExists = uiState.value.paymentMethods.any { currentPaymentMethod ->
             currentPaymentMethod.id != paymentMethod.id &&
                     currentPaymentMethod.name.equals(name, ignoreCase = true)
         }
@@ -105,15 +111,17 @@ class PaymentMethodViewModel(
             return
         }
 
-        paymentMethodRepository.updatePaymentMethod(
-            paymentMethod.copy(name = name)
-        )
+        viewModelScope.launch {
+            paymentMethodRepository.updatePaymentMethod(
+                paymentMethod.copy(name = name)
+            )
 
-        formState.value = state.copy(
-            editingPaymentMethod = null,
-            editingPaymentMethodName = "",
-            error = null
-        )
+            formState.value = state.copy(
+                editingPaymentMethod = null,
+                editingPaymentMethodName = "",
+                error = null
+            )
+        }
     }
 
     fun cancelEditing() {
@@ -127,6 +135,17 @@ class PaymentMethodViewModel(
     fun deletePaymentMethod(paymentMethod: PaymentMethod) {
         if (paymentMethod.isDefault) return
 
-        paymentMethodRepository.deletePaymentMethod(paymentMethod)
+        viewModelScope.launch {
+            paymentMethodRepository.deletePaymentMethod(paymentMethod)
+        }
+    }
+
+    companion object {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MonexiApplication)
+                PaymentMethodViewModel(application.paymentMethodRepository)
+            }
+        }
     }
 }

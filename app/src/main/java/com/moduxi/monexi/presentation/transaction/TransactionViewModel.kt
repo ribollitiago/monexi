@@ -17,14 +17,15 @@ import com.moduxi.monexi.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import androidx.lifecycle.viewModelScope
+import com.moduxi.monexi.MonexiApplication
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
 class TransactionViewModel(
-    private val transactionRepository: TransactionRepository = InMemoryTransactionRepository,
-    private val categoryRepository: CategoryRepository = InMemoryCategoryRepository,
-    private val paymentMethodRepository: PaymentMethodRepository = InMemoryPaymentMethodRepository
+    private val transactionRepository: TransactionRepository,
+    private val categoryRepository: CategoryRepository,
+    private val paymentMethodRepository: PaymentMethodRepository
     ) : ViewModel() {
 
     private val formState = MutableStateFlow(TransactionUiState())
@@ -49,10 +50,11 @@ class TransactionViewModel(
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
+                val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MonexiApplication)
                 TransactionViewModel(
                     transactionRepository = InMemoryTransactionRepository,
-                    categoryRepository = InMemoryCategoryRepository,
-                    paymentMethodRepository = InMemoryPaymentMethodRepository
+                    categoryRepository = application.categoryRepository,
+                    paymentMethodRepository = application.paymentMethodRepository
                 )
             }
         }

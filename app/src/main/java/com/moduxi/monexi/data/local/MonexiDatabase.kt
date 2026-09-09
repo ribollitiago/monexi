@@ -6,20 +6,24 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.moduxi.monexi.data.local.dao.CategoryDao
+import com.moduxi.monexi.data.local.dao.PaymentMethodDao
 import com.moduxi.monexi.data.local.entity.CategoryEntity
+import com.moduxi.monexi.data.local.entity.PaymentMethodEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Database(
     entities = [
-        CategoryEntity::class
+        CategoryEntity::class,
+        PaymentMethodEntity::class
     ],
     version = 1,
     exportSchema = false
 )
 abstract class MonexiDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
+    abstract fun paymentMethodDao(): PaymentMethodDao
 
     companion object {
         @Volatile
@@ -31,13 +35,23 @@ abstract class MonexiDatabase : RoomDatabase() {
 
                 CoroutineScope(Dispatchers.IO).launch {
                     INSTANCE?.let { database ->
-                        val dao = database.categoryDao()
-                        dao.insertCategories(
+                        val categoryDao = database.categoryDao()
+                        categoryDao.insertCategories(
                             listOf(
                                 CategoryEntity(name = "Alimentação", isDefault = true),
                                 CategoryEntity(name = "Transporte", isDefault = true),
                                 CategoryEntity(name = "Casa", isDefault = true),
                                 CategoryEntity(name = "Trabalho", isDefault = true)
+                            )
+                        )
+
+                        val paymentMethodDao = database.paymentMethodDao()
+                        paymentMethodDao.insertPaymentMethods(
+                            listOf(
+                                PaymentMethodEntity(name = "Dinheiro", isDefault = true),
+                                PaymentMethodEntity(name = "Cartão de Crédito", isDefault = true),
+                                PaymentMethodEntity(name = "Cartão de Débito", isDefault = true),
+                                PaymentMethodEntity(name = "Pix", isDefault = true)
                             )
                         )
                     }

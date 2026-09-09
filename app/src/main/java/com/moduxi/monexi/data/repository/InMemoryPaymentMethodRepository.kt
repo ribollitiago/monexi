@@ -20,17 +20,17 @@ object InMemoryPaymentMethodRepository : PaymentMethodRepository {
 
     override val paymentMethods: StateFlow<List<PaymentMethod>> = _paymentMethods.asStateFlow()
 
-    override fun addPaymentMethod(paymentMethod: PaymentMethod) {
+    override suspend fun addPaymentMethod(paymentMethod: PaymentMethod) {
         _paymentMethods.value += paymentMethod
     }
 
-    override fun updatePaymentMethod(paymentMethod: PaymentMethod) {
+    override suspend fun updatePaymentMethod(paymentMethod: PaymentMethod) {
         _paymentMethods.value = _paymentMethods.value.map {
             if (it.id == paymentMethod.id) paymentMethod else it
         }
     }
 
-    override fun deletePaymentMethod(paymentMethod: PaymentMethod) {
+    override suspend fun deletePaymentMethod(paymentMethod: PaymentMethod) {
         _paymentMethods.value -= paymentMethod
     }
 }

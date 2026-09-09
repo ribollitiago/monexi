@@ -34,7 +34,7 @@ import com.moduxi.monexi.ui.theme.MonexiTheme
 fun PaymentMethodScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: PaymentMethodViewModel = viewModel()
+    viewModel: PaymentMethodViewModel = viewModel(factory = PaymentMethodViewModel.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
