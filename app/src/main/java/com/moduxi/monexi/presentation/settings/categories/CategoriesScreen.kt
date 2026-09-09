@@ -34,7 +34,7 @@ import com.moduxi.monexi.ui.theme.MonexiTheme
 fun CategoriesScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: CategoriesViewModel = viewModel()
+    viewModel: CategoriesViewModel = viewModel(factory = CategoriesViewModel.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsState()
 

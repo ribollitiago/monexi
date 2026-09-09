@@ -1,7 +1,11 @@
 package com.moduxi.monexi.presentation.settings.categories
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.moduxi.monexi.MonexiApplication
 import com.moduxi.monexi.data.repository.InMemoryCategoryRepository
 import com.moduxi.monexi.domain.model.Category
 import com.moduxi.monexi.domain.repository.CategoryRepository
@@ -12,7 +16,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class CategoriesViewModel(
-    private val categoryRepository: CategoryRepository = InMemoryCategoryRepository
+    private val categoryRepository: CategoryRepository
 ) : ViewModel() {
 
     private val formState = MutableStateFlow(CategoriesUiState())
@@ -58,7 +62,7 @@ class CategoriesViewModel(
         viewModelScope.launch {
             categoryRepository.addCategory(
                 Category(
-                    id = System.currentTimeMillis(),
+                    id = 0,
                     name = name,
                     isDefault = false
                 )
@@ -134,6 +138,15 @@ class CategoriesViewModel(
 
         viewModelScope.launch {
             categoryRepository.deleteCategory(category)
+        }
+    }
+
+    companion object {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MonexiApplication)
+                CategoriesViewModel(application.categoryRepository)
+            }
         }
     }
 }
