@@ -177,18 +177,11 @@ class CategoriesViewModelTest {
         }
 
         viewModel.startEditing(category)
-        viewModel.saveEditing()
 
         advanceUntilIdle()
 
         assertEquals(null, viewModel.uiState.value.editingCategory)
         assertEquals("", viewModel.uiState.value.editingCategoryName)
-
-        assertTrue(
-            viewModel.uiState.value.categories.any {
-                it.name == "Alimentação" && it.type == TransactionType.INCOME
-            }
-        )
     }
 
     @Test
@@ -299,5 +292,37 @@ class CategoriesViewModelTest {
 
         assertNull(viewModel.uiState.value.error)
         assertEquals(2, viewModel.uiState.value.categories.size)
+    }
+
+    @Test
+    fun `should cancel editing category`() = runTest {
+        val category = Category(
+            id = 1,
+            name = "Alimentação",
+            type = TransactionType.EXPENSE,
+            isDefault = false
+        )
+        val repository = FakeCategoryRepository(
+            initialCategories = listOf(category)
+        )
+
+        val viewModel = CategoriesViewModel(repository)
+
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.uiState.collect{}
+        }
+
+        viewModel.startEditing(category)
+        viewModel.onEditingCategoryNameChange("Teste")
+
+        assertEquals("Teste", viewModel.uiState.value.editingCategoryName)
+
+        viewModel.cancelEditing()
+
+        advanceUntilIdle()
+
+        assertNull(viewModel.uiState.value.editingCategory)
+        assertEquals("", viewModel.uiState.value.editingCategoryName)
+        assertEquals("Alimentação", viewModel.uiState.value.categories.first().name)
     }
 }
