@@ -74,7 +74,7 @@ abstract class MonexiDatabase : RoomDatabase() {
                     MonexiDatabase::class.java,
                     "monexi.db"
                 )
-                    .fallbackToDestructiveMigration(true)
+                    .fallbackToDestructiveMigration(true) //ALTERAR PARA MIGRATIONS NO FUTURO
                     .addCallback(databaseCallback)
                     .build().also { database ->
                     INSTANCE = database
