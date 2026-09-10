@@ -3,22 +3,22 @@ package com.moduxi.monexi.presentation.settings.payment
 import com.moduxi.monexi.MainDispatcherRule
 import com.moduxi.monexi.data.repository.FakePaymentMethodRepository
 import com.moduxi.monexi.domain.model.PaymentMethod
-import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class PaymentMethodViewModelTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
-    @OptIn(ExperimentalCoroutinesApi::class)
     fun`should add payment method`() = runTest {
         val repository = FakePaymentMethodRepository()
         val viewModel = PaymentMethodViewModel(repository)
@@ -39,8 +39,7 @@ class PaymentMethodViewModelTest {
     }
 
     @Test
-    @OptIn(ExperimentalCoroutinesApi::class)
-    fun `should not add duplicated payment method for same type`() = runTest {
+    fun `should not add duplicated payment method`() = runTest {
         val repository = FakePaymentMethodRepository(
             initialPaymentMethods = listOf(
                 PaymentMethod(
@@ -65,7 +64,6 @@ class PaymentMethodViewModelTest {
     }
 
     @Test
-    @OptIn(ExperimentalCoroutinesApi::class)
     fun `should clear error when typing a new name`() = runTest {
         val repository = FakePaymentMethodRepository()
         val viewModel = PaymentMethodViewModel(repository)

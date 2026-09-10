@@ -4,23 +4,23 @@ import com.moduxi.monexi.MainDispatcherRule
 import com.moduxi.monexi.data.repository.FakeCategoryRepository
 import com.moduxi.monexi.domain.model.Category
 import com.moduxi.monexi.domain.model.TransactionType
-import junit.framework.TestCase.assertEquals
-import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class CategoriesViewModelTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
-    @OptIn(ExperimentalCoroutinesApi::class)
     fun `should add category`() = runTest {
         val repository = FakeCategoryRepository()
         val viewModel = CategoriesViewModel(repository)
@@ -42,7 +42,6 @@ class CategoriesViewModelTest {
     }
 
     @Test
-    @OptIn(ExperimentalCoroutinesApi::class)
     fun `should not add duplicated category for same type`() = runTest {
         val repository = FakeCategoryRepository(
             initialCategories = listOf(
@@ -69,7 +68,6 @@ class CategoriesViewModelTest {
     }
 
     @Test
-    @OptIn(ExperimentalCoroutinesApi::class)
     fun `should allow same category name for different type`() = runTest {
         val repository = FakeCategoryRepository(
             initialCategories = listOf(
