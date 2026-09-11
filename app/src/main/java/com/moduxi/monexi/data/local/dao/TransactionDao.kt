@@ -1,9 +1,11 @@
 package com.moduxi.monexi.data.local.dao
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.moduxi.monexi.data.local.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -14,4 +16,10 @@ interface TransactionDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransaction(transaction: TransactionEntity)
+
+    @Update
+    suspend fun updateTransaction(transaction: TransactionEntity)
+    
+    @Delete
+    suspend fun deleteTransaction(transaction: TransactionEntity)
 }

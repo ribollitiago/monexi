@@ -204,6 +204,8 @@ class CategoriesViewModelTest {
 
         viewModel.deleteCategory(category)
 
+        advanceUntilIdle()
+
         assertEquals(0, viewModel.uiState.value.categories.size)
     }
 

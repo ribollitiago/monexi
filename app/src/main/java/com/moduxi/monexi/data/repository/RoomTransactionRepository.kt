@@ -32,4 +32,12 @@ class RoomTransactionRepository(
     override suspend fun addTransaction(transaction: Transaction) {
         transactionDao.insertTransaction(transaction.toEntity())
     }
+
+    override suspend fun updateTransaction(transaction: Transaction) {
+        transactionDao.updateTransaction(transaction.toEntity())
+    }
+
+    override suspend fun deleteTransaction(transaction: Transaction) {
+        transactionDao.deleteTransaction(transaction.toEntity())
+    }
 }
