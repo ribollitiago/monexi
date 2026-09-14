@@ -22,7 +22,7 @@ class CalculateBalanceUseCaseTest {
     )
 
     @Test
-    fun `should calculate balance`() {
+    fun shouldCalculateBalance() {
         val transactions = listOf(
             Transaction(
                 id = 1,

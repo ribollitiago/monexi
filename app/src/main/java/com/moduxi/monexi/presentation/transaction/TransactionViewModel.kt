@@ -67,7 +67,9 @@ class TransactionViewModel(
 
     fun onTypeChange(type: TransactionType) {
         formState.value = formState.value.copy(
-            type = type
+            type = type,
+            selectedCategory = null,
+            error = null
         )
     }
 
@@ -103,12 +105,36 @@ class TransactionViewModel(
         )
     }
 
+    fun startEditing(transaction: Transaction) {
+        formState.value = formState.value.copy(
+            editingTransaction = transaction,
+            description = transaction.title,
+            amountDigits = (transaction.amount * 100).toLong().toString(),
+            type = transaction.type,
+            selectedCategory = transaction.category,
+            selectedPaymentMethod = transaction.paymentMethod,
+            dateMillis = transaction.date,
+            error = null
+        )
+    }
+    
+    fun cancelEditing() {
+        formState.value = TransactionUiState()
+    }
+
+    fun deleteTransaction(transaction: Transaction) {
+        viewModelScope.launch {
+            transactionRepository.deleteTransaction(transaction)
+        }
+    }
+
     fun saveTransaction(onSaved: () -> Unit) {
         val state = uiState.value
 
         val category = state.selectedCategory
         val paymentMethod = state.selectedPaymentMethod
         val amount = (state.amountDigits.toLongOrNull() ?: 0L) / 100.0
+        val editingTransaction = state.editingTransaction
 
         if (category == null) {
             formState.value = formState.value.copy(
@@ -139,7 +165,7 @@ class TransactionViewModel(
         }
 
         val transaction = Transaction(
-            id = 0,
+            id = editingTransaction?.id ?: 0,
             title = state.description,
             amount = amount,
             type = state.type,
@@ -149,7 +175,11 @@ class TransactionViewModel(
         )
 
         viewModelScope.launch {
-            transactionRepository.addTransaction(transaction)
+            if (editingTransaction == null) {
+                transactionRepository.addTransaction(transaction)
+            } else {
+                transactionRepository.updateTransaction(transaction)
+            }
             onSaved()
         }
     }

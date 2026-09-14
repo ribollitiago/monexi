@@ -2,6 +2,7 @@ package com.moduxi.monexi.presentation.transaction
 
 import com.moduxi.monexi.domain.model.Category
 import com.moduxi.monexi.domain.model.PaymentMethod
+import com.moduxi.monexi.domain.model.Transaction
 import com.moduxi.monexi.domain.model.TransactionType
 
 data class TransactionUiState(
@@ -11,6 +12,7 @@ data class TransactionUiState(
     val dateMillis: Long = System.currentTimeMillis(),
     val selectedCategory: Category? = null,
     val selectedPaymentMethod: PaymentMethod? = null,
+    val editingTransaction: Transaction? = null,
     val categories: List<Category> = emptyList(),
     val paymentMethods: List<PaymentMethod> = emptyList(),
     val isLoading: Boolean = false,
