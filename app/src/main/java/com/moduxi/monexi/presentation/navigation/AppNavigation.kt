@@ -21,6 +21,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.getValue
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import com.moduxi.monexi.data.repository.local.ThemeManager
 import com.moduxi.monexi.presentation.settings.SettingsScreen
 import com.moduxi.monexi.presentation.settings.categories.CategoriesScreen
@@ -47,6 +49,7 @@ fun AppNavigation(themeManager: ThemeManager) {
                     NavigationBarItem(
                         selected = when (item.route) {
                             "settings" -> currentRoute == "settings" || currentRoute == "categories" || currentRoute == "paymentMethods"
+                            "transaction" -> currentRoute?.startsWith("transaction") == true
                             else -> currentRoute == item.route
                         },
                         onClick = {
@@ -71,12 +74,23 @@ fun AppNavigation(themeManager: ThemeManager) {
         ) {
             composable("home") {
                 HomeScreen(
-                    onNavigateToTransaction = {
-                        navController.navigate("transaction")
+                    onNavigateToTransaction = { id ->
+                        if (id != null) {
+                            navController.navigate("transaction?id=$id")
+                        } else {
+                            navController.navigate("transaction")
+                        }
                     }
                 )
             }
-            composable("transaction") {
+            composable(route = "transaction?id={id}",
+                arguments = listOf(
+                    navArgument("id") {
+                        type = NavType.LongType
+                        defaultValue = 0L
+                    }
+                )
+            ) {
                 TransactionScreen(
                     onTransactionSaved = {
                         // Se for uma barra de navegação, o popBackStack vai voltar para a Home

@@ -1,5 +1,7 @@
 package com.moduxi.monexi.presentation.home
 
+import android.R
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.moduxi.monexi.domain.model.Category
 import com.moduxi.monexi.domain.model.PaymentMethod
@@ -36,14 +38,14 @@ import java.util.Locale
 fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
-    onNavigateToTransaction: () -> Unit
+    onNavigateToTransaction: (Long?) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     HomeContent(
         uiState = uiState,
-        onAddTransactionClick = {
-            onNavigateToTransaction()
+        onTransactionClick = { id ->
+            onNavigateToTransaction(id)
         },
         modifier = modifier
     )
@@ -52,7 +54,7 @@ fun HomeScreen(
 @Composable
 private fun HomeContent(
     uiState: HomeUiState,
-    onAddTransactionClick: () -> Unit,
+    onTransactionClick: (Long?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -107,7 +109,10 @@ private fun HomeContent(
         }
 
         items(uiState.transactions) { transaction ->
-            TransactionItem(transaction = transaction)
+            TransactionItem(
+                transaction = transaction,
+                onEditClick = { onTransactionClick(transaction.id) }
+            )
         }
     }
 }
@@ -137,15 +142,22 @@ private fun SummaryCard(
 }
 
 @Composable
-private fun TransactionItem(transaction: Transaction) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun TransactionItem(
+    transaction: Transaction,
+    modifier: Modifier = Modifier,
+    onEditClick: () -> Unit
+    ) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = transaction.title,
                     style = MaterialTheme.typography.titleMedium,
@@ -155,6 +167,14 @@ private fun TransactionItem(transaction: Transaction) {
                     text = transaction.category.name,
                     style = MaterialTheme.typography.bodyMedium
                 )
+
+                androidx.compose.material3.TextButton(
+                    onClick = onEditClick,
+                    modifier = Modifier.padding(top = 4.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+                ) {
+                    Text("Editar", style = MaterialTheme.typography.bodySmall)
+                }
             }
 
             Text(
@@ -221,10 +241,11 @@ private fun HomeScreenPreview() {
                             id = 1,
                             name = "Pix"
                         ),
-                        System.currentTimeMillis())
+                        System.currentTimeMillis()
+                    )
                 )
             ),
-            onAddTransactionClick = {}
+            onTransactionClick = {}
         )
     }
 }

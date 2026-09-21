@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
@@ -70,6 +71,12 @@ fun TransactionScreen(
         onDateChange = viewModel::onDateChange,
         onCategoryChange = viewModel::onCategoryChange,
         onPaymentMethodChange = viewModel::onPaymentMethodChange,
+        onDeleteClick = {
+            uiState.editingTransaction?.let { transaction ->
+                viewModel.deleteTransaction(transaction)
+                onTransactionSaved()
+            }
+        },
         onSaveClick = {
             viewModel.saveTransaction(
                 onSaved = onTransactionSaved
@@ -89,6 +96,7 @@ private fun TransactionContent(
     onDateChange: (Long) -> Unit,
     onCategoryChange: (Category) -> Unit,
     onPaymentMethodChange: (PaymentMethod) -> Unit,
+    onDeleteClick: () -> Unit,
     onSaveClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -113,7 +121,7 @@ private fun TransactionContent(
         ) {
             item {
                 Text(
-                    text = "Nova Transação",
+                    text = if (uiState.editingTransaction == null) "Nova Transação" else "Editar Transação",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -230,6 +238,16 @@ private fun TransactionContent(
         ) {
             Text(text = "Salvar")
         }
+
+        if (uiState.editingTransaction != null) {
+            Button(
+                onClick = onDeleteClick, // Use a lambda aqui em vez do viewModel
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+            ) {
+                Text("Excluir")
+            }
+        }
     }
 
     if (showDatePicker) {
@@ -313,6 +331,7 @@ private fun TransactionScreenPreview() {
             onDateChange = {},
             onCategoryChange = {},
             onPaymentMethodChange = {},
+            onDeleteClick = {},
             onSaveClick = {}
         )
     }

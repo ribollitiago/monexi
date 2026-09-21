@@ -9,6 +9,7 @@ import com.moduxi.monexi.domain.repository.PaymentMethodRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 
 class RoomTransactionRepository(
     private val transactionDao: TransactionDao,
@@ -39,5 +40,14 @@ class RoomTransactionRepository(
 
     override suspend fun deleteTransaction(transaction: Transaction) {
         transactionDao.deleteTransaction(transaction.toEntity())
+    }
+
+    override suspend fun getTransactionById(id: Long): Transaction? {
+        val entity = transactionDao.getTransactionById(id) ?: return null
+
+        val categories = categoryRepository.categories.first()
+        val paymentMethods = paymentMethodRepository.paymentMethods.first()
+
+        return entity.toDomain(categories, paymentMethods)
     }
 }

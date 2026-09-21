@@ -1,7 +1,9 @@
 package com.moduxi.monexi.presentation.transaction
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.domain.model.Category
@@ -22,12 +24,11 @@ import kotlinx.coroutines.launch
 class TransactionViewModel(
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
-    private val paymentMethodRepository: PaymentMethodRepository
+    private val paymentMethodRepository: PaymentMethodRepository,
+    private val savedStateHandle: SavedStateHandle
     ) : ViewModel() {
 
     private val formState = MutableStateFlow(TransactionUiState())
-
-
 
     val uiState = combine(
         categoryRepository.categories,
@@ -52,14 +53,24 @@ class TransactionViewModel(
         initialValue = TransactionUiState()
     )
 
+    init {
+        val transactionId = savedStateHandle.get<Long>("id")
+        if (transactionId != null && transactionId != 0L) {
+            loadTransaction(transactionId)
+        }
+    }
+
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MonexiApplication)
+
+                val savedStateHandle = createSavedStateHandle()
                 TransactionViewModel(
                     transactionRepository = application.transactionRepository,
                     categoryRepository = application.categoryRepository,
-                    paymentMethodRepository = application.paymentMethodRepository
+                    paymentMethodRepository = application.paymentMethodRepository,
+                    savedStateHandle = savedStateHandle
                 )
             }
         }
@@ -125,6 +136,13 @@ class TransactionViewModel(
     fun deleteTransaction(transaction: Transaction) {
         viewModelScope.launch {
             transactionRepository.deleteTransaction(transaction)
+        }
+    }
+
+    fun loadTransaction(id: Long) {
+        viewModelScope.launch {
+            val transaction = transactionRepository.getTransactionById(id)
+            transaction?.let { startEditing(it) }
         }
     }
 
