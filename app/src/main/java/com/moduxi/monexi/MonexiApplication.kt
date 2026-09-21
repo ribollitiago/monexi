@@ -6,9 +6,11 @@ import com.moduxi.monexi.data.repository.RoomCategoryRepository
 import com.moduxi.monexi.data.repository.RoomPaymentMethodRepository
 import com.moduxi.monexi.domain.repository.PaymentMethodRepository
 import com.moduxi.monexi.data.repository.RoomTransactionRepository
+import com.moduxi.monexi.data.repository.local.ThemeManager
 import com.moduxi.monexi.domain.repository.TransactionRepository
 
 class MonexiApplication : Application() {
+    val themeManager by lazy { ThemeManager(this) }
     val database: MonexiDatabase by lazy { MonexiDatabase.getInstance(this) }
     val categoryRepository: RoomCategoryRepository by lazy { RoomCategoryRepository(database.categoryDao()) }
     val paymentMethodRepository: PaymentMethodRepository by lazy { RoomPaymentMethodRepository(database.paymentMethodDao()) }

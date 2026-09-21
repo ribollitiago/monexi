@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
@@ -20,6 +22,8 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -82,6 +86,7 @@ fun TransactionScreen(
                 onSaved = onTransactionSaved
             )
         },
+        onBackClick = onTransactionSaved,
         modifier = modifier
     )
 }
@@ -98,6 +103,7 @@ private fun TransactionContent(
     onPaymentMethodChange: (PaymentMethod) -> Unit,
     onDeleteClick: () -> Unit,
     onSaveClick: () -> Unit,
+    onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
@@ -120,11 +126,23 @@ private fun TransactionContent(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                Text(
-                    text = if (uiState.editingTransaction == null) "Nova Transação" else "Editar Transação",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Row (
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    IconButton(onClick = onSaveClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Voltar"
+                        )
+                    }
+                    Text(
+                        text = if (uiState.editingTransaction == null) "Nova Transação" else "Editar Transação",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
 
             item {
@@ -332,7 +350,8 @@ private fun TransactionScreenPreview() {
             onCategoryChange = {},
             onPaymentMethodChange = {},
             onDeleteClick = {},
-            onSaveClick = {}
+            onSaveClick = {},
+            onBackClick = {}
         )
     }
 }

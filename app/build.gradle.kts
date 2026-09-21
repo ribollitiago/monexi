@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.androidx.ui)
     implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.core.splashscreen)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(platform(libs.androidx.compose.bom))
