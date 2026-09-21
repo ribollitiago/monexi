@@ -131,11 +131,13 @@ private fun TransactionContent(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    IconButton(onClick = onSaveClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Voltar"
-                        )
+                    if (uiState.editingTransaction != null) {
+                        IconButton(onClick = onSaveClick) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Voltar"
+                            )
+                        }
                     }
                     Text(
                         text = if (uiState.editingTransaction == null) "Nova Transação" else "Editar Transação",
@@ -259,7 +261,7 @@ private fun TransactionContent(
 
         if (uiState.editingTransaction != null) {
             Button(
-                onClick = onDeleteClick, // Use a lambda aqui em vez do viewModel
+                onClick = onDeleteClick,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             ) {
