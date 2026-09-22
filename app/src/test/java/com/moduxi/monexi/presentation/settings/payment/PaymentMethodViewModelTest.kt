@@ -178,6 +178,7 @@ class PaymentMethodViewModelTest {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect{}
         }
+        advanceUntilIdle()
 
         assertEquals(1, viewModel.uiState.value.paymentMethods.size)
 
