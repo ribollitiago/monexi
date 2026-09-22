@@ -1,5 +1,6 @@
 package com.moduxi.monexi.presentation.transaction
 
+import androidx.lifecycle.SavedStateHandle
 import com.moduxi.monexi.MainDispatcherRule
 import com.moduxi.monexi.data.repository.FakeCategoryRepository
 import com.moduxi.monexi.data.repository.FakePaymentMethodRepository
@@ -47,7 +48,8 @@ class TransactionViewModelTest {
         val viewModel = TransactionViewModel(
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
-            paymentMethodRepository = paymentMethodRepository
+            paymentMethodRepository = paymentMethodRepository,
+            savedStateHandle = SavedStateHandle()
         )
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
@@ -102,7 +104,8 @@ class TransactionViewModelTest {
         val viewModel = TransactionViewModel(
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
-            paymentMethodRepository = paymentMethodRepository
+            paymentMethodRepository = paymentMethodRepository,
+            savedStateHandle = SavedStateHandle()
         )
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
@@ -151,7 +154,8 @@ class TransactionViewModelTest {
         val viewModel = TransactionViewModel(
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
-            paymentMethodRepository = paymentMethodRepository
+            paymentMethodRepository = paymentMethodRepository,
+            savedStateHandle = SavedStateHandle()
         )
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
@@ -194,7 +198,8 @@ class TransactionViewModelTest {
         val viewModel = TransactionViewModel(
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
-            paymentMethodRepository = paymentMethodRepository
+            paymentMethodRepository = paymentMethodRepository,
+            savedStateHandle = SavedStateHandle()
         )
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
@@ -239,7 +244,8 @@ class TransactionViewModelTest {
         val viewModel = TransactionViewModel(
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
-            paymentMethodRepository = paymentMethodRepository
+            paymentMethodRepository = paymentMethodRepository,
+            savedStateHandle = SavedStateHandle()
         )
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
@@ -295,7 +301,8 @@ class TransactionViewModelTest {
         val viewModel = TransactionViewModel(
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
-            paymentMethodRepository = paymentMethodRepository
+            paymentMethodRepository = paymentMethodRepository,
+            savedStateHandle = SavedStateHandle()
         )
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
@@ -347,7 +354,8 @@ class TransactionViewModelTest {
         val viewModel = TransactionViewModel(
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
-            paymentMethodRepository = paymentMethodRepository
+            paymentMethodRepository = paymentMethodRepository,
+            savedStateHandle = SavedStateHandle()
         )
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {

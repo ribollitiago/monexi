@@ -132,7 +132,7 @@ private fun TransactionContent(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     if (uiState.editingTransaction != null) {
-                        IconButton(onClick = onSaveClick) {
+                        IconButton(onClick = onBackClick) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "Voltar"

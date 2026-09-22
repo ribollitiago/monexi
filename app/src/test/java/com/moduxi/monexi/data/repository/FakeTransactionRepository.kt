@@ -33,4 +33,8 @@ class FakeTransactionRepository(
             it.id == transaction.id
         }
     }
+
+    override suspend fun getTransactionById(id: Long): Transaction? {
+        return transactionsState.value.firstOrNull { it.id == id }
+    }
 }
