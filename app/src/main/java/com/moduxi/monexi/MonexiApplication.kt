@@ -2,11 +2,13 @@ package com.moduxi.monexi
 
 import android.app.Application
 import com.moduxi.monexi.data.local.MonexiDatabase
+import com.moduxi.monexi.data.repository.FirebaseAuthRepository
 import com.moduxi.monexi.data.repository.RoomCategoryRepository
 import com.moduxi.monexi.data.repository.RoomPaymentMethodRepository
 import com.moduxi.monexi.domain.repository.PaymentMethodRepository
 import com.moduxi.monexi.data.repository.RoomTransactionRepository
 import com.moduxi.monexi.data.repository.local.ThemeManager
+import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
 
 class MonexiApplication : Application() {
@@ -21,4 +23,6 @@ class MonexiApplication : Application() {
             paymentMethodRepository = paymentMethodRepository
         )
     }
+
+    val authRepository: AuthRepository by lazy { FirebaseAuthRepository() }
 }
