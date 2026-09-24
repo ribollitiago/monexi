@@ -9,7 +9,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -21,9 +20,13 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import com.moduxi.monexi.MonexiApplication
 import com.moduxi.monexi.data.repository.local.ThemeManager
+import com.moduxi.monexi.presentation.auth.login.LoginScreen
+import com.moduxi.monexi.presentation.auth.register.RegisterScreen
 import com.moduxi.monexi.presentation.settings.SettingsScreen
 import com.moduxi.monexi.presentation.settings.categories.CategoriesScreen
 import com.moduxi.monexi.presentation.settings.payment.PaymentMethodScreen
@@ -36,42 +39,79 @@ sealed class BottomNavItem(val route: String, val label: String, val icon: Image
 
 @Composable
 fun AppNavigation(themeManager: ThemeManager) {
-    val navController = rememberNavController()
+    val context = LocalContext.current
+    val app = context.applicationContext as MonexiApplication
+    val authRepository = app.authRepository
 
+    val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    val startDestination = if (authRepository.currentUser != null) "home" else "login"
+
+    val showBottomBar = currentRoute in listOf("home", "transaction", "transaction?id={id}", "settings", "categories", "paymentMethods")
+
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                val items = listOf(BottomNavItem.Home, BottomNavItem.Transaction, BottomNavItem.Settings)
-                items.forEach { item ->
-                    NavigationBarItem(
-                        selected = when (item.route) {
-                            "settings" -> currentRoute == "settings" || currentRoute == "categories" || currentRoute == "paymentMethods"
-                            "transaction" -> currentRoute?.startsWith("transaction") == true
-                            else -> currentRoute == item.route
-                        },
-                        onClick = {
-                            navController.navigate(item.route) {
-                                popUpTo("home") {
-                                    inclusive = false
-                                }
-                                launchSingleTop = true
-                            }
-                        },
-                        icon = { Icon(item.icon , contentDescription = item.label) },
-                        label = { Text(item.label) }
+            if (showBottomBar) {
+                NavigationBar {
+                    val items = listOf(
+                        BottomNavItem.Home,
+                        BottomNavItem.Transaction,
+                        BottomNavItem.Settings
                     )
+                    items.forEach { item ->
+                        NavigationBarItem(
+                            selected = when (item.route) {
+                                "settings" -> currentRoute == "settings" || currentRoute == "categories" || currentRoute == "paymentMethods"
+                                "transaction" -> currentRoute?.startsWith("transaction") == true
+                                else -> currentRoute == item.route
+                            },
+                            onClick = {
+                                navController.navigate(item.route) {
+                                    popUpTo("home") {
+                                        inclusive = false
+                                    }
+                                    launchSingleTop = true
+                                }
+                            },
+                            icon = { Icon(item.icon, contentDescription = item.label) },
+                            label = { Text(item.label) }
+                        )
+                    }
                 }
             }
         }
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = "home",
+            startDestination = startDestination,
             modifier = Modifier.padding(innerPadding)
         ) {
+            composable("login") {
+                LoginScreen(
+                    onLoginSuccess = {
+                        navController.navigate("home") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    },
+                    onNavigateToRegister = {
+                        navController.navigate("register")
+                    }
+                )
+            }
+            composable("register") {
+                RegisterScreen(
+                    onRegisterSuccess = {
+                        navController.navigate("login") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    },
+                    onNavigateToLogin = {
+                        navController.popBackStack()
+                    }
+                )
+            }
             composable("home") {
                 HomeScreen(
                     onNavigateToTransaction = { id ->
@@ -100,12 +140,16 @@ fun AppNavigation(themeManager: ThemeManager) {
             }
             composable("settings") {
                 SettingsScreen(
-                    themeManager = themeManager,
                     onNavigateToCategories = {
                         navController.navigate("categories")
                     },
                     onNavigateToPaymentMethods = {
                         navController.navigate("paymentMethods")
+                    },
+                    onLogout = {
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                        }
                     }
 
                 )

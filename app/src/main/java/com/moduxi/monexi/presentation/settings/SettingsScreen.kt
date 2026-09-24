@@ -31,13 +31,13 @@ import com.moduxi.monexi.ui.theme.MonexiTheme
 
 @Composable
 fun SettingsScreen (
-    themeManager: ThemeManager,
     onNavigateToCategories: () -> Unit,
     onNavigateToPaymentMethods: () -> Unit,
+    onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ){
     val viewModel: SettingsViewModel = viewModel(
-        factory = SettingsViewModelFactory(themeManager)
+        factory = SettingsViewModel.Factory
     )
     val uiState by viewModel.uiState.collectAsState()
 
@@ -80,11 +80,20 @@ fun SettingsScreen (
 
         item { HorizontalDivider() }
         item { SettingsSectionTitle("Sua Conta") }
+        uiState.userEmail?.let { email ->
+            item {
+                Text(
+                    text = "Logado como $email",
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                )
+            }
+        }
         item {
             SettingsItem(
                 title = "Sair",
                 icon = Icons.Default.Logout,
-                onClick = { viewModel.logout() }
+                onClick = { viewModel.logout(onLogoutSuccess = onLogout) }
             )
         }
     }
@@ -122,19 +131,9 @@ fun SettingsSectionTitle(title: String) {
 fun SettingsScreenPreview() {
     MonexiTheme {
         SettingsScreen(
-            ThemeManager(LocalContext.current),
             onNavigateToCategories = {},
-            onNavigateToPaymentMethods = {}
+            onNavigateToPaymentMethods = {},
+            onLogout = {}
         )
-    }
-}
-
-class SettingsViewModelFactory(private val themeManager: ThemeManager) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(SettingsViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return SettingsViewModel(themeManager) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
