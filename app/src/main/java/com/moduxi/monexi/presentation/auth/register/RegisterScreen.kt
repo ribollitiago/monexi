@@ -1,7 +1,5 @@
-package com.moduxi.monexi.presentation.auth.login
+package com.moduxi.monexi.presentation.auth.register
 
-import android.util.Log
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,57 +16,28 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.moduxi.monexi.R
+import com.moduxi.monexi.presentation.auth.login.LoginContent
+import com.moduxi.monexi.presentation.auth.login.LoginUiState
 import com.moduxi.monexi.ui.theme.MonexiTheme
 
 @Composable
-fun LoginScreen(
-    onLoginSuccess: () -> Unit,
-    onNavigateToRegister: () -> Unit,
-    modifier: Modifier = Modifier,
-    viewModel: LoginViewModel = viewModel(factory = LoginViewModel.Factory)
-) {
-    val uiState = viewModel.uiState
-
-    LaunchedEffect(uiState.isSuccess) {
-        if (uiState.isSuccess) {
-            onLoginSuccess()
-        }
-    }
-
-    LoginContent(
-        uiState = uiState,
-        onEmailChange = viewModel::onEmailChange,
-        onPasswordChange = viewModel::onPasswordChange,
-        onLoginClick = viewModel::onLoginClick,
-        onNavigateToRegister = onNavigateToRegister,
-        modifier = modifier
-    )
-}
-
-@Composable
-fun LoginContent(
-    uiState: LoginUiState,
+fun RegisterContent(
+    uiState: RegisterUiState,
+    onNameChange: (String) -> Unit,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
-    onLoginClick: () -> Unit,
-    onNavigateToRegister: () -> Unit,
+    onConfirmPasswordChange: (String) -> Unit,
+    onRegisterClick: () -> Unit,
+    onNavigateToLogin: () -> Unit,
     modifier: Modifier = Modifier
-) {
+){
     Column(
         modifier = modifier
             .padding(16.dp)
@@ -76,18 +45,21 @@ fun LoginContent(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        /*
-        Image(
-            painter = painterResource(id = R.drawable.moduxi_horizontal),
-            contentDescription = "Logo",
-            modifier = Modifier.size(150.dp)
-        )
-        */
-        Text("Bem vindo!", fontSize = 28.sp, fontWeight = FontWeight.Bold)
+        Text("Cadastro", fontSize = 28.sp, fontWeight = FontWeight.Bold)
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        Text("Faça login na sua conta")
+        Text("Faça o cadastro de uma nova conta!")
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = uiState.name,
+            onValueChange = onNameChange,
+            label = { Text("Nome") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -110,6 +82,17 @@ fun LoginContent(
             modifier = Modifier.fillMaxWidth()
         )
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = uiState.confirmPassword,
+            onValueChange = onConfirmPasswordChange,
+            label = { Text("Confirmar Senha") },
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth()
+        )
+
         // Exibe mensagem de erro caso exista
         uiState.errorMessage?.let { error ->
             Spacer(modifier = Modifier.height(8.dp))
@@ -122,21 +105,8 @@ fun LoginContent(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(
-            text = "Esqueceu a senha?",
-            modifier = Modifier
-                .align(Alignment.End)
-                .clickable { onNavigateToRegister() },
-            fontWeight = FontWeight.Medium,
-            fontSize = 14.sp,
-            textDecoration = TextDecoration.Underline,
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         Button(
-            onClick = onLoginClick,
+            onClick = onRegisterClick,
             enabled = !uiState.isLoading,
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -146,7 +116,7 @@ fun LoginContent(
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             } else {
-                Text("Login")
+                Text("Cadastrar")
             }
         }
 
@@ -157,33 +127,33 @@ fun LoginContent(
             horizontalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Não tem uma conta? ",
+                text = "Já possui uma conta? ",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 14.sp
             )
             Text(
-                text = "Cadastre-se",
-                modifier = Modifier.clickable { onNavigateToRegister() },
+                text = "Login",
+                modifier = Modifier.clickable { onNavigateToLogin() },
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
                 color = MaterialTheme.colorScheme.primary
             )
         }
-
     }
-
 }
 
 @Preview(showBackground = true)
 @Composable
-fun LoginScreenPreview() {
+fun RegisterScreenPreview() {
     MonexiTheme {
-        LoginContent(
-            uiState = LoginUiState(),
+        RegisterContent(
+            uiState = RegisterUiState(),
+            onNameChange = {},
             onEmailChange = {},
             onPasswordChange = {},
-            onLoginClick = {},
-            onNavigateToRegister = {},
-            )
+            onConfirmPasswordChange = {},
+            onRegisterClick = {},
+            onNavigateToLogin = {},
+        )
     }
 }
