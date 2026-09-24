@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
 import com.moduxi.monexi.domain.model.PaymentMethod
+import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.PaymentMethodRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -15,7 +16,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class PaymentMethodViewModel(
-    private val paymentMethodRepository: PaymentMethodRepository
+    private val paymentMethodRepository: PaymentMethodRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val formState = MutableStateFlow(PaymentMethodUiState())
@@ -44,6 +46,8 @@ class PaymentMethodViewModel(
         val state = formState.value
         val name = state.newPaymentMethodName.trim()
 
+        val currentUserId = authRepository.currentUser?.uid ?: ""
+
         if (name.isBlank()) {
             formState.value = state.copy(error = "Informe o nome do método de pagamento")
             return
@@ -61,6 +65,7 @@ class PaymentMethodViewModel(
             paymentMethodRepository.addPaymentMethod(
                 PaymentMethod(
                     id = 0,
+                    userId = currentUserId,
                     name = name,
                     isDefault = false
                 )
@@ -143,7 +148,10 @@ class PaymentMethodViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MonexiApplication)
-                PaymentMethodViewModel(application.paymentMethodRepository)
+                PaymentMethodViewModel(
+                    application.paymentMethodRepository,
+                    application.authRepository
+                )
             }
         }
     }

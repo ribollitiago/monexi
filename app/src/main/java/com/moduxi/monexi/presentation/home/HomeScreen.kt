@@ -212,36 +212,42 @@ private fun HomeScreenPreview() {
                 totalExpense = 400.0,
                 transactions = listOf(
                     Transaction(
-                        1,
-                        "Salario",
-                        3200.0,
-                        TransactionType.INCOME,
-                        Category(
+                        id = 1,
+                        userId = "1",
+                        title = "Salario",
+                        amount = 3200.0,
+                        type = TransactionType.INCOME,
+                        category = Category(
                             id = 1,
+                            userId = "1",
                             name = "Alimentação",
                             type = TransactionType.INCOME
                         ),
-                        PaymentMethod(
+                        paymentMethod = PaymentMethod(
                             id = 1,
+                            userId = "1",
                             name = "Pix"
                         ),
-                        System.currentTimeMillis()
+                        date = System.currentTimeMillis()
                     ),
                     Transaction(
-                        2,
-                        "Mercado",
-                        280.0,
-                        TransactionType.EXPENSE,
-                        Category(
+                        id = 2,
+                        userId = "1",
+                        title = "Mercado",
+                        amount = 280.0,
+                        type = TransactionType.EXPENSE,
+                        category = Category(
                             id = 1,
+                            userId = "1",
                             name = "Alimentação",
                             type = TransactionType.EXPENSE
                         ),
-                        PaymentMethod(
+                        paymentMethod = PaymentMethod(
                             id = 1,
+                            userId = "1",
                             name = "Pix"
                         ),
-                        System.currentTimeMillis()
+                        date = System.currentTimeMillis()
                     )
                 )
             ),

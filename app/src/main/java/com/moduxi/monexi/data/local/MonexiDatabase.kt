@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
         PaymentMethodEntity::class,
         TransactionEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class MonexiDatabase : RoomDatabase() {
@@ -52,7 +52,6 @@ abstract class MonexiDatabase : RoomDatabase() {
                                 CategoryEntity(name = "Investimentos", type = TransactionType.INCOME.name, isDefault = true)
                             )
                         )
-
                         val paymentMethodDao = database.paymentMethodDao()
                         paymentMethodDao.insertPaymentMethods(
                             listOf(

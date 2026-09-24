@@ -16,6 +16,7 @@ import com.moduxi.monexi.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.lifecycle.viewModelScope
 import com.moduxi.monexi.MonexiApplication
+import com.moduxi.monexi.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
@@ -25,6 +26,7 @@ class TransactionViewModel(
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
     private val paymentMethodRepository: PaymentMethodRepository,
+    private val authRepository: AuthRepository,
     private val savedStateHandle: SavedStateHandle
     ) : ViewModel() {
 
@@ -57,22 +59,6 @@ class TransactionViewModel(
         val transactionId = savedStateHandle.get<Long>("id")
         if (transactionId != null && transactionId != 0L) {
             loadTransaction(transactionId)
-        }
-    }
-
-    companion object {
-        val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer {
-                val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MonexiApplication)
-
-                val savedStateHandle = createSavedStateHandle()
-                TransactionViewModel(
-                    transactionRepository = application.transactionRepository,
-                    categoryRepository = application.categoryRepository,
-                    paymentMethodRepository = application.paymentMethodRepository,
-                    savedStateHandle = savedStateHandle
-                )
-            }
         }
     }
 
@@ -153,6 +139,7 @@ class TransactionViewModel(
         val paymentMethod = state.selectedPaymentMethod
         val amount = (state.amountDigits.toLongOrNull() ?: 0L) / 100.0
         val editingTransaction = state.editingTransaction
+        val currentUserId = authRepository.currentUser?.uid ?: ""
 
         if (category == null) {
             formState.value = formState.value.copy(
@@ -184,6 +171,7 @@ class TransactionViewModel(
 
         val transaction = Transaction(
             id = editingTransaction?.id ?: 0,
+            userId = currentUserId,
             title = state.description,
             amount = amount,
             type = state.type,
@@ -199,6 +187,23 @@ class TransactionViewModel(
                 transactionRepository.updateTransaction(transaction)
             }
             onSaved()
+        }
+    }
+
+    companion object {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MonexiApplication)
+
+                val savedStateHandle = createSavedStateHandle()
+                TransactionViewModel(
+                    transactionRepository = application.transactionRepository,
+                    categoryRepository = application.categoryRepository,
+                    paymentMethodRepository = application.paymentMethodRepository,
+                    authRepository = application.authRepository,
+                    savedStateHandle = savedStateHandle
+                )
+            }
         }
     }
 }

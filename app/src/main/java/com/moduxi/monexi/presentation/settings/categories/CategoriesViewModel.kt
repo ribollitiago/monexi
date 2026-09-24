@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
 import com.moduxi.monexi.domain.model.Category
 import com.moduxi.monexi.domain.model.TransactionType
+import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.CategoryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -16,7 +17,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class CategoriesViewModel(
-    private val categoryRepository: CategoryRepository
+    private val categoryRepository: CategoryRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val formState = MutableStateFlow(CategoriesUiState())
@@ -45,6 +47,8 @@ class CategoriesViewModel(
         val state = formState.value
         val name = state.newCategoryName.trim()
 
+        val currentUserId = authRepository.currentUser?.uid ?: ""
+
         if (name.isBlank()) {
             formState.value = state.copy(error = "Informe o nome da categoria")
             return
@@ -64,6 +68,7 @@ class CategoriesViewModel(
             categoryRepository.addCategory(
                 Category(
                     id = 0,
+                    userId = currentUserId,
                     name = name,
                     type = state.selectedType,
                     isDefault = false
@@ -154,7 +159,10 @@ class CategoriesViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MonexiApplication)
-                CategoriesViewModel(application.categoryRepository)
+                CategoriesViewModel(
+                    application.categoryRepository,
+                    application.authRepository
+                )
             }
         }
     }

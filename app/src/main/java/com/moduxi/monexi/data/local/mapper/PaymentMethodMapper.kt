@@ -6,6 +6,7 @@ import com.moduxi.monexi.domain.model.PaymentMethod
 fun PaymentMethodEntity.toDomain(): PaymentMethod {
     return PaymentMethod(
         id = id,
+        userId = userId,
         name = name,
         isDefault = isDefault
     )
@@ -14,6 +15,7 @@ fun PaymentMethodEntity.toDomain(): PaymentMethod {
 fun PaymentMethod.toEntity(): PaymentMethodEntity{
     return PaymentMethodEntity(
         id = id,
+        userId = userId,
         name = name,
         isDefault = isDefault
     )

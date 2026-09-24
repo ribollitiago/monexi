@@ -17,6 +17,9 @@ interface CategoryDao {
     @Query("SELECT * FROM categories")
     suspend fun getCategories(): List<CategoryEntity>
 
+    @Query("SELECT * FROM categories WHERE isDefault = 1 OR userId = :userId ORDER BY name ASC")
+    fun observeCategoriesByUser(userId: String): Flow<List<CategoryEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCategory(category: CategoryEntity)
 

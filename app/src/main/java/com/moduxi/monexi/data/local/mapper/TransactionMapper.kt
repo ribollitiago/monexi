@@ -9,6 +9,7 @@ import com.moduxi.monexi.domain.model.TransactionType
 fun Transaction.toEntity(): TransactionEntity {
     return TransactionEntity(
         id = id,
+        userId = userId,
         title = title,
         amount = amount,
         type = type.name,
@@ -31,6 +32,7 @@ fun TransactionEntity.toDomain(
 
     return Transaction(
         id = id,
+        userId = userId,
         title = title,
         amount = amount,
         type = TransactionType.valueOf(type),

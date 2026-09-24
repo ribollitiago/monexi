@@ -14,13 +14,24 @@ import com.moduxi.monexi.domain.repository.TransactionRepository
 class MonexiApplication : Application() {
     val themeManager by lazy { ThemeManager(this) }
     val database: MonexiDatabase by lazy { MonexiDatabase.getInstance(this) }
-    val categoryRepository: RoomCategoryRepository by lazy { RoomCategoryRepository(database.categoryDao()) }
-    val paymentMethodRepository: PaymentMethodRepository by lazy { RoomPaymentMethodRepository(database.paymentMethodDao()) }
+    val categoryRepository: RoomCategoryRepository by lazy {
+        RoomCategoryRepository(
+            categoryDao = database.categoryDao(),
+            authRepository = authRepository
+        )
+    }
+    val paymentMethodRepository: PaymentMethodRepository by lazy {
+        RoomPaymentMethodRepository(
+            paymentMethodDao = database.paymentMethodDao(),
+            authRepository = authRepository
+        )
+    }
     val transactionRepository: TransactionRepository by lazy {
         RoomTransactionRepository(
             transactionDao = database.transactionDao(),
             categoryRepository = categoryRepository,
-            paymentMethodRepository = paymentMethodRepository
+            paymentMethodRepository = paymentMethodRepository,
+            authRepository = authRepository
         )
     }
 

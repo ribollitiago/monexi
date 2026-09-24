@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 data class PaymentMethodEntity (
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
+    val userId: String = "",
     val name: String,
     val isDefault: Boolean
 )

@@ -14,6 +14,12 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions ORDER BY date DESC")
     fun observeTransactions(): Flow<List<TransactionEntity>>
 
+    @Query("SELECT * FROM transactions WHERE id = :id AND userId = :userId")
+    suspend fun getTransactionById(id: Long, userId: String): TransactionEntity?
+
+    @Query("SELECT * FROM transactions WHERE userId = :userId ORDER BY date DESC")
+    fun observeTransactionsByUser(userId: String): Flow<List<TransactionEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransaction(transaction: TransactionEntity)
 

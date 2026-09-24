@@ -263,17 +263,25 @@ private fun CategoriesScreenPreview() {
                 categories = listOf(
                     Category(
                         id = 1,
+                        userId = "1",
                         name = "Alimentacao",
                         type = TransactionType.EXPENSE,
                         isDefault = true
                     ),
                     Category(
                         id = 2,
+                        userId = "1",
                         name = "Transporte",
-                        TransactionType.EXPENSE,
+                        type = TransactionType.EXPENSE,
                         isDefault = true
                     ),
-                    Category(id = 3, name = "Viagem", TransactionType.EXPENSE, isDefault = false)
+                    Category(
+                        id = 3,
+                        userId = "1",
+                        name = "Viagem",
+                        type = TransactionType.EXPENSE,
+                        isDefault = false
+                    )
                 )
             ),
             onNewCategoryNameChange = {},

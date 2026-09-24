@@ -7,6 +7,7 @@ import com.moduxi.monexi.domain.model.TransactionType
 fun CategoryEntity.toDomain(): Category {
     return Category(
         id = id,
+        userId = userId,
         name = name,
         type = TransactionType.valueOf(type),
         isDefault = isDefault
@@ -16,6 +17,7 @@ fun CategoryEntity.toDomain(): Category {
 fun Category.toEntity(): CategoryEntity {
     return CategoryEntity(
         id = id,
+        userId = userId,
         name = name,
         type = type.name,
         isDefault = isDefault
