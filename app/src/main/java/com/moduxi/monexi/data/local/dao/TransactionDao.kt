@@ -11,13 +11,13 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TransactionDao {
-    @Query("SELECT * FROM transactions ORDER BY date DESC")
+    @Query("SELECT * FROM transactions WHERE deletedAt IS NULL ORDER BY date DESC")
     fun observeTransactions(): Flow<List<TransactionEntity>>
 
     @Query("SELECT * FROM transactions WHERE id = :id AND userId = :userId")
     suspend fun getTransactionById(id: String, userId: String): TransactionEntity?
 
-    @Query("SELECT * FROM transactions WHERE userId = :userId ORDER BY date DESC")
+    @Query("SELECT * FROM transactions WHERE userId = :userId AND deletedAt IS NULL ORDER BY date DESC")
     fun observeTransactionsByUser(userId: String): Flow<List<TransactionEntity>>
 
     @Query("DELETE FROM transactions WHERE userId = :userId")

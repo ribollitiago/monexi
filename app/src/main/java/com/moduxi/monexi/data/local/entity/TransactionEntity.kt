@@ -13,5 +13,9 @@ data class TransactionEntity (
     val type: String,
     val categoryId: Long,
     val paymentMethodId: Long,
-    val date: Long
+    val date: Long,
+    val updatedAt: Long,
+    val deletedAt: Long?,
+    val syncStatus: String,
+    val remoteId: String?
 )

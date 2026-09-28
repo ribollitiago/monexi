@@ -8,5 +8,9 @@ data class Transaction(
     val type: TransactionType,
     val category: Category,
     val paymentMethod: PaymentMethod,
-    val date: Long
+    val date: Long,
+    val updatedAt: Long = System.currentTimeMillis(),
+    val deletedAt: Long? = null,
+    val syncStatus: SyncStatus = SyncStatus.PENDING_CREATE,
+    val remoteId: String? = null
 )

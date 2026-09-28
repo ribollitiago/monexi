@@ -16,6 +16,7 @@ import com.moduxi.monexi.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.lifecycle.viewModelScope
 import com.moduxi.monexi.MonexiApplication
+import com.moduxi.monexi.domain.model.SyncStatus
 import com.moduxi.monexi.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -121,7 +122,13 @@ class TransactionViewModel(
 
     fun deleteTransaction(transaction: Transaction) {
         viewModelScope.launch {
-            transactionRepository.deleteTransaction(transaction)
+            transactionRepository.deleteTransaction(
+                transaction.copy(
+                    deletedAt = System.currentTimeMillis(),
+                    updatedAt = System.currentTimeMillis(),
+                    syncStatus = SyncStatus.PENDING_DELETE
+                )
+            )
         }
     }
 
@@ -177,7 +184,15 @@ class TransactionViewModel(
             type = state.type,
             category = category,
             paymentMethod = paymentMethod,
-            date = state.dateMillis
+            date = state.dateMillis,
+            updatedAt = System.currentTimeMillis(),
+            deletedAt = editingTransaction?.deletedAt,
+            syncStatus = if (editingTransaction == null) {
+                SyncStatus.PENDING_CREATE
+            } else {
+                SyncStatus.PENDING_UPDATE
+            },
+            remoteId = editingTransaction?.remoteId
         )
 
         viewModelScope.launch {

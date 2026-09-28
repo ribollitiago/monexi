@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import android.util.Log
+import com.moduxi.monexi.domain.model.SyncStatus
 
 class RoomTransactionRepository(
     private val transactionDao: TransactionDao,
@@ -82,7 +83,12 @@ class RoomTransactionRepository(
             "type" to transaction.type.name,
             "categoryId" to transaction.category.id,
             "paymentMethodId" to transaction.paymentMethod.id,
-            "date" to transaction.date
+            "date" to transaction.date,
+            "userId" to transaction.userId,
+            "updatedAt" to transaction.updatedAt,
+            "deletedAt" to transaction.deletedAt,
+            "syncStatus" to transaction.syncStatus.name,
+            "remoteId" to transaction.remoteId
         )
 
         try {
@@ -145,6 +151,10 @@ class RoomTransactionRepository(
                 val paymentMethodId = doc.getLong("paymentMethodId") ?: 1L
                 val date = doc.getLong("date") ?: System.currentTimeMillis()
                 val transactionId = doc.getString("id") ?: doc.id
+                val updatedAt = doc.getLong("updatedAt") ?: System.currentTimeMillis()
+                val deletedAt = doc.getLong("deletedAt")
+                val syncStatus = doc.getString("syncStatus") ?: SyncStatus.SYNCED.name
+                val remoteId = doc.getString("remoteId")
 
                 com.moduxi.monexi.data.local.entity.TransactionEntity(
                     id = transactionId,
@@ -154,7 +164,11 @@ class RoomTransactionRepository(
                     type = type,
                     categoryId = categoryId,
                     paymentMethodId = paymentMethodId,
-                    date = date
+                    date = date,
+                    updatedAt = updatedAt,
+                    deletedAt = deletedAt,
+                    syncStatus = syncStatus,
+                    remoteId = remoteId
                 )
             }
 

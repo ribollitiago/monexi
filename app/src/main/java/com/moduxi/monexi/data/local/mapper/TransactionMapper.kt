@@ -3,6 +3,7 @@ package com.moduxi.monexi.data.local.mapper
 import com.moduxi.monexi.data.local.entity.TransactionEntity
 import com.moduxi.monexi.domain.model.Category
 import com.moduxi.monexi.domain.model.PaymentMethod
+import com.moduxi.monexi.domain.model.SyncStatus
 import com.moduxi.monexi.domain.model.Transaction
 import com.moduxi.monexi.domain.model.TransactionType
 
@@ -15,7 +16,11 @@ fun Transaction.toEntity(): TransactionEntity {
         type = type.name,
         categoryId = category.id,
         paymentMethodId = paymentMethod.id,
-        date = date
+        date = date,
+        updatedAt = updatedAt,
+        deletedAt = deletedAt,
+        syncStatus = syncStatus.name,
+        remoteId = remoteId
     )
 }
 
@@ -38,6 +43,10 @@ fun TransactionEntity.toDomain(
         type = TransactionType.valueOf(type),
         category = category,
         paymentMethod = paymentMethod,
-        date = date
+        date = date,
+        updatedAt = updatedAt,
+        deletedAt = deletedAt,
+        syncStatus = SyncStatus.valueOf(syncStatus),
+        remoteId = remoteId
     )
 }

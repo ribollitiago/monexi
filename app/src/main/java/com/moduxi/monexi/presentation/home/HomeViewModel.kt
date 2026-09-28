@@ -13,6 +13,7 @@ import com.moduxi.monexi.domain.usecase.CalculateIncomeUseCase
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 class HomeViewModel(
     private val transactionRepository: TransactionRepository
@@ -23,6 +24,10 @@ class HomeViewModel(
         calculateIncomeUseCase = calculateIncomeUseCase,
         calculateExpenseUseCase = calculateExpenseUseCase
     )
+
+    init {
+        syncTransactions()
+    }
 
     val uiState = transactionRepository.transactions
         .map { transactions ->
@@ -39,6 +44,12 @@ class HomeViewModel(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = HomeUiState()
         )
+
+    fun syncTransactions() {
+        viewModelScope.launch {
+            transactionRepository.syncFromRemote()
+        }
+    }
 
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
