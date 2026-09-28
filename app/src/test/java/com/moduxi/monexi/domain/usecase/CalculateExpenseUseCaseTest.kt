@@ -25,7 +25,7 @@ class CalculateExpenseUseCaseTest {
     fun `should calculate total expense`() {
         val transactions = listOf(
             Transaction(
-                id = 1,
+                id = "1",
                 title = "Salario",
                 amount = 3000.0,
                 type = TransactionType.INCOME,
@@ -34,7 +34,7 @@ class CalculateExpenseUseCaseTest {
                 date = 0L
             ),
             Transaction(
-                id = 2,
+                id = "2",
                 title = "Mercado",
                 amount = 250.0,
                 type = TransactionType.EXPENSE,
@@ -43,7 +43,7 @@ class CalculateExpenseUseCaseTest {
                 date = 0L
             ),
             Transaction(
-                id = 3,
+                id = "3",
                 title = "Internet",
                 amount = 120.0,
                 type = TransactionType.EXPENSE,

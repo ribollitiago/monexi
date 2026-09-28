@@ -25,7 +25,7 @@ class CalculateIncomeUseCaseTest {
     fun `should calculate total income`() {
         val transactions = listOf(
             Transaction(
-                id = 1,
+                id = "1",
                 title = "salario",
                 amount = 3000.0,
                 type = TransactionType.INCOME,
@@ -34,7 +34,7 @@ class CalculateIncomeUseCaseTest {
                 date = 0L
             ),
             Transaction(
-                id = 2,
+                id = "2",
                 title = "Freelance",
                 amount = 800.0,
                 type = TransactionType.INCOME,
@@ -43,7 +43,7 @@ class CalculateIncomeUseCaseTest {
                 date = 0L
             ),
             Transaction(
-                id = 3,
+                id = "3",
                 title = "Mercado",
                 amount = 250.0,
                 type = TransactionType.EXPENSE,

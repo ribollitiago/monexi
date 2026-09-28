@@ -1,6 +1,5 @@
 package com.moduxi.monexi.presentation.home
 
-import android.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -38,7 +37,7 @@ import java.util.Locale
 fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
-    onNavigateToTransaction: (Long?) -> Unit
+    onNavigateToTransaction: (String?) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -54,7 +53,7 @@ fun HomeScreen(
 @Composable
 private fun HomeContent(
     uiState: HomeUiState,
-    onTransactionClick: (Long?) -> Unit,
+    onTransactionClick: (String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -212,7 +211,7 @@ private fun HomeScreenPreview() {
                 totalExpense = 400.0,
                 transactions = listOf(
                     Transaction(
-                        id = 1,
+                        id = "1",
                         userId = "1",
                         title = "Salario",
                         amount = 3200.0,
@@ -231,7 +230,7 @@ private fun HomeScreenPreview() {
                         date = System.currentTimeMillis()
                     ),
                     Transaction(
-                        id = 2,
+                        id = "2",
                         userId = "1",
                         title = "Mercado",
                         amount = 280.0,

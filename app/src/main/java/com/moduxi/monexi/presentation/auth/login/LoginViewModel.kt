@@ -10,10 +10,12 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
 import com.moduxi.monexi.domain.repository.AuthRepository
+import com.moduxi.monexi.domain.repository.TransactionRepository
 import kotlinx.coroutines.launch
 
 class LoginViewModel(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val transactionRepository: TransactionRepository
 ) : ViewModel() {
 
     var uiState by mutableStateOf(LoginUiState())
@@ -39,6 +41,8 @@ class LoginViewModel(
             val result = authRepository.login(uiState.email, uiState.password)
 
             result.onSuccess {
+                transactionRepository.syncFromRemote()
+
                 uiState = uiState.copy(
                     isLoading = false,
                     isSuccess = true
@@ -60,7 +64,10 @@ class LoginViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MonexiApplication
-                LoginViewModel(application.authRepository)
+                LoginViewModel(
+                    authRepository = application.authRepository,
+                    transactionRepository = application.transactionRepository
+                )
             }
         }
     }

@@ -1,6 +1,7 @@
 package com.moduxi.monexi.presentation.settings.categories
 
 import com.moduxi.monexi.MainDispatcherRule
+import com.moduxi.monexi.data.repository.FakeAuthRepository
 import com.moduxi.monexi.data.repository.FakeCategoryRepository
 import com.moduxi.monexi.domain.model.Category
 import com.moduxi.monexi.domain.model.TransactionType
@@ -25,7 +26,7 @@ class CategoriesViewModelTest {
     @Test
     fun `should add category`() = runTest {
         val repository = FakeCategoryRepository()
-        val viewModel = CategoriesViewModel(repository)
+        val viewModel = CategoriesViewModel(repository, FakeAuthRepository())
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect{}
@@ -54,7 +55,7 @@ class CategoriesViewModelTest {
                 )
             )
         )
-        val viewModel = CategoriesViewModel(repository)
+        val viewModel = CategoriesViewModel(repository, FakeAuthRepository())
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect{}
@@ -81,7 +82,7 @@ class CategoriesViewModelTest {
             )
         )
 
-        val viewModel = CategoriesViewModel(repository)
+        val viewModel = CategoriesViewModel(repository, FakeAuthRepository())
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect{}
@@ -104,7 +105,7 @@ class CategoriesViewModelTest {
     @Test
     fun `should not add blank category`() = runTest {
         val repository = FakeCategoryRepository()
-        val viewModel = CategoriesViewModel(repository)
+        val viewModel = CategoriesViewModel(repository, FakeAuthRepository())
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect{}
@@ -133,7 +134,7 @@ class CategoriesViewModelTest {
             initialCategories = listOf(category)
         )
 
-        val viewModel = CategoriesViewModel(repository)
+        val viewModel = CategoriesViewModel(repository, FakeAuthRepository())
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect{}
@@ -170,7 +171,7 @@ class CategoriesViewModelTest {
             initialCategories = listOf(category)
         )
 
-        val viewModel = CategoriesViewModel(repository)
+        val viewModel = CategoriesViewModel(repository, FakeAuthRepository())
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect{}
@@ -196,7 +197,7 @@ class CategoriesViewModelTest {
             initialCategories = listOf(category)
         )
 
-        val viewModel = CategoriesViewModel(repository)
+        val viewModel = CategoriesViewModel(repository, FakeAuthRepository())
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect{}
@@ -221,7 +222,7 @@ class CategoriesViewModelTest {
             initialCategories = listOf(category)
         )
 
-        val viewModel = CategoriesViewModel(repository)
+        val viewModel = CategoriesViewModel(repository, FakeAuthRepository())
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect{}
@@ -246,7 +247,7 @@ class CategoriesViewModelTest {
                 )
             )
         )
-        val viewModel = CategoriesViewModel(repository)
+        val viewModel = CategoriesViewModel(repository, FakeAuthRepository())
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect{}
@@ -275,7 +276,7 @@ class CategoriesViewModelTest {
                 )
             )
         )
-        val viewModel = CategoriesViewModel(repository)
+        val viewModel = CategoriesViewModel(repository, FakeAuthRepository())
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect{}
@@ -308,7 +309,7 @@ class CategoriesViewModelTest {
             initialCategories = listOf(category)
         )
 
-        val viewModel = CategoriesViewModel(repository)
+        val viewModel = CategoriesViewModel(repository, FakeAuthRepository())
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect{}

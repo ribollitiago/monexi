@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
 import com.moduxi.monexi.data.repository.local.ThemeManager
 import com.moduxi.monexi.domain.repository.AuthRepository
+import com.moduxi.monexi.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -16,7 +17,8 @@ import kotlin.onSuccess
 
 class SettingsViewModel(
     private val themeManager: ThemeManager,
-    private val authRepository: AuthRepository) : ViewModel() {
+    private val authRepository: AuthRepository,
+    private val transactionRepository: TransactionRepository) : ViewModel() {
 
     val uiState = themeManager.isDarkMode.map { isDark ->
         SettingsUiState(
@@ -31,8 +33,11 @@ class SettingsViewModel(
     }
 
     fun logout(onLogoutSuccess: () -> Unit){
-        authRepository.signOut()
-        onLogoutSuccess()
+        viewModelScope.launch {
+            transactionRepository.clearLocalData()
+            authRepository.signOut()
+            onLogoutSuccess()
+        }
     }
 
     companion object {
@@ -41,7 +46,8 @@ class SettingsViewModel(
                 val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MonexiApplication
                 SettingsViewModel(
                     themeManager = application.themeManager,
-                    authRepository = application.authRepository
+                    authRepository = application.authRepository,
+                    transactionRepository = application.transactionRepository
                 )
             }
         }

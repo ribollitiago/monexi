@@ -2,6 +2,7 @@ package com.moduxi.monexi.presentation.transaction
 
 import androidx.lifecycle.SavedStateHandle
 import com.moduxi.monexi.MainDispatcherRule
+import com.moduxi.monexi.data.repository.FakeAuthRepository
 import com.moduxi.monexi.data.repository.FakeCategoryRepository
 import com.moduxi.monexi.data.repository.FakePaymentMethodRepository
 import com.moduxi.monexi.data.repository.FakeTransactionRepository
@@ -53,6 +54,7 @@ class TransactionViewModelTest {
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
             paymentMethodRepository = paymentMethodRepository,
+            authRepository = FakeAuthRepository(),
             savedStateHandle = SavedStateHandle()
         )
 
@@ -111,6 +113,7 @@ class TransactionViewModelTest {
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
             paymentMethodRepository = paymentMethodRepository,
+            authRepository = FakeAuthRepository(),
             savedStateHandle = SavedStateHandle()
         )
 
@@ -163,6 +166,7 @@ class TransactionViewModelTest {
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
             paymentMethodRepository = paymentMethodRepository,
+            authRepository = FakeAuthRepository(),
             savedStateHandle = SavedStateHandle()
         )
 
@@ -207,6 +211,7 @@ class TransactionViewModelTest {
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
             paymentMethodRepository = paymentMethodRepository,
+            authRepository = FakeAuthRepository(),
             savedStateHandle = SavedStateHandle()
         )
 
@@ -253,6 +258,7 @@ class TransactionViewModelTest {
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
             paymentMethodRepository = paymentMethodRepository,
+            authRepository = FakeAuthRepository(),
             savedStateHandle = SavedStateHandle()
         )
 
@@ -312,6 +318,7 @@ class TransactionViewModelTest {
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
             paymentMethodRepository = paymentMethodRepository,
+            authRepository = FakeAuthRepository(),
             savedStateHandle = SavedStateHandle()
         )
 
@@ -348,7 +355,7 @@ class TransactionViewModelTest {
         )
 
         val transaction = Transaction(
-            id =  1,
+            id = "1",
             title = "Mercado",
             amount = 25.0,
             type = TransactionType.EXPENSE,
@@ -373,6 +380,7 @@ class TransactionViewModelTest {
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
             paymentMethodRepository = paymentMethodRepository,
+            authRepository = FakeAuthRepository(),
             savedStateHandle = SavedStateHandle()
         )
 
@@ -409,7 +417,7 @@ class TransactionViewModelTest {
         )
 
         val transaction = Transaction(
-            id =  1,
+            id = "1",
             title = "Mercado",
             amount = 25.0,
             type = TransactionType.EXPENSE,
@@ -434,6 +442,7 @@ class TransactionViewModelTest {
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
             paymentMethodRepository = paymentMethodRepository,
+            authRepository = FakeAuthRepository(),
             savedStateHandle = SavedStateHandle()
         )
 
@@ -466,7 +475,7 @@ class TransactionViewModelTest {
         )
 
         val transaction = Transaction(
-            id =  1,
+            id = "1",
             title = "Mercado",
             amount = 25.0,
             type = TransactionType.EXPENSE,
@@ -491,6 +500,7 @@ class TransactionViewModelTest {
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
             paymentMethodRepository = paymentMethodRepository,
+            authRepository = FakeAuthRepository(),
             savedStateHandle = SavedStateHandle()
         )
 
@@ -549,7 +559,7 @@ class TransactionViewModelTest {
         )
 
         val transaction = Transaction(
-            id =  1,
+            id = "1",
             title = "Mercado",
             amount = 25.0,
             type = TransactionType.EXPENSE,
@@ -574,6 +584,7 @@ class TransactionViewModelTest {
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
             paymentMethodRepository = paymentMethodRepository,
+            authRepository = FakeAuthRepository(),
             savedStateHandle = SavedStateHandle()
         )
 
@@ -606,7 +617,7 @@ class TransactionViewModelTest {
         val updatedTransaction = transactionRepository.currentTransactions.first()
 
         assertEquals(1, transactionRepository.currentTransactions.size)
-        assertEquals(1L, updatedTransaction.id)
+        assertEquals("1", updatedTransaction.id)
         assertEquals("Salario", updatedTransaction.title)
         assertEquals(2500.0, updatedTransaction.amount, 0.0)
         assertEquals(category2, updatedTransaction.category)
@@ -629,7 +640,7 @@ class TransactionViewModelTest {
         )
 
         val transaction = Transaction(
-            id = 1,
+            id = "1",
             title = "Mercado",
             amount = 25.0,
             type = TransactionType.EXPENSE,
@@ -654,8 +665,9 @@ class TransactionViewModelTest {
             transactionRepository = transactionRepository,
             categoryRepository = categoryRepository,
             paymentMethodRepository = paymentMethodRepository,
+            authRepository = FakeAuthRepository(),
             savedStateHandle = SavedStateHandle(
-                mapOf("id" to 1L)
+                mapOf("id" to "1")
             )
         )
 

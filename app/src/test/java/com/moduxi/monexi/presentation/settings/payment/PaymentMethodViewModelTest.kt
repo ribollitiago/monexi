@@ -1,6 +1,7 @@
 package com.moduxi.monexi.presentation.settings.payment
 
 import com.moduxi.monexi.MainDispatcherRule
+import com.moduxi.monexi.data.repository.FakeAuthRepository
 import com.moduxi.monexi.data.repository.FakePaymentMethodRepository
 import com.moduxi.monexi.domain.model.PaymentMethod
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -23,7 +24,7 @@ class PaymentMethodViewModelTest {
     @Test
     fun`should add payment method`() = runTest {
         val repository = FakePaymentMethodRepository()
-        val viewModel = PaymentMethodViewModel(repository)
+        val viewModel = PaymentMethodViewModel(repository, FakeAuthRepository())
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect{}
@@ -50,7 +51,7 @@ class PaymentMethodViewModelTest {
                 )
             )
         )
-        val viewModel = PaymentMethodViewModel(repository)
+        val viewModel = PaymentMethodViewModel(repository, FakeAuthRepository())
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect{}
@@ -68,7 +69,7 @@ class PaymentMethodViewModelTest {
     @Test
     fun `should clear error when typing a new name`() = runTest {
         val repository = FakePaymentMethodRepository()
-        val viewModel = PaymentMethodViewModel(repository)
+        val viewModel = PaymentMethodViewModel(repository, FakeAuthRepository())
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect{}
@@ -87,7 +88,7 @@ class PaymentMethodViewModelTest {
     @Test
     fun `should not add blank payment method`() = runTest {
         val repository = FakePaymentMethodRepository()
-        val viewModel = PaymentMethodViewModel(repository)
+        val viewModel = PaymentMethodViewModel(repository, FakeAuthRepository())
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect{}
@@ -113,7 +114,7 @@ class PaymentMethodViewModelTest {
             initialPaymentMethods = listOf(paymentMethod)
         )
 
-        val viewModel = PaymentMethodViewModel(repository)
+        val viewModel = PaymentMethodViewModel(repository, FakeAuthRepository())
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect{}
@@ -145,7 +146,7 @@ class PaymentMethodViewModelTest {
             )
         )
 
-        val viewModel = PaymentMethodViewModel(repository)
+        val viewModel = PaymentMethodViewModel(repository, FakeAuthRepository())
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect{}
@@ -173,7 +174,7 @@ class PaymentMethodViewModelTest {
             )
         )
 
-        val viewModel = PaymentMethodViewModel(repository)
+        val viewModel = PaymentMethodViewModel(repository, FakeAuthRepository())
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect{}
@@ -208,7 +209,7 @@ class PaymentMethodViewModelTest {
             )
         )
 
-        val viewModel = PaymentMethodViewModel(repository)
+        val viewModel = PaymentMethodViewModel(repository, FakeAuthRepository())
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect{}
@@ -238,7 +239,7 @@ class PaymentMethodViewModelTest {
             )
         )
 
-        val viewModel = PaymentMethodViewModel(repository)
+        val viewModel = PaymentMethodViewModel(repository, FakeAuthRepository())
 
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             viewModel.uiState.collect{}

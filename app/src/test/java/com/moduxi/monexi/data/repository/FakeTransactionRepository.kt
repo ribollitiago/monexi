@@ -18,7 +18,7 @@ class FakeTransactionRepository(
 
     override suspend fun addTransaction(transaction: Transaction) {
         transactionsState.value += transaction.copy(
-            id = if (transaction.id == 0L) transactionsState.value.size + 1L else transaction.id
+            id = if (transaction.id.isEmpty()) java.util.UUID.randomUUID().toString() else transaction.id
         )
     }
 
@@ -34,7 +34,15 @@ class FakeTransactionRepository(
         }
     }
 
-    override suspend fun getTransactionById(id: Long): Transaction? {
+    override suspend fun getTransactionById(id: String): Transaction? {
         return transactionsState.value.firstOrNull { it.id == id }
+    }
+
+    override suspend fun syncFromRemote(): Result<Unit> {
+        return Result.success(Unit)
+    }
+
+    override suspend fun clearLocalData() {
+        transactionsState.value = emptyList()
     }
 }

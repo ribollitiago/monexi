@@ -126,8 +126,9 @@ fun AppNavigation(themeManager: ThemeManager) {
             composable(route = "transaction?id={id}",
                 arguments = listOf(
                     navArgument("id") {
-                        type = NavType.LongType
-                        defaultValue = 0L
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
                     }
                 )
             ) {

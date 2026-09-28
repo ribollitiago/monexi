@@ -56,8 +56,8 @@ class TransactionViewModel(
     )
 
     init {
-        val transactionId = savedStateHandle.get<Long>("id")
-        if (transactionId != null && transactionId != 0L) {
+        val transactionId = savedStateHandle.get<String>("id")
+        if (!transactionId.isNullOrEmpty()) {
             loadTransaction(transactionId)
         }
     }
@@ -125,7 +125,7 @@ class TransactionViewModel(
         }
     }
 
-    fun loadTransaction(id: Long) {
+    fun loadTransaction(id: String) {
         viewModelScope.launch {
             val transaction = transactionRepository.getTransactionById(id)
             transaction?.let { startEditing(it) }
@@ -170,7 +170,7 @@ class TransactionViewModel(
         }
 
         val transaction = Transaction(
-            id = editingTransaction?.id ?: 0,
+            id = editingTransaction?.id ?: java.util.UUID.randomUUID().toString(),
             userId = currentUserId,
             title = state.description,
             amount = amount,

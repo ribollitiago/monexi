@@ -15,10 +15,13 @@ interface TransactionDao {
     fun observeTransactions(): Flow<List<TransactionEntity>>
 
     @Query("SELECT * FROM transactions WHERE id = :id AND userId = :userId")
-    suspend fun getTransactionById(id: Long, userId: String): TransactionEntity?
+    suspend fun getTransactionById(id: String, userId: String): TransactionEntity?
 
     @Query("SELECT * FROM transactions WHERE userId = :userId ORDER BY date DESC")
     fun observeTransactionsByUser(userId: String): Flow<List<TransactionEntity>>
+
+    @Query("DELETE FROM transactions WHERE userId = :userId")
+    suspend fun clearTransactionsByUser(userId: String)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransaction(transaction: TransactionEntity)
@@ -30,5 +33,5 @@ interface TransactionDao {
     suspend fun deleteTransaction(transaction: TransactionEntity)
 
     @Query("SELECT * FROM transactions WHERE id = :id")
-    suspend fun getTransactionById(id: Long): TransactionEntity?
+    suspend fun getTransactionById(id: String): TransactionEntity?
 }
