@@ -1,7 +1,10 @@
 package com.moduxi.monexi.domain.model
 
+import androidx.room.PrimaryKey
+
 data class Category (
-    val id: Long = 0,
+    @PrimaryKey
+    val id: String = java.util.UUID.randomUUID().toString(),
     val userId: String = "",
     val name: String,
     val type: TransactionType,

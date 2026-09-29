@@ -72,7 +72,8 @@ class RoomTransactionRepository(
     }
 
     override suspend fun updateTransaction(transaction: Transaction) {
-        transactionDao.updateTransaction(transaction.toEntity())
+        val updatedEntity = transaction.copy(syncStatus = SyncStatus.PENDING_UPDATE).toEntity()
+        transactionDao.updateTransaction(updatedEntity)
 
         val currentUserId = authRepository.currentUser?.uid ?: return
 
@@ -87,7 +88,7 @@ class RoomTransactionRepository(
             "userId" to transaction.userId,
             "updatedAt" to transaction.updatedAt,
             "deletedAt" to transaction.deletedAt,
-            "syncStatus" to transaction.syncStatus.name,
+            "syncStatus" to SyncStatus.SYNCED.name,
             "remoteId" to transaction.remoteId
         )
 
@@ -172,7 +173,7 @@ class RoomTransactionRepository(
                 val title = doc.getString("title") ?: return@mapNotNull null
                 val amount = doc.getDouble("amount") ?: 0.0
                 val type = doc.getString("type") ?: "EXPENSE"
-                val categoryId = doc.getLong("categoryId") ?: 1L
+                val categoryId = doc.getString("categoryId") ?: ""
                 val paymentMethodId = doc.getLong("paymentMethodId") ?: 1L
                 val date = doc.getLong("date") ?: System.currentTimeMillis()
                 val transactionId = doc.getString("id") ?: doc.id

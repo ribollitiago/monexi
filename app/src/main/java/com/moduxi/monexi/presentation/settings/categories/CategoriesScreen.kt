@@ -262,21 +262,21 @@ private fun CategoriesScreenPreview() {
             uiState = CategoriesUiState(
                 categories = listOf(
                     Category(
-                        id = 1,
+                        id = "1",
                         userId = "1",
                         name = "Alimentacao",
                         type = TransactionType.EXPENSE,
                         isDefault = true
                     ),
                     Category(
-                        id = 2,
+                        id = "2",
                         userId = "1",
                         name = "Transporte",
                         type = TransactionType.EXPENSE,
                         isDefault = true
                     ),
                     Category(
-                        id = 3,
+                        id = "3",
                         userId = "1",
                         name = "Viagem",
                         type = TransactionType.EXPENSE,

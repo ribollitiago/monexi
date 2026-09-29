@@ -67,7 +67,7 @@ class CategoriesViewModel(
         viewModelScope.launch {
             categoryRepository.addCategory(
                 Category(
-                    id = 0,
+                    id = "0",
                     userId = currentUserId,
                     name = name,
                     type = state.selectedType,

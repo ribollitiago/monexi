@@ -222,7 +222,7 @@ private fun HomeScreenPreview() {
                         amount = 3200.0,
                         type = TransactionType.INCOME,
                         category = Category(
-                            id = 1,
+                            id = "1",
                             userId = "1",
                             name = "Alimentação",
                             type = TransactionType.INCOME
@@ -241,7 +241,7 @@ private fun HomeScreenPreview() {
                         amount = 280.0,
                         type = TransactionType.EXPENSE,
                         category = Category(
-                            id = 1,
+                            id = "1",
                             userId = "1",
                             name = "Alimentação",
                             type = TransactionType.EXPENSE
