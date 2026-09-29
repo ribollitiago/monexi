@@ -105,9 +105,24 @@ class RoomTransactionRepository(
     }
 
     override suspend fun deleteTransaction(transaction: Transaction) {
-        transactionDao.deleteTransaction(transaction.toEntity())
+        transactionDao.updateTransaction(transaction.toEntity())
 
         val currentUserId = authRepository.currentUser?.uid ?: return
+
+        val transactionData = hashMapOf(
+            "id" to transaction.id,
+            "title" to transaction.title,
+            "amount" to transaction.amount,
+            "type" to transaction.type.name,
+            "categoryId" to transaction.category.id,
+            "paymentMethodId" to transaction.paymentMethod.id,
+            "date" to transaction.date,
+            "userId" to transaction.userId,
+            "updatedAt" to transaction.updatedAt,
+            "deletedAt" to transaction.deletedAt,
+            "syncStatus" to transaction.syncStatus.name,
+            "remoteId" to transaction.remoteId
+        )
 
         try {
             com.google.firebase.firestore.FirebaseFirestore.getInstance()
@@ -115,7 +130,7 @@ class RoomTransactionRepository(
                 .document(currentUserId)
                 .collection("transactions")
                 .document(transaction.id)
-                .delete()
+                .set(transactionData)
                 .await()
         } catch (e: Exception) {
             e.printStackTrace()
