@@ -143,6 +143,16 @@ class RoomTransactionRepository(
                 .get()
                 .await()
 
+            val remoteIds = snapshot.documents.map { it.id }.toSet()
+
+            val localTransactions = transactionDao.observeTransactionsByUser(currentUserId).first()
+
+            localTransactions.forEach { localEntity ->
+                if (localEntity.id !in remoteIds) {
+                    transactionDao.deleteTransaction(localEntity)
+                }
+            }
+
             val remoteEntities = snapshot.documents.mapNotNull { doc ->
                 val title = doc.getString("title") ?: return@mapNotNull null
                 val amount = doc.getDouble("amount") ?: 0.0
