@@ -17,9 +17,11 @@ interface PaymentMethodDao {
     @Query("SELECT * FROM paymentMethods")
     suspend fun getPaymentMethods(): List<PaymentMethodEntity>
 
-    @Query("SELECT * FROM paymentMethods WHERE isDefault = 1 OR userId = :userId ORDER BY name ASC")
+    @Query("SELECT * FROM paymentMethods WHERE (isDefault = 1 OR userId = :userId) AND isArchived = 0 ORDER BY name ASC")
     fun observePaymentMethodsByUser(userId: String): Flow<List<PaymentMethodEntity>>
 
+    @Query("SELECT * FROM paymentMethods WHERE userId = :userId AND isArchived = 1 ORDER BY name ASC")
+    fun observeArchivedPaymentMethodsByUser(userId: String): Flow<List<PaymentMethodEntity>>
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPaymentMethod(paymentMethod: PaymentMethodEntity)
 

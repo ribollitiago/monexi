@@ -76,7 +76,7 @@ private fun CategoriesContent(
     onTypeChange: (TransactionType) -> Unit
 ) {
     val visibleCategories = uiState.categories.filter { category ->
-        category.type == uiState.selectedType && !category.isArchived
+        category.type == uiState.selectedType
     }
 
     Column (
