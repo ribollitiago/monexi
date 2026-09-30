@@ -9,4 +9,5 @@ interface PaymentMethodRepository {
     suspend fun addPaymentMethod(paymentMethod: PaymentMethod)
     suspend fun updatePaymentMethod(paymentMethod: PaymentMethod)
     suspend fun deletePaymentMethod(paymentMethod: PaymentMethod)
+    suspend fun syncFromRemote(): Result<Unit>
 }

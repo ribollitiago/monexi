@@ -13,9 +13,14 @@ import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
 import kotlinx.coroutines.launch
 
+import com.moduxi.monexi.domain.repository.CategoryRepository
+import com.moduxi.monexi.domain.repository.PaymentMethodRepository
+
 class LoginViewModel(
     private val authRepository: AuthRepository,
-    private val transactionRepository: TransactionRepository
+    private val transactionRepository: TransactionRepository,
+    private val categoryRepository: CategoryRepository,
+    private val paymentMethodRepository: PaymentMethodRepository
 ) : ViewModel() {
 
     var uiState by mutableStateOf(LoginUiState())
@@ -41,6 +46,8 @@ class LoginViewModel(
             val result = authRepository.login(uiState.email, uiState.password)
 
             result.onSuccess {
+                categoryRepository.syncFromRemote()
+                paymentMethodRepository.syncFromRemote()
                 transactionRepository.syncFromRemote()
 
                 uiState = uiState.copy(
@@ -66,7 +73,9 @@ class LoginViewModel(
                 val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MonexiApplication
                 LoginViewModel(
                     authRepository = application.authRepository,
-                    transactionRepository = application.transactionRepository
+                    transactionRepository = application.transactionRepository,
+                    categoryRepository = application.categoryRepository,
+                    paymentMethodRepository = application.paymentMethodRepository
                 )
             }
         }

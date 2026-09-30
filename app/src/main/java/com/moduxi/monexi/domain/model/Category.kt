@@ -8,5 +8,6 @@ data class Category (
     val userId: String = "",
     val name: String,
     val type: TransactionType,
-    val isDefault: Boolean = false
+    val isDefault: Boolean = false,
+    val isArchived: Boolean = false
 )

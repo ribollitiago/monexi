@@ -22,7 +22,7 @@ import kotlinx.coroutines.launch
         PaymentMethodEntity::class,
         TransactionEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class MonexiDatabase : RoomDatabase() {

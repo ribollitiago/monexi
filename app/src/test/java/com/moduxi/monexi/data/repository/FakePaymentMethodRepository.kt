@@ -5,7 +5,7 @@ import com.moduxi.monexi.domain.repository.PaymentMethodRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
-class FakePaymentMethodRepository (
+class FakePaymentMethodRepository(
     initialPaymentMethods: List<PaymentMethod> = emptyList()
 ) : PaymentMethodRepository {
 
@@ -15,7 +15,7 @@ class FakePaymentMethodRepository (
 
     override suspend fun addPaymentMethod(paymentMethod: PaymentMethod) {
         paymentMethodsState.value += paymentMethod.copy(
-            id = if(paymentMethod.id == 0L) paymentMethodsState.value.size + 1L else paymentMethod.id
+            id = if (paymentMethod.id == "0" || paymentMethod.id.isEmpty()) java.util.UUID.randomUUID().toString() else paymentMethod.id
         )
     }
 
@@ -29,5 +29,9 @@ class FakePaymentMethodRepository (
         paymentMethodsState.value = paymentMethodsState.value.filterNot {
             it.id == paymentMethod.id
         }
+    }
+
+    override suspend fun syncFromRemote(): Result<Unit> {
+        return Result.success(Unit)
     }
 }

@@ -34,7 +34,7 @@ class TransactionViewModelTest {
         val categoryRepository = FakeCategoryRepository(
             initialCategories = listOf(
                 Category(
-                    id = 1,
+                    id = "1",
                     name = "Alimentação",
                     type = TransactionType.EXPENSE
                 )
@@ -44,7 +44,7 @@ class TransactionViewModelTest {
         val paymentMethodRepository = FakePaymentMethodRepository(
             initialPaymentMethods = listOf(
                 PaymentMethod(
-                    id = 1,
+                    id = "1",
                     name = "Pix"
                 )
             )
@@ -93,7 +93,7 @@ class TransactionViewModelTest {
         val categoryRepository = FakeCategoryRepository(
             initialCategories = listOf(
                 Category(
-                    id = 1,
+                    id = "1",
                     name = "Alimentação",
                     type = TransactionType.EXPENSE
                 )
@@ -103,7 +103,7 @@ class TransactionViewModelTest {
         val paymentMethodRepository = FakePaymentMethodRepository(
             initialPaymentMethods = listOf(
                 PaymentMethod(
-                    id = 1,
+                    id = "1",
                     name = "Pix"
                 )
             )
@@ -146,7 +146,7 @@ class TransactionViewModelTest {
         val categoryRepository = FakeCategoryRepository(
             initialCategories = listOf(
                 Category(
-                    id = 1,
+                    id = "1",
                     name = "Alimentação",
                     type = TransactionType.EXPENSE
                 )
@@ -156,7 +156,7 @@ class TransactionViewModelTest {
         val paymentMethodRepository = FakePaymentMethodRepository(
             initialPaymentMethods = listOf(
                 PaymentMethod(
-                    id = 1,
+                    id = "1",
                     name = "Pix"
                 )
             )
@@ -202,7 +202,7 @@ class TransactionViewModelTest {
         val paymentMethodRepository = FakePaymentMethodRepository(
             initialPaymentMethods = listOf(
                 PaymentMethod(
-                    id = 1,
+                    id = "1",
                     name = "Pix"
                 )
             )
@@ -245,7 +245,7 @@ class TransactionViewModelTest {
         val categoryRepository = FakeCategoryRepository(
             initialCategories = listOf(
                 Category(
-                    id = 1,
+                    id = "1",
                     name = "Alimentação",
                     type = TransactionType.EXPENSE
                 )
@@ -292,12 +292,12 @@ class TransactionViewModelTest {
         val categoryRepository = FakeCategoryRepository(
             initialCategories = listOf(
                 Category(
-                    id = 1,
+                    id = "1",
                     name = "Salário",
                     type = TransactionType.INCOME
                 ),
                 Category(
-                    id = 2,
+                    id = "2",
                     name = "Alimentação",
                     type = TransactionType.EXPENSE
                 )
@@ -308,7 +308,7 @@ class TransactionViewModelTest {
         val paymentMethodRepository = FakePaymentMethodRepository(
             initialPaymentMethods = listOf(
                 PaymentMethod(
-                    id = 1,
+                    id = "1",
                     name = "Pix"
                 )
             )
@@ -344,13 +344,13 @@ class TransactionViewModelTest {
     @Test
     fun `should start editing transaction`() = runTest {
         val category = Category(
-            id = 1,
+            id = "1",
             name = "Alimentação",
             type = TransactionType.EXPENSE
         )
 
         val payment = PaymentMethod(
-            id = 1,
+            id = "1",
             name = "Pix"
         )
 
@@ -406,13 +406,13 @@ class TransactionViewModelTest {
     @Test
     fun `should delete transaction`() = runTest {
         val category = Category(
-            id = 1,
+            id = "1",
             name = "Alimentação",
             type = TransactionType.EXPENSE
         )
 
         val payment = PaymentMethod(
-            id = 1,
+            id = "1",
             name = "Pix"
         )
 
@@ -464,13 +464,13 @@ class TransactionViewModelTest {
     @Test
     fun `should cancel editing transaction`() = runTest {
         val category = Category(
-            id = 1,
+            id = "1",
             name = "Alimentação",
             type = TransactionType.EXPENSE
         )
 
         val payment = PaymentMethod(
-            id = 1,
+            id = "1",
             name = "Pix"
         )
 
@@ -537,24 +537,24 @@ class TransactionViewModelTest {
     @Test
     fun `should update transaction`() = runTest {
         val category1 = Category(
-            id = 1,
+            id = "1",
             name = "Alimentação",
             type = TransactionType.EXPENSE
         )
 
         val category2 = Category(
-            id = 2,
+            id = "2",
             name = "Salário",
             type = TransactionType.INCOME
         )
 
         val payment1 = PaymentMethod(
-            id = 1,
+            id = "1",
             name = "Pix"
         )
 
         val payment2 = PaymentMethod(
-            id = 2,
+            id = "2",
             name = "Dinheiro"
         )
 
@@ -629,13 +629,13 @@ class TransactionViewModelTest {
     @Test
     fun `should load transaction by id`() = runTest {
         val category = Category(
-            id = 1,
+            id = "1",
             name = "Alimentação",
             type = TransactionType.EXPENSE
         )
 
         val payment = PaymentMethod(
-            id = 1,
+            id = "1",
             name = "Pix"
         )
 

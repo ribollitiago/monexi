@@ -210,9 +210,9 @@ private fun PaymentMethodScreenPreview() {
         PaymentMethodContent(
             uiState = PaymentMethodUiState(
                 paymentMethods = listOf(
-                    PaymentMethod(id = 1, name = "Pix", isDefault = true),
-                    PaymentMethod(id = 2, name = "Débito", isDefault = true),
-                    PaymentMethod(id = 3, name = "Boleto", isDefault = false)
+                    PaymentMethod(id = "1", name = "Pix", isDefault = true),
+                    PaymentMethod(id = "2", name = "Débito", isDefault = true),
+                    PaymentMethod(id = "3", name = "Boleto", isDefault = false)
                 )
             ),
             onNewPaymentMethodNameChange = {},

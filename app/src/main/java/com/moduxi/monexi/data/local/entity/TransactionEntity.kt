@@ -12,7 +12,7 @@ data class TransactionEntity (
     val amount: Double,
     val type: String,
     val categoryId: String,
-    val paymentMethodId: Long,
+    val paymentMethodId: String,
     val date: Long,
     val updatedAt: Long,
     val deletedAt: Long?,

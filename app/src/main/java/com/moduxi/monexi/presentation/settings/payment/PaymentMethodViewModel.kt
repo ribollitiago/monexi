@@ -64,7 +64,7 @@ class PaymentMethodViewModel(
         viewModelScope.launch{
             paymentMethodRepository.addPaymentMethod(
                 PaymentMethod(
-                    id = 0,
+                    id = "0",
                     userId = currentUserId,
                     name = name,
                     isDefault = false

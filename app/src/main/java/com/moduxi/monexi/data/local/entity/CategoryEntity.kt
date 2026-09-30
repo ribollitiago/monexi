@@ -10,5 +10,6 @@ data class CategoryEntity (
     val userId: String = "",
     val name: String,
     val type: String,
-    val isDefault: Boolean
+    val isDefault: Boolean,
+    val isArchived: Boolean = false
 )

@@ -5,9 +5,10 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "paymentMethods")
 data class PaymentMethodEntity (
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
+    @PrimaryKey
+    val id: String = java.util.UUID.randomUUID().toString(),
     val userId: String = "",
     val name: String,
-    val isDefault: Boolean
+    val isDefault: Boolean,
+    val isArchived: Boolean = false
 )

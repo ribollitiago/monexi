@@ -174,7 +174,7 @@ class RoomTransactionRepository(
                 val amount = doc.getDouble("amount") ?: 0.0
                 val type = doc.getString("type") ?: "EXPENSE"
                 val categoryId = doc.getString("categoryId") ?: ""
-                val paymentMethodId = doc.getLong("paymentMethodId") ?: 1L
+                val paymentMethodId = doc.getString("paymentMethodId") ?: ""
                 val date = doc.getLong("date") ?: System.currentTimeMillis()
                 val transactionId = doc.getString("id") ?: doc.id
                 val updatedAt = doc.getLong("updatedAt") ?: System.currentTimeMillis()

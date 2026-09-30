@@ -11,13 +11,13 @@ class CalculateIncomeUseCaseTest {
     private val useCase = CalculateIncomeUseCase()
 
     private val category = Category(
-        id = 1,
+        id = "1",
         name = "Teste",
         type = TransactionType.EXPENSE
     )
 
     private val paymentMethod = PaymentMethod(
-        id = 1,
+        id = "1",
         name = "Pix"
     )
 

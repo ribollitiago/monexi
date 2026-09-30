@@ -15,8 +15,8 @@ class FakeCategoryRepository(
 
     override suspend fun addCategory(category: Category) {
         categoriesState.value += category.copy(
-                    id = if (category.id == 0L) categoriesState.value.size + 1L else category.id
-                )
+            id = if (category.id == "0" || category.id.isEmpty()) java.util.UUID.randomUUID().toString() else category.id
+        )
     }
 
     override suspend fun updateCategory(category: Category) {
@@ -29,5 +29,9 @@ class FakeCategoryRepository(
         categoriesState.value = categoriesState.value.filterNot {
             it.id == category.id
         }
+    }
+
+    override suspend fun syncFromRemote(): Result<Unit> {
+        return Result.success(Unit)
     }
 }

@@ -49,7 +49,7 @@ class CategoriesViewModelTest {
         val repository = FakeCategoryRepository(
             initialCategories = listOf(
                 Category(
-                    id = 1,
+                    id = "1",
                     name = "Viagem",
                     type = TransactionType.EXPENSE
                 )
@@ -75,7 +75,7 @@ class CategoriesViewModelTest {
         val repository = FakeCategoryRepository(
             initialCategories = listOf(
                 Category(
-                    id = 1,
+                    id = "1",
                     name = "Outros",
                     type = TransactionType.INCOME
                 )
@@ -124,7 +124,7 @@ class CategoriesViewModelTest {
     @Test
     fun `should edit custom category`() = runTest {
         val category = Category(
-            id = 1,
+            id = "1",
             name = "Outros",
             type = TransactionType.INCOME,
             isDefault = false
@@ -161,7 +161,7 @@ class CategoriesViewModelTest {
     @Test
     fun `should not edit default category`() = runTest {
         val category = Category(
-            id = 1,
+            id = "1",
             name = "Alimentação",
             type = TransactionType.INCOME,
             isDefault = true
@@ -188,7 +188,7 @@ class CategoriesViewModelTest {
     @Test
     fun `should delete custom category`() = runTest {
         val category = Category(
-            id = 1,
+            id = "1",
             name = "Alimentação",
             type = TransactionType.EXPENSE,
             isDefault = false
@@ -213,7 +213,7 @@ class CategoriesViewModelTest {
     @Test
     fun `should not delete default category`() = runTest {
         val category = Category(
-            id = 1,
+            id = "1",
             name = "Alimentação",
             type = TransactionType.EXPENSE,
             isDefault = true
@@ -241,7 +241,7 @@ class CategoriesViewModelTest {
         val repository = FakeCategoryRepository(
             initialCategories = listOf(
                 Category(
-                    id = 1,
+                    id = "1",
                     name = "Outros",
                     type = TransactionType.EXPENSE
                 )
@@ -270,7 +270,7 @@ class CategoriesViewModelTest {
         val repository = FakeCategoryRepository(
             initialCategories = listOf(
                 Category(
-                    id = 1,
+                    id = "1",
                     name = "Outros",
                     type = TransactionType.EXPENSE
                 )
@@ -300,7 +300,7 @@ class CategoriesViewModelTest {
     @Test
     fun `should cancel editing category`() = runTest {
         val category = Category(
-            id = 1,
+            id = "1",
             name = "Alimentação",
             type = TransactionType.EXPENSE,
             isDefault = false

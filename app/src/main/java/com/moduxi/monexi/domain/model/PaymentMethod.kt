@@ -1,8 +1,12 @@
 package com.moduxi.monexi.domain.model
 
+import androidx.room.PrimaryKey
+
 data class PaymentMethod (
-    val id: Long = 0,
+    @PrimaryKey
+    val id: String = java.util.UUID.randomUUID().toString(),
     val userId: String = "",
     val name: String,
-    val isDefault: Boolean = false
+    val isDefault: Boolean = false,
+    val isArchived: Boolean = false
 )

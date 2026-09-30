@@ -228,7 +228,7 @@ private fun HomeScreenPreview() {
                             type = TransactionType.INCOME
                         ),
                         paymentMethod = PaymentMethod(
-                            id = 1,
+                            id = "1",
                             userId = "1",
                             name = "Pix"
                         ),
@@ -247,7 +247,7 @@ private fun HomeScreenPreview() {
                             type = TransactionType.EXPENSE
                         ),
                         paymentMethod = PaymentMethod(
-                            id = 1,
+                            id = "1",
                             userId = "1",
                             name = "Pix"
                         ),

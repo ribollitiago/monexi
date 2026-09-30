@@ -46,7 +46,7 @@ class PaymentMethodViewModelTest {
         val repository = FakePaymentMethodRepository(
             initialPaymentMethods = listOf(
                 PaymentMethod(
-                    id = 1,
+                    id = "1",
                     name = "Pix"
                 )
             )
@@ -105,7 +105,7 @@ class PaymentMethodViewModelTest {
     @Test
     fun `should edit custom payment method`() = runTest {
         val paymentMethod = PaymentMethod(
-            id = 1,
+            id = "1",
             name = "Pix",
             isDefault = false
         )
@@ -135,7 +135,7 @@ class PaymentMethodViewModelTest {
     @Test
     fun `should not edit default payment method`() = runTest {
         val paymentMethod = PaymentMethod(
-            id = 1,
+            id = "1",
             name = "Pix",
             isDefault = true
         )
@@ -163,7 +163,7 @@ class PaymentMethodViewModelTest {
     @Test
     fun `should delete custom payment method`() = runTest {
         val paymentMethod = PaymentMethod(
-            id = 1,
+            id = "1",
             name = "Pix",
             isDefault = false
         )
@@ -198,7 +198,7 @@ class PaymentMethodViewModelTest {
     @Test
     fun `should not delete default payment method`() = runTest {
         val paymentMethod = PaymentMethod(
-            id = 1,
+            id = "1",
             name = "Pix",
             isDefault = true
         )
@@ -228,7 +228,7 @@ class PaymentMethodViewModelTest {
     @Test
     fun `should cancel editing payment method`() = runTest {
         val paymentMethod = PaymentMethod(
-            id = 1,
+            id = "1",
             name = "Pix",
             isDefault = false
         )
