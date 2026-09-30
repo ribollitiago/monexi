@@ -65,6 +65,10 @@ private fun PaymentMethodContent(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val visiblePaymentMethod = uiState.paymentMethods.filter { paymentMethod ->
+        !paymentMethod.isArchived
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -120,7 +124,7 @@ private fun PaymentMethodContent(
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(uiState.paymentMethods) { paymentMethod ->
+            items(visiblePaymentMethod) { paymentMethod ->
                 PaymentMethodItem(
                     paymentMethod = paymentMethod,
                     isEditing = uiState.editingPaymentMethod?.id == paymentMethod.id,

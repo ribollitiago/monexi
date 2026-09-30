@@ -39,7 +39,7 @@ class TransactionViewModel(
         formState
     ) { categories, paymentMethods, form ->
         val filteredCategories = categories.filter { category ->
-            category.type == form.type
+            category.type == form.type && !category.isArchived
         }
 
         form.copy(

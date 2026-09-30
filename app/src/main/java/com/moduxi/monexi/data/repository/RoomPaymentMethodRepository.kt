@@ -48,7 +48,8 @@ class RoomPaymentMethodRepository (
             "id" to paymentMethodId,
             "userId" to currentUserId,
             "name" to paymentMethod.name,
-            "isDefault" to false
+            "isDefault" to false,
+            "isArchived" to paymentMethod.isArchived
         )
 
         try {
@@ -78,7 +79,8 @@ class RoomPaymentMethodRepository (
             "id" to paymentMethod.id,
             "userId" to paymentMethod.userId,
             "name" to paymentMethod.name,
-            "isDefault" to false
+            "isDefault" to false,
+            "isArchived" to paymentMethod.isArchived
         )
 
         try {
@@ -98,17 +100,27 @@ class RoomPaymentMethodRepository (
     override suspend fun deletePaymentMethod(paymentMethod: PaymentMethod) {
         if (paymentMethod.isDefault) return
 
-        paymentMethodDao.deletePaymentMethod(paymentMethod.toEntity())
+        val archivedPaymentMethod = paymentMethod.copy(isArchived = true)
+
+        paymentMethodDao.updatePaymentMethod(archivedPaymentMethod.toEntity())
 
         val currentUserId = authRepository.currentUser?.uid ?: return
+
+        val paymentMethodData = hashMapOf(
+            "id" to archivedPaymentMethod.id,
+            "userId" to archivedPaymentMethod.userId,
+            "name" to archivedPaymentMethod.name,
+            "isDefault" to archivedPaymentMethod.isDefault,
+            "isArchived" to archivedPaymentMethod.isArchived
+        )
 
         try {
             com.google.firebase.firestore.FirebaseFirestore.getInstance()
                 .collection("users")
                 .document(currentUserId)
                 .collection("paymentMethods")
-                .document(paymentMethod.id.toString())
-                .delete()
+                .document(archivedPaymentMethod.id)
+                .set(paymentMethodData)
                 .await()
 
         } catch (e: Exception) {

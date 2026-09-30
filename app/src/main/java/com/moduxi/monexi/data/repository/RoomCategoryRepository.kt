@@ -99,21 +99,34 @@ class RoomCategoryRepository(
     override suspend fun deleteCategory(category: Category) {
         if (category.isDefault) return
 
-        categoryDao.deleteCategory(category.toEntity())
+        val archivedCategory = category.copy(isArchived = true)
+
+        categoryDao.updateCategory(archivedCategory.toEntity())
 
         val currentUserId = authRepository.currentUser?.uid ?: return
+
+        val categoryData = hashMapOf(
+            "id" to archivedCategory.id,
+            "userId" to archivedCategory.userId,
+            "name" to archivedCategory.name,
+            "type" to archivedCategory.type,
+            "isDefault" to archivedCategory.isDefault,
+            "isArchived" to true
+        )
 
         try {
             com.google.firebase.firestore.FirebaseFirestore.getInstance()
                 .collection("users")
                 .document(currentUserId)
                 .collection("categories")
-                .document(category.id.toString())
-                .delete()
+                .document(archivedCategory.id)
+                .set(categoryData)
                 .await()
 
+            android.util.Log.d("FirestoreSync", "Categoria ${archivedCategory.id} arquivada no Firestore com sucesso!")
         } catch (e: Exception) {
             e.printStackTrace()
+            android.util.Log.e("FirestoreSync", "Erro ao arquivar categoria no Firestore: ${e.message}", e)
         }
     }
 
@@ -135,13 +148,15 @@ class RoomCategoryRepository(
                 val type = TransactionType.valueOf(typeStr)
                 val isDefault = doc.getBoolean("isDefault") ?: false
                 val categoryId = doc.getString("id") ?: doc.id
+                val isArchived = doc.getBoolean("isArchived") ?: false
 
                 CategoryEntity(
                     id = categoryId,
                     userId = currentUserId,
                     name = name,
                     type = type.name,
-                    isDefault = isDefault
+                    isDefault = isDefault,
+                    isArchived = isArchived
                 )
             }
 

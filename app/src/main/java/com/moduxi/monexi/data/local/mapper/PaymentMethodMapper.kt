@@ -8,7 +8,8 @@ fun PaymentMethodEntity.toDomain(): PaymentMethod {
         id = id,
         userId = userId,
         name = name,
-        isDefault = isDefault
+        isDefault = isDefault,
+        isArchived = isArchived
     )
 }
 
@@ -17,6 +18,7 @@ fun PaymentMethod.toEntity(): PaymentMethodEntity{
         id = id,
         userId = userId,
         name = name,
-        isDefault = isDefault
+        isDefault = isDefault,
+        isArchived = isArchived
     )
 }

@@ -10,7 +10,8 @@ fun CategoryEntity.toDomain(): Category {
         userId = userId,
         name = name,
         type = TransactionType.valueOf(type),
-        isDefault = isDefault
+        isDefault = isDefault,
+        isArchived = isArchived
     )
 }
 
@@ -20,6 +21,7 @@ fun Category.toEntity(): CategoryEntity {
         userId = userId,
         name = name,
         type = type.name,
-        isDefault = isDefault
+        isDefault = isDefault,
+        isArchived = isArchived
     )
 }
