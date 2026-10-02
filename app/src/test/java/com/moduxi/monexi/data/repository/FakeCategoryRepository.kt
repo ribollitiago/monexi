@@ -5,6 +5,8 @@ import com.moduxi.monexi.domain.repository.CategoryRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
+import kotlinx.coroutines.flow.map
+
 class FakeCategoryRepository(
     initialCategories: List<Category> = emptyList()
 ) : CategoryRepository {
@@ -12,6 +14,8 @@ class FakeCategoryRepository(
     private val categoriesState = MutableStateFlow(initialCategories)
 
     override val categories: Flow<List<Category>> = categoriesState
+    override val archivedCategories: Flow<List<Category>>
+        get() = categoriesState.map { list -> list.filter { it.isArchived } }
 
     override suspend fun addCategory(category: Category) {
         categoriesState.value += category.copy(

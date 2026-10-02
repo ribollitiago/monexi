@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface CategoryRepository {
     val categories: Flow<List<Category>>
+    val archivedCategories: Flow<List<Category>>
 
     suspend fun addCategory(category: Category)
     suspend fun updateCategory(category: Category)

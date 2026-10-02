@@ -29,6 +29,7 @@ import com.moduxi.monexi.presentation.auth.login.LoginScreen
 import com.moduxi.monexi.presentation.auth.register.RegisterScreen
 import com.moduxi.monexi.presentation.settings.SettingsScreen
 import com.moduxi.monexi.presentation.settings.categories.CategoriesScreen
+import com.moduxi.monexi.presentation.settings.categories.archived.ArchivedCategoriesScreen
 import com.moduxi.monexi.presentation.settings.payment.PaymentMethodScreen
 
 sealed class BottomNavItem(val route: String, val label: String, val icon: ImageVector) {
@@ -49,7 +50,7 @@ fun AppNavigation(themeManager: ThemeManager) {
 
     val startDestination = if (authRepository.currentUser != null) "home" else "login"
 
-    val showBottomBar = currentRoute in listOf("home", "transaction", "transaction?id={id}", "settings", "categories", "paymentMethods")
+    val showBottomBar = currentRoute in listOf("home", "transaction", "transaction?id={id}", "settings", "categories", "paymentMethods", "archivedCategories")
 
     Scaffold(
         bottomBar = {
@@ -159,11 +160,21 @@ fun AppNavigation(themeManager: ThemeManager) {
                 CategoriesScreen(
                     onNavigateBack = {
                         navController.popBackStack()
+                    },
+                    onNavigateArchived = {
+                        navController.navigate("archivedCategories")
                     }
                 )
             }
             composable ("paymentMethods") {
                 PaymentMethodScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable("archivedCategories") {
+                ArchivedCategoriesScreen(
                     onNavigateBack = {
                         navController.popBackStack()
                     }

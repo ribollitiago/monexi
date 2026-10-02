@@ -26,6 +26,14 @@ class RoomCategoryRepository(
             }
         }
 
+    override val archivedCategories: Flow<List<Category>>
+        get() {
+            val currentUserId = authRepository.currentUser?.uid ?: ""
+            return categoryDao.observeArchivedCategoriesByUser(currentUserId).map { list ->
+                list.map { it.toDomain() }
+            }
+        }
+
     override suspend fun addCategory(category: Category) {
         val currentUserId = authRepository.currentUser?.uid ?: ""
         if (currentUserId.isEmpty()) {

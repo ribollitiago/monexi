@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -41,6 +42,7 @@ import com.moduxi.monexi.ui.theme.MonexiTheme
 @Composable
 fun CategoriesScreen(
     onNavigateBack: () -> Unit,
+    onNavigateArchived: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CategoriesViewModel = viewModel(factory = CategoriesViewModel.Factory)
 ) {
@@ -56,6 +58,7 @@ fun CategoriesScreen(
         onSaveEditingClick = viewModel::saveEditing,
         onCancelEditingClick = viewModel::cancelEditing,
         onNavigateBack = onNavigateBack,
+        onNavigateArchived = onNavigateArchived,
         onTypeChange = viewModel::onTypeChange,
         modifier = modifier
     )
@@ -72,6 +75,7 @@ private fun CategoriesContent(
     onSaveEditingClick: () -> Unit,
     onCancelEditingClick: () -> Unit,
     onNavigateBack: () -> Unit,
+    onNavigateArchived: () -> Unit,
     modifier: Modifier = Modifier,
     onTypeChange: (TransactionType) -> Unit
 ) {
@@ -87,7 +91,6 @@ private fun CategoriesContent(
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(
@@ -100,9 +103,18 @@ private fun CategoriesContent(
             }
             Text (
                 text = "Categorias",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f)
             )
+            IconButton(
+                onClick = onNavigateArchived
+            ) {
+                Icon(
+                    imageVector = Icons.Default.FolderOpen,
+                    contentDescription = "Arquivados"
+                )
+            }
         }
 
         Row(
@@ -292,6 +304,7 @@ private fun CategoriesScreenPreview() {
             onSaveEditingClick = {},
             onCancelEditingClick = {},
             onNavigateBack = {},
+            onNavigateArchived = {},
             onTypeChange = {}
         )
     }
