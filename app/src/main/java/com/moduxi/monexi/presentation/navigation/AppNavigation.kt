@@ -31,6 +31,7 @@ import com.moduxi.monexi.presentation.settings.SettingsScreen
 import com.moduxi.monexi.presentation.settings.categories.CategoriesScreen
 import com.moduxi.monexi.presentation.settings.categories.archived.ArchivedCategoriesScreen
 import com.moduxi.monexi.presentation.settings.payment.PaymentMethodScreen
+import com.moduxi.monexi.presentation.settings.payment.archived.ArchivedPaymentMethodScreen
 
 sealed class BottomNavItem(val route: String, val label: String, val icon: ImageVector) {
     object Home : BottomNavItem("home", "Resumo", Icons.Default.Home)
@@ -50,7 +51,16 @@ fun AppNavigation(themeManager: ThemeManager) {
 
     val startDestination = if (authRepository.currentUser != null) "home" else "login"
 
-    val showBottomBar = currentRoute in listOf("home", "transaction", "transaction?id={id}", "settings", "categories", "paymentMethods", "archivedCategories")
+    val showBottomBar = currentRoute in listOf(
+        "home",
+        "transaction",
+        "transaction?id={id}",
+        "settings",
+        "categories",
+        "paymentMethods",
+        "archivedCategories",
+        "archivedPaymentMethod"
+    )
 
     Scaffold(
         bottomBar = {
@@ -170,11 +180,21 @@ fun AppNavigation(themeManager: ThemeManager) {
                 PaymentMethodScreen(
                     onNavigateBack = {
                         navController.popBackStack()
+                    },
+                    onNavigateArchived = {
+                        navController.navigate("archivedPaymentMethod")
                     }
                 )
             }
             composable("archivedCategories") {
                 ArchivedCategoriesScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable("archivedPaymentMethod") {
+                ArchivedPaymentMethodScreen(
                     onNavigateBack = {
                         navController.popBackStack()
                     }

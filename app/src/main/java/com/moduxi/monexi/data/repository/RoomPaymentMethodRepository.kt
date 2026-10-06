@@ -6,6 +6,7 @@ import com.moduxi.monexi.data.local.entity.CategoryEntity
 import com.moduxi.monexi.data.local.entity.PaymentMethodEntity
 import com.moduxi.monexi.data.local.mapper.toDomain
 import com.moduxi.monexi.data.local.mapper.toEntity
+import com.moduxi.monexi.domain.model.Category
 import com.moduxi.monexi.domain.model.PaymentMethod
 import com.moduxi.monexi.domain.model.TransactionType
 import com.moduxi.monexi.domain.repository.AuthRepository
@@ -13,6 +14,7 @@ import com.moduxi.monexi.domain.repository.PaymentMethodRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
+import kotlin.collections.map
 
 class RoomPaymentMethodRepository (
     private val paymentMethodDao: PaymentMethodDao,
@@ -23,6 +25,14 @@ class RoomPaymentMethodRepository (
         get() {
             val currentUserId = authRepository.currentUser?.uid ?: ""
             return paymentMethodDao.observePaymentMethodsByUser(currentUserId).map { list ->
+                list.map { it.toDomain() }
+            }
+        }
+
+    override val archivedPaymentMethod: Flow<List<PaymentMethod>>
+        get() {
+            val currentUserId = authRepository.currentUser?.uid ?: ""
+            return paymentMethodDao.observeArchivedPaymentMethodsByUser(currentUserId).map { list ->
                 list.map { it.toDomain() }
             }
         }

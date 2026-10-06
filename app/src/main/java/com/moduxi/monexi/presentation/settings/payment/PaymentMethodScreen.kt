@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -33,6 +34,7 @@ import com.moduxi.monexi.ui.theme.MonexiTheme
 @Composable
 fun PaymentMethodScreen(
     onNavigateBack: () -> Unit,
+    onNavigateArchived: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PaymentMethodViewModel = viewModel(factory = PaymentMethodViewModel.Factory)
 ) {
@@ -48,6 +50,7 @@ fun PaymentMethodScreen(
         onSaveEditingClick = viewModel::saveEditing,
         onCancelEditingClick = viewModel::cancelEditing,
         onNavigateBack = onNavigateBack,
+        onNavigateArchived = onNavigateArchived,
         modifier = modifier
     )
 }
@@ -63,6 +66,7 @@ private fun PaymentMethodContent(
     onSaveEditingClick: () -> Unit,
     onCancelEditingClick: () -> Unit,
     onNavigateBack: () -> Unit,
+    onNavigateArchived: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -86,9 +90,18 @@ private fun PaymentMethodContent(
             }
             Text (
                 text = "Métodos de Pagamento",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.weight(1f)
             )
+            IconButton(
+                onClick = onNavigateArchived
+            ) {
+                Icon(
+                    imageVector = Icons.Default.FolderOpen,
+                    contentDescription = "Arquivados"
+                )
+            }
         }
 
         Row(
@@ -223,6 +236,7 @@ private fun PaymentMethodScreenPreview() {
             onSaveEditingClick = {},
             onCancelEditingClick = {},
             onNavigateBack = {},
+            onNavigateArchived = {}
         )
     }
 }
