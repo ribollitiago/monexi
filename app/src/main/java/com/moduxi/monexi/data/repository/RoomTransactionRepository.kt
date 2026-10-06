@@ -25,8 +25,8 @@ class RoomTransactionRepository(
 ) : TransactionRepository {
 
     override val transactions: Flow<List<Transaction>> = combine(
-        categoryRepository.categories,
-        paymentMethodRepository.paymentMethods
+        categoryRepository.allCategories,
+        paymentMethodRepository.allPaymentMethods
     ) { categories, paymentMethods ->
         Pair(categories, paymentMethods)
     }.flatMapLatest { (categories, paymentMethods) ->
@@ -141,17 +141,17 @@ class RoomTransactionRepository(
     override suspend fun getTransactionById(id: String): Transaction? {
         val entity = transactionDao.getTransactionById(id) ?: return null
 
-        val categories = categoryRepository.categories.first()
-        val paymentMethods = paymentMethodRepository.paymentMethods.first()
+        val categories = categoryRepository.allCategories.first()
+        val paymentMethods = paymentMethodRepository.allPaymentMethods.first()
 
         return entity.toDomain(categories, paymentMethods)
     }
 
-    override suspend fun syncFromRemote(): Result<Unit> {
+    override suspend fun syncFromRemote(): Result<Unit> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         val currentUserId = authRepository.currentUser?.uid
-            ?: return Result.failure(Exception("Usuário não autenticado"))
+            ?: return@withContext Result.failure(Exception("Usuário não autenticado"))
 
-        return try {
+        try {
             val snapshot = com.google.firebase.firestore.FirebaseFirestore.getInstance()
                 .collection("users")
                 .document(currentUserId)
@@ -164,21 +164,21 @@ class RoomTransactionRepository(
             val localTransactions = transactionDao.observeTransactionsByUser(currentUserId).first()
 
             localTransactions.forEach { localEntity ->
-                if (localEntity.id !in remoteIds) {
+                if (localEntity.id !in remoteIds && localEntity.syncStatus == SyncStatus.SYNCED.name) {
                     transactionDao.deleteTransaction(localEntity)
                 }
             }
 
             val remoteEntities = snapshot.documents.mapNotNull { doc ->
                 val title = doc.getString("title") ?: return@mapNotNull null
-                val amount = doc.getDouble("amount") ?: 0.0
+                val amount = (doc.get("amount") as? Number)?.toDouble() ?: 0.0
                 val type = doc.getString("type") ?: "EXPENSE"
                 val categoryId = doc.getString("categoryId") ?: ""
                 val paymentMethodId = doc.getString("paymentMethodId") ?: ""
-                val date = doc.getLong("date") ?: System.currentTimeMillis()
+                val date = (doc.get("date") as? Number)?.toLong() ?: System.currentTimeMillis()
                 val transactionId = doc.getString("id") ?: doc.id
-                val updatedAt = doc.getLong("updatedAt") ?: System.currentTimeMillis()
-                val deletedAt = doc.getLong("deletedAt")
+                val updatedAt = (doc.get("updatedAt") as? Number)?.toLong() ?: System.currentTimeMillis()
+                val deletedAt = (doc.get("deletedAt") as? Number)?.toLong()
                 val syncStatus = doc.getString("syncStatus") ?: SyncStatus.SYNCED.name
                 val remoteId = doc.getString("remoteId")
 

@@ -29,6 +29,14 @@ class RoomPaymentMethodRepository (
             }
         }
 
+    override val allPaymentMethods: Flow<List<PaymentMethod>>
+        get() {
+            val currentUserId = authRepository.currentUser?.uid ?: ""
+            return paymentMethodDao.observeAllPaymentMethodsByUser(currentUserId).map { list ->
+                list.map { it.toDomain() }
+            }
+        }
+
     override val archivedPaymentMethod: Flow<List<PaymentMethod>>
         get() {
             val currentUserId = authRepository.currentUser?.uid ?: ""
@@ -138,11 +146,11 @@ class RoomPaymentMethodRepository (
         }
     }
 
-    override suspend fun syncFromRemote(): Result<Unit> {
+    override suspend fun syncFromRemote(): Result<Unit> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         val currentUserId = authRepository.currentUser?.uid
-            ?: return Result.failure(Exception("Usuário não autenticado"))
+            ?: return@withContext Result.failure(Exception("Usuário não autenticado"))
 
-        return try {
+        try {
             val snapshot = FirebaseFirestore.getInstance()
                 .collection("users")
                 .document(currentUserId)
@@ -154,12 +162,14 @@ class RoomPaymentMethodRepository (
                 val name = doc.getString("name") ?: return@mapNotNull null
                 val isDefault = doc.getBoolean("isDefault") ?: false
                 val categoryId = doc.getString("id") ?: doc.id
+                val isArchived = doc.getBoolean("isArchived") ?: false
 
                 PaymentMethodEntity(
                     id = categoryId,
                     userId = currentUserId,
                     name = name,
-                    isDefault = isDefault
+                    isDefault = isDefault,
+                    isArchived = isArchived
                 )
             }
 

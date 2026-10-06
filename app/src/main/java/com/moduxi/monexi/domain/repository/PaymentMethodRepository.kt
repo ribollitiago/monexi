@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface PaymentMethodRepository {
     val paymentMethods: Flow<List<PaymentMethod>>
+    val allPaymentMethods: Flow<List<PaymentMethod>>
     val archivedPaymentMethod: Flow<List<PaymentMethod>>
 
     suspend fun addPaymentMethod(paymentMethod: PaymentMethod)

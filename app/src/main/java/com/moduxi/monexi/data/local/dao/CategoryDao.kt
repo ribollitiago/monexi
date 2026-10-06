@@ -20,6 +20,9 @@ interface CategoryDao {
     @Query("SELECT * FROM categories WHERE (isDefault = 1 OR userId = :userId) AND isArchived = 0 ORDER BY name ASC")
     fun observeCategoriesByUser(userId: String): Flow<List<CategoryEntity>>
 
+    @Query("SELECT * FROM categories WHERE isDefault = 1 OR userId = :userId ORDER BY name ASC")
+    fun observeAllCategoriesByUser(userId: String): Flow<List<CategoryEntity>>
+
     @Query("SELECT * FROM categories WHERE userId = :userId AND isArchived = 1 ORDER BY name ASC")
     fun observeArchivedCategoriesByUser(userId: String): Flow<List<CategoryEntity>>
 

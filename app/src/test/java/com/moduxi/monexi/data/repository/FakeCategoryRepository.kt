@@ -14,6 +14,7 @@ class FakeCategoryRepository(
     private val categoriesState = MutableStateFlow(initialCategories)
 
     override val categories: Flow<List<Category>> = categoriesState
+    override val allCategories: Flow<List<Category>> = categoriesState
     override val archivedCategories: Flow<List<Category>>
         get() = categoriesState.map { list -> list.filter { it.isArchived } }
 

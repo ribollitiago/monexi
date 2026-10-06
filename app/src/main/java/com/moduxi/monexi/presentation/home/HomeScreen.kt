@@ -42,10 +42,6 @@ fun HomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(Unit) {
-        viewModel.syncTransactions()
-    }
-
     HomeContent(
         uiState = uiState,
         onTransactionClick = { id ->

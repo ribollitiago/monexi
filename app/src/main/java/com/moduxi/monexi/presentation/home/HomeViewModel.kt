@@ -46,7 +46,7 @@ class HomeViewModel(
         )
 
     fun syncTransactions() {
-        viewModelScope.launch {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             transactionRepository.syncFromRemote()
         }
     }

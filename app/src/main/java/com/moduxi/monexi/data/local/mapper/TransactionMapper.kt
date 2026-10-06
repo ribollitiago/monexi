@@ -35,18 +35,30 @@ fun TransactionEntity.toDomain(
         return null
     }
 
+    val transactionType = try {
+        TransactionType.valueOf(type)
+    } catch (e: Exception) {
+        TransactionType.EXPENSE
+    }
+
+    val status = try {
+        SyncStatus.valueOf(syncStatus)
+    } catch (e: Exception) {
+        SyncStatus.SYNCED
+    }
+
     return Transaction(
         id = id,
         userId = userId,
         title = title,
         amount = amount,
-        type = TransactionType.valueOf(type),
+        type = transactionType,
         category = category,
         paymentMethod = paymentMethod,
         date = date,
         updatedAt = updatedAt,
         deletedAt = deletedAt,
-        syncStatus = SyncStatus.valueOf(syncStatus),
+        syncStatus = status,
         remoteId = remoteId
     )
 }

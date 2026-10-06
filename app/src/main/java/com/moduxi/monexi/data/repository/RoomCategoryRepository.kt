@@ -26,6 +26,14 @@ class RoomCategoryRepository(
             }
         }
 
+    override val allCategories: Flow<List<Category>>
+        get() {
+            val currentUserId = authRepository.currentUser?.uid ?: ""
+            return categoryDao.observeAllCategoriesByUser(currentUserId).map { list ->
+                list.map { it.toDomain() }
+            }
+        }
+
     override val archivedCategories: Flow<List<Category>>
         get() {
             val currentUserId = authRepository.currentUser?.uid ?: ""
@@ -138,11 +146,11 @@ class RoomCategoryRepository(
         }
     }
 
-    override suspend fun syncFromRemote(): Result<Unit> {
+    override suspend fun syncFromRemote(): Result<Unit> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         val currentUserId = authRepository.currentUser?.uid
-            ?: return Result.failure(Exception("Usuário não autenticado"))
+            ?: return@withContext Result.failure(Exception("Usuário não autenticado"))
 
-        return try {
+        try {
             val snapshot = FirebaseFirestore.getInstance()
                 .collection("users")
                 .document(currentUserId)
@@ -153,7 +161,7 @@ class RoomCategoryRepository(
             val remoteCategories = snapshot.documents.mapNotNull { doc ->
                 val name = doc.getString("name") ?: return@mapNotNull null
                 val typeStr = doc.getString("type") ?: "EXPENSE"
-                val type = TransactionType.valueOf(typeStr)
+                val type = try { TransactionType.valueOf(typeStr) } catch (e: Exception) { TransactionType.EXPENSE }
                 val isDefault = doc.getBoolean("isDefault") ?: false
                 val categoryId = doc.getString("id") ?: doc.id
                 val isArchived = doc.getBoolean("isArchived") ?: false
