@@ -141,7 +141,7 @@ private fun TransactionContent(
                     }
                     Text(
                         text = if (uiState.editingTransaction == null) "Nova Transação" else "Editar Transação",
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                 }

@@ -18,6 +18,7 @@ import com.moduxi.monexi.presentation.transaction.TransactionScreen
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
@@ -36,7 +37,7 @@ import com.moduxi.monexi.presentation.settings.payment.archived.ArchivedPaymentM
 sealed class BottomNavItem(val route: String, val label: String, val icon: ImageVector) {
     object Home : BottomNavItem("home", "Resumo", Icons.Default.Home)
     object Transaction : BottomNavItem("transaction", "Lançamento", Icons.Default.Add)
-    object Settings : BottomNavItem("settings", "Configurações", Icons.Default.Settings)
+    object Settings : BottomNavItem("settings", "Configurações", Icons.Default.Person)
 }
 
 @Composable
@@ -86,8 +87,7 @@ fun AppNavigation(themeManager: ThemeManager) {
                                     launchSingleTop = true
                                 }
                             },
-                            icon = { Icon(item.icon, contentDescription = item.label) },
-                            label = { Text(item.label) }
+                            icon = { Icon(item.icon, contentDescription = item.label) }
                         )
                     }
                 }

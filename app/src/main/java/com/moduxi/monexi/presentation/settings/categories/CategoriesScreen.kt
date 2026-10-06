@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,9 +15,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -26,6 +30,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,7 +67,7 @@ fun CategoriesScreen(
         onNavigateBack = onNavigateBack,
         onNavigateArchived = onNavigateArchived,
         onTypeChange = viewModel::onTypeChange,
-        modifier = modifier
+        modifier = modifier.fillMaxSize()
     )
 }
 
@@ -83,119 +90,152 @@ private fun CategoriesContent(
         category.type == uiState.selectedType
     }
 
-    Column (
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    var showAddDialog by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = modifier.fillMaxSize()
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = 16.dp, end = 16.dp, top = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            IconButton(
-                onClick = onNavigateBack
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Voltar"
-                )
-            }
-            Text (
-                text = "Categorias",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.weight(1f)
-            )
-            IconButton(
-                onClick = onNavigateArchived
-            ) {
-                Icon(
-                    imageVector = Icons.Default.FolderOpen,
-                    contentDescription = "Arquivados"
-                )
-            }
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            val transactionTypes = listOf(
-                TransactionType.INCOME to "Receita",
-                TransactionType.EXPENSE to "Despesa"
-            )
-
-            transactionTypes.forEach { (type, label) ->
-                val isSelected = uiState.selectedType == type
-
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(
-                            if (isSelected) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.surfaceVariant
-                        )
-                        .clickable {
-                            onTypeChange(type)
-                        }
-                        .padding(vertical = 12.dp),
-                    contentAlignment = Alignment.Center
+                IconButton(
+                    onClick = onNavigateBack
                 ) {
-                    Text(
-                        text = label,
-                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 13.sp,
-                        textAlign = TextAlign.Center
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Voltar"
+                    )
+                }
+                Text(
+                    text = "Categorias",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(
+                    onClick = onNavigateArchived
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FolderOpen,
+                        contentDescription = "Arquivados"
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val transactionTypes = listOf(
+                    TransactionType.INCOME to "Receita",
+                    TransactionType.EXPENSE to "Despesa"
+                )
+
+                transactionTypes.forEach { (type, label) ->
+                    val isSelected = uiState.selectedType == type
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(
+                                if (isSelected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.surfaceVariant
+                            )
+                            .clickable {
+                                onTypeChange(type)
+                            }
+                            .padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = label,
+                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 13.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+
+            uiState.error?.let { error ->
+                Text(
+                    text = error,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentPadding = PaddingValues(bottom = 88.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(visibleCategories) { category ->
+                    CategoryItem(
+                        category = category,
+                        isEditing = uiState.editingCategory?.id == category.id,
+                        editingName = uiState.editingCategoryName,
+                        onEditClick = { onEditCategoryClick(category) },
+                        onDeleteClick = { onDeleteCategoryClick(category) },
+                        onEditingNameChange = onEditingCategoryNameChange,
+                        onSaveEditingClick = onSaveEditingClick,
+                        onCancelEditingClick = onCancelEditingClick
                     )
                 }
             }
         }
 
-        Row (
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            OutlinedTextField(
-                value = uiState.newCategoryName,
-                onValueChange = onNewCategoryNameChange,
-                label = { Text("Nova Categoria") },
-                modifier = Modifier.weight(1f)
-            )
-
-            Button(
-                onClick = onAddCategoryClick
-            ) {
-                Text("Adicionar")
-            }
-        }
-
-        uiState.error?.let { error ->
-            Text(
-                text = error,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(visibleCategories) { category ->
-                CategoryItem(
-                    category = category,
-                    isEditing = uiState.editingCategory?.id == category.id,
-                    editingName = uiState.editingCategoryName,
-                    onEditClick = { onEditCategoryClick(category) },
-                    onDeleteClick = { onDeleteCategoryClick(category) },
-                    onEditingNameChange = onEditingCategoryNameChange,
-                    onSaveEditingClick = onSaveEditingClick,
-                    onCancelEditingClick = onCancelEditingClick
+        ExtendedFloatingActionButton(
+            onClick = { showAddDialog = true },
+            icon = { Icon(Icons.Default.Add, contentDescription = null) },
+            text = { Text("Adicionar novo") },
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(16.dp)
+        )
+    }
+    
+    if (showAddDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddDialog = false },
+            title = { Text("Nova Categoria") },
+            text = {
+                OutlinedTextField(
+                    value = uiState.newCategoryName,
+                    onValueChange = onNewCategoryNameChange,
+                    label = { Text("Nome da Categoria") },
+                    modifier = Modifier.fillMaxWidth()
                 )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onAddCategoryClick()
+                        showAddDialog = false
+                        onNewCategoryNameChange("") // Limpa o campo opcionalmente
+                    }
+                ) {
+                    Text("Adicionar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddDialog = false }) {
+                    Text("Cancelar")
+                }
             }
-        }
+        )
     }
 }
 
@@ -286,6 +326,34 @@ private fun CategoriesScreenPreview() {
                         name = "Transporte",
                         type = TransactionType.EXPENSE,
                         isDefault = true
+                    ),
+                    Category(
+                        id = "3",
+                        userId = "1",
+                        name = "Viagem",
+                        type = TransactionType.EXPENSE,
+                        isDefault = false
+                    ),
+                    Category(
+                        id = "3",
+                        userId = "1",
+                        name = "Viagem",
+                        type = TransactionType.EXPENSE,
+                        isDefault = false
+                    ),
+                    Category(
+                        id = "3",
+                        userId = "1",
+                        name = "Viagem",
+                        type = TransactionType.EXPENSE,
+                        isDefault = false
+                    ),
+                    Category(
+                        id = "3",
+                        userId = "1",
+                        name = "Viagem",
+                        type = TransactionType.EXPENSE,
+                        isDefault = false
                     ),
                     Category(
                         id = "3",
