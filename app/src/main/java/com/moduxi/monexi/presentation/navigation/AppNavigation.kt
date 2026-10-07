@@ -18,6 +18,7 @@ import com.moduxi.monexi.presentation.transaction.TransactionScreen
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.getValue
@@ -28,6 +29,7 @@ import com.moduxi.monexi.MonexiApplication
 import com.moduxi.monexi.data.repository.local.ThemeManager
 import com.moduxi.monexi.presentation.auth.login.LoginScreen
 import com.moduxi.monexi.presentation.auth.register.RegisterScreen
+import com.moduxi.monexi.presentation.extract.ExtractScreen
 import com.moduxi.monexi.presentation.settings.SettingsScreen
 import com.moduxi.monexi.presentation.settings.categories.CategoriesScreen
 import com.moduxi.monexi.presentation.settings.categories.archived.ArchivedCategoriesScreen
@@ -36,7 +38,8 @@ import com.moduxi.monexi.presentation.settings.payment.archived.ArchivedPaymentM
 
 sealed class BottomNavItem(val route: String, val label: String, val icon: ImageVector) {
     object Home : BottomNavItem("home", "Resumo", Icons.Default.Home)
-    object Transaction : BottomNavItem("transaction", "Lançamento", Icons.Default.Add)
+    object Extract : BottomNavItem("extract", "Extrato", Icons.Default.ListAlt)
+    object Transaction : BottomNavItem("transaction", "Resumo", Icons.Default.Add)
     object Settings : BottomNavItem("settings", "Configurações", Icons.Default.Person)
 }
 
@@ -54,13 +57,14 @@ fun AppNavigation(themeManager: ThemeManager) {
 
     val showBottomBar = currentRoute in listOf(
         "home",
+        "extract",
         "transaction",
         "transaction?id={id}",
         "settings",
         "categories",
         "paymentMethods",
         "archivedCategories",
-        "archivedPaymentMethod"
+        "archivedPaymentMethod",
     )
 
     Scaffold(
@@ -69,6 +73,7 @@ fun AppNavigation(themeManager: ThemeManager) {
                 NavigationBar {
                     val items = listOf(
                         BottomNavItem.Home,
+                        BottomNavItem.Extract,
                         BottomNavItem.Transaction,
                         BottomNavItem.Settings
                     )
@@ -125,6 +130,17 @@ fun AppNavigation(themeManager: ThemeManager) {
             }
             composable("home") {
                 HomeScreen(
+                    onNavigateToTransaction = { id ->
+                        if (id != null) {
+                            navController.navigate("transaction?id=$id")
+                        } else {
+                            navController.navigate("transaction")
+                        }
+                    }
+                )
+            }
+            composable("extract") {
+                ExtractScreen(
                     onNavigateToTransaction = { id ->
                         if (id != null) {
                             navController.navigate("transaction?id=$id")
