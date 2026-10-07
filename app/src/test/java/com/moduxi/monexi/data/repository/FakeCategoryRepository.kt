@@ -36,6 +36,10 @@ class FakeCategoryRepository(
         }
     }
 
+    override suspend fun getCategoryById(id: String): Category? {
+        return categoriesState.value.firstOrNull { it.id == id }
+    }
+
     override suspend fun syncFromRemote(): Result<Unit> {
         return Result.success(Unit)
     }

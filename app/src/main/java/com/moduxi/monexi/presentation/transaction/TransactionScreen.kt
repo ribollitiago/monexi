@@ -149,8 +149,8 @@ private fun TransactionContent(
 
             item {
                 val transactionTypes = listOf(
-                    TransactionType.INCOME to "Receita",
-                    TransactionType.EXPENSE to "Despesa"
+                    TransactionType.EXPENSE to "Despesa",
+                    TransactionType.INCOME to "Receita"
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),

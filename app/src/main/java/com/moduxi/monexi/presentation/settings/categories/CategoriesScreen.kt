@@ -50,6 +50,7 @@ import com.moduxi.monexi.ui.theme.MonexiTheme
 fun CategoriesScreen(
     onNavigateBack: () -> Unit,
     onNavigateArchived: () -> Unit,
+    onNavigateEdit: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CategoriesViewModel = viewModel(factory = CategoriesViewModel.Factory)
 ) {
@@ -66,6 +67,7 @@ fun CategoriesScreen(
         onCancelEditingClick = viewModel::cancelEditing,
         onNavigateBack = onNavigateBack,
         onNavigateArchived = onNavigateArchived,
+        onNavigateEdit = onNavigateEdit,
         onTypeChange = viewModel::onTypeChange,
         modifier = modifier.fillMaxSize()
     )
@@ -83,6 +85,7 @@ private fun CategoriesContent(
     onCancelEditingClick: () -> Unit,
     onNavigateBack: () -> Unit,
     onNavigateArchived: () -> Unit,
+    onNavigateEdit: () -> Unit,
     modifier: Modifier = Modifier,
     onTypeChange: (TransactionType) -> Unit
 ) {
@@ -134,8 +137,8 @@ private fun CategoriesContent(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 val transactionTypes = listOf(
-                    TransactionType.INCOME to "Receita",
-                    TransactionType.EXPENSE to "Despesa"
+                    TransactionType.EXPENSE to "Despesa",
+                    TransactionType.INCOME to "Receita"
                 )
 
                 transactionTypes.forEach { (type, label) ->
@@ -184,20 +187,14 @@ private fun CategoriesContent(
                 items(visibleCategories) { category ->
                     CategoryItem(
                         category = category,
-                        isEditing = uiState.editingCategory?.id == category.id,
-                        editingName = uiState.editingCategoryName,
-                        onEditClick = { onEditCategoryClick(category) },
-                        onDeleteClick = { onDeleteCategoryClick(category) },
-                        onEditingNameChange = onEditingCategoryNameChange,
-                        onSaveEditingClick = onSaveEditingClick,
-                        onCancelEditingClick = onCancelEditingClick
+                        onClick = { onEditCategoryClick(category) }
                     )
                 }
             }
         }
 
         ExtendedFloatingActionButton(
-            onClick = { showAddDialog = true },
+            onClick = { onNavigateEdit },
             icon = { Icon(Icons.Default.Add, contentDescription = null) },
             text = { Text("Adicionar novo") },
             modifier = Modifier
@@ -242,66 +239,27 @@ private fun CategoriesContent(
 @Composable
 private fun CategoryItem(
     category: Category,
-    isEditing: Boolean,
-    editingName: String,
-    onEditClick: () -> Unit,
-    onDeleteClick: () -> Unit,
-    onEditingNameChange: (String) -> Unit,
-    onSaveEditingClick: () -> Unit,
-    onCancelEditingClick: () -> Unit
+    onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            if (isEditing) {
-                OutlinedTextField(
-                    value = editingName,
-                    onValueChange = onEditingNameChange,
-                    label = { Text("Editar categoria") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+            Text(
+                text = category.name,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(onClick = onSaveEditingClick) {
-                        Text("Salvar")
-                    }
-
-                    TextButton(onClick = onCancelEditingClick) {
-                        Text("Cancelar")
-                    }
-                }
-            } else {
-                Text(
-                    text = category.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-
-                Text(
-                    text = if (category.isDefault) "Padrao" else "Criada por voce",
-                    style = MaterialTheme.typography.bodySmall
-                )
-
-                if (!category.isDefault) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        TextButton(onClick = onEditClick) {
-                            Text("Editar")
-                        }
-
-                        TextButton(onClick = onDeleteClick) {
-                            Text("Excluir")
-                        }
-                    }
-                }
-            }
+            Text(
+                text = if (category.isDefault) "Padrão" else "Criada por você",
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }
@@ -373,6 +331,7 @@ private fun CategoriesScreenPreview() {
             onCancelEditingClick = {},
             onNavigateBack = {},
             onNavigateArchived = {},
+            onNavigateEdit = {},
             onTypeChange = {}
         )
     }

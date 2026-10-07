@@ -1,6 +1,5 @@
 package com.moduxi.monexi.presentation.home
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,27 +8,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.moduxi.monexi.domain.model.Category
-import com.moduxi.monexi.domain.model.PaymentMethod
-import com.moduxi.monexi.domain.model.Transaction
-import com.moduxi.monexi.domain.model.TransactionType
 import com.moduxi.monexi.ui.theme.MonexiTheme
 import java.text.NumberFormat
 import java.util.Locale
@@ -37,16 +28,12 @@ import java.util.Locale
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
-    onNavigateToTransaction: (String?) -> Unit
+    viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     HomeContent(
         uiState = uiState,
-        onTransactionClick = { id ->
-            onNavigateToTransaction(id)
-        },
         modifier = modifier
     )
 }
@@ -54,64 +41,41 @@ fun HomeScreen(
 @Composable
 private fun HomeContent(
     uiState: HomeUiState,
-    onTransactionClick: (String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(
+    Column(
         modifier = modifier
             .fillMaxSize()
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        item {
-            Text(
-                text = "Monexi",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-        }
+        Text(
+            text = "Monexi",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold
+        )
 
-        item {
+        SummaryCard(
+            title = "Saldo atual",
+            amount = uiState.balance,
+            amountColor = if (uiState.balance >= 0) Color(0xFF1B8A5A) else Color(0xFFC62828)
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             SummaryCard(
-                title = "Saldo atual",
-                amount = uiState.balance,
-                amountColor = if (uiState.balance >= 0) Color(0xFF1B8A5A) else Color(0xFFC62828)
+                title = "Receitas",
+                amount = uiState.totalIncome,
+                amountColor = Color(0xFF1B8A5A),
+                modifier = Modifier.weight(1f)
             )
-        }
-
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                SummaryCard(
-                    title = "Receitas",
-                    amount = uiState.totalIncome,
-                    amountColor = Color(0xFF1B8A5A),
-                    modifier = Modifier.weight(1f)
-                )
-                SummaryCard(
-                    title = "Despesas",
-                    amount = uiState.totalExpense,
-                    amountColor = Color(0xFFC62828),
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-
-        item {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Ultimas transações",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-
-        items(uiState.transactions) { transaction ->
-            TransactionItem(
-                transaction = transaction,
-                onEditClick = { onTransactionClick(transaction.id) }
+            SummaryCard(
+                title = "Despesas",
+                amount = uiState.totalExpense,
+                amountColor = Color(0xFFC62828),
+                modifier = Modifier.weight(1f)
             )
         }
     }
@@ -142,63 +106,11 @@ private fun SummaryCard(
 }
 
 @Composable
-private fun TransactionItem(
-    transaction: Transaction,
-    modifier: Modifier = Modifier,
-    onEditClick: () -> Unit
-    ) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = transaction.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = transaction.category.name,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                androidx.compose.material3.TextButton(
-                    onClick = onEditClick,
-                    modifier = Modifier.padding(top = 4.dp),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
-                ) {
-                    Text("Editar", style = MaterialTheme.typography.bodySmall)
-                }
-            }
-
-            Text(
-                text = transaction.signedAmount(),
-                color = if (transaction.type == TransactionType.INCOME) Color(0xFF1B8A5A) else Color(0xFFC62828),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-        }
-    }
-}
-
-@Composable
 private fun Double.toCurrency(): String {
     val formatter = remember {
         NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"))
     }
     return formatter.format(this)
-}
-
-@Composable
-private fun Transaction.signedAmount(): String {
-    val prefix = if (type == TransactionType.INCOME) "+" else "-"
-    return "$prefix ${amount.toCurrency()}"
 }
 
 @Preview(showBackground = true)
@@ -209,49 +121,8 @@ private fun HomeScreenPreview() {
             uiState = HomeUiState(
                 balance = 2800.0,
                 totalIncome = 3200.0,
-                totalExpense = 400.0,
-                transactions = listOf(
-                    Transaction(
-                        id = "1",
-                        userId = "1",
-                        title = "Salario",
-                        amount = 3200.0,
-                        type = TransactionType.INCOME,
-                        category = Category(
-                            id = "1",
-                            userId = "1",
-                            name = "Alimentação",
-                            type = TransactionType.INCOME
-                        ),
-                        paymentMethod = PaymentMethod(
-                            id = "1",
-                            userId = "1",
-                            name = "Pix"
-                        ),
-                        date = System.currentTimeMillis()
-                    ),
-                    Transaction(
-                        id = "2",
-                        userId = "1",
-                        title = "Mercado",
-                        amount = 280.0,
-                        type = TransactionType.EXPENSE,
-                        category = Category(
-                            id = "1",
-                            userId = "1",
-                            name = "Alimentação",
-                            type = TransactionType.EXPENSE
-                        ),
-                        paymentMethod = PaymentMethod(
-                            id = "1",
-                            userId = "1",
-                            name = "Pix"
-                        ),
-                        date = System.currentTimeMillis()
-                    )
-                )
-            ),
-            onTransactionClick = {}
+                totalExpense = 400.0
+            )
         )
     }
 }

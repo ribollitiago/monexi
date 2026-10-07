@@ -146,6 +146,10 @@ class RoomCategoryRepository(
         }
     }
 
+    override suspend fun getCategoryById(id: String): Category? {
+        return categoryDao.getCategoryById(id)?.toDomain()
+    }
+
     override suspend fun syncFromRemote(): Result<Unit> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         val currentUserId = authRepository.currentUser?.uid
             ?: return@withContext Result.failure(Exception("Usuário não autenticado"))

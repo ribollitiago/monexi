@@ -33,6 +33,7 @@ import com.moduxi.monexi.presentation.extract.ExtractScreen
 import com.moduxi.monexi.presentation.settings.SettingsScreen
 import com.moduxi.monexi.presentation.settings.categories.CategoriesScreen
 import com.moduxi.monexi.presentation.settings.categories.archived.ArchivedCategoriesScreen
+import com.moduxi.monexi.presentation.settings.categories.edit.EditCategoriesScreen
 import com.moduxi.monexi.presentation.settings.payment.PaymentMethodScreen
 import com.moduxi.monexi.presentation.settings.payment.archived.ArchivedPaymentMethodScreen
 
@@ -65,6 +66,7 @@ fun AppNavigation(themeManager: ThemeManager) {
         "paymentMethods",
         "archivedCategories",
         "archivedPaymentMethod",
+        "editCategory"
     )
 
     Scaffold(
@@ -129,15 +131,7 @@ fun AppNavigation(themeManager: ThemeManager) {
                 )
             }
             composable("home") {
-                HomeScreen(
-                    onNavigateToTransaction = { id ->
-                        if (id != null) {
-                            navController.navigate("transaction?id=$id")
-                        } else {
-                            navController.navigate("transaction")
-                        }
-                    }
-                )
+                HomeScreen()
             }
             composable("extract") {
                 ExtractScreen(
@@ -189,6 +183,9 @@ fun AppNavigation(themeManager: ThemeManager) {
                     },
                     onNavigateArchived = {
                         navController.navigate("archivedCategories")
+                    },
+                    onNavigateEdit = {
+                        navController.navigate("editCategory")
                     }
                 )
             }
@@ -213,6 +210,13 @@ fun AppNavigation(themeManager: ThemeManager) {
                 ArchivedPaymentMethodScreen(
                     onNavigateBack = {
                         navController.popBackStack()
+                    }
+                )
+            }
+            composable("editCategory") {
+                EditCategoriesScreen(
+                    onCategorySaved = {
+                        navController.navigate("categories")
                     }
                 )
             }

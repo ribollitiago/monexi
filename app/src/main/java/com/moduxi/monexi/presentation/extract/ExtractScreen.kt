@@ -33,6 +33,8 @@ import com.moduxi.monexi.domain.model.Transaction
 import com.moduxi.monexi.domain.model.TransactionType
 import com.moduxi.monexi.ui.theme.MonexiTheme
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 @Composable
@@ -157,10 +159,18 @@ private fun TransactionItem(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
-                Text(
-                    text = transaction.category.name,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Row() {
+                    Text(
+                        text = transaction.category.name,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(" - ")
+                    Text(
+                        text = transaction.date.toFormattedDate(),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
             }
 
             Text(
@@ -220,4 +230,9 @@ fun ExtractPreview() {
             onTransactionClick = {}
         )
     }
+}
+
+private fun Long.toFormattedDate(): String {
+    val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.forLanguageTag("pt-BR"))
+    return formatter.format(Date(this))
 }
