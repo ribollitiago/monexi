@@ -184,8 +184,12 @@ fun AppNavigation(themeManager: ThemeManager) {
                     onNavigateArchived = {
                         navController.navigate("archivedCategories")
                     },
-                    onNavigateEdit = {
-                        navController.navigate("editCategory")
+                    onNavigateEdit = { id ->
+                        if (id != null) {
+                            navController.navigate("editCategory?id=$id")
+                        } else {
+                            navController.navigate("editCategory")
+                        }
                     }
                 )
             }
@@ -213,14 +217,22 @@ fun AppNavigation(themeManager: ThemeManager) {
                     }
                 )
             }
-            composable("editCategory") {
+            composable(
+                route = "editCategory?id={id}",
+                arguments = listOf(
+                    navArgument("id") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) {
                 EditCategoriesScreen(
                     onCategorySaved = {
-                        navController.navigate("categories")
+                        navController.popBackStack()
                     }
                 )
             }
         }
     }
-
 }

@@ -13,10 +13,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,14 +35,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.moduxi.monexi.domain.model.TransactionType
-import com.moduxi.monexi.presentation.transaction.TransactionViewModel
 import com.moduxi.monexi.ui.theme.MonexiTheme
 
 @Composable
 fun EditCategoriesScreen(
     onCategorySaved: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: EditCategoriesViewModel = viewModel(factory = EditCategoriesViewModel .Factory)
+    viewModel: EditCategoriesViewModel = viewModel(factory = EditCategoriesViewModel.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -49,8 +51,13 @@ fun EditCategoriesScreen(
         onCategoryNameChange = viewModel::onNameChange,
         modifier = modifier,
         onSaveClick = {
-            viewModel.saveCategory (
+            viewModel.saveCategory(
                 onSaved = onCategorySaved
+            )
+        },
+        onDeleteClick = {
+            viewModel.deleteCategory(
+                onDeleted = onCategorySaved
             )
         },
         onBackClick = onCategorySaved
@@ -64,6 +71,7 @@ fun EditCategoriesContent(
     onCategoryNameChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     onSaveClick: () -> Unit,
+    onDeleteClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
     Column(
@@ -78,23 +86,34 @@ fun EditCategoriesContent(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                Row (
+                Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                        IconButton(onClick = onBackClick) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Voltar"
-                            )
-                        }
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Voltar"
+                        )
+                    }
 
                     Text(
                         text = if (uiState.editingCategory == null) "Nova Categoria" else "Editar Categoria",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
                     )
+
+                    if (uiState.editingCategory != null) {
+                        IconButton(onClick = onDeleteClick) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Excluir Categoria",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
                 }
             }
             item {
@@ -133,7 +152,6 @@ fun EditCategoriesContent(
                         }
                     }
                 }
-
             }
             item {
                 OutlinedTextField(
@@ -144,6 +162,16 @@ fun EditCategoriesContent(
                 )
             }
         }
+
+        uiState.error?.let { error ->
+            Text(
+                text = error,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+        }
+
         Button(
             onClick = onSaveClick,
             modifier = Modifier
@@ -157,11 +185,12 @@ fun EditCategoriesContent(
 
 @Preview(showBackground = true)
 @Composable
-fun EditCategoriesPreview(){
-    MonexiTheme() {
+fun EditCategoriesPreview() {
+    MonexiTheme {
         EditCategoriesContent(
             uiState = EditCategoriesUiState(),
             onSaveClick = {},
+            onDeleteClick = {},
             onBackClick = {},
             onCategoryNameChange = {},
             onTypeChange = {}

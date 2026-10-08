@@ -50,7 +50,7 @@ import com.moduxi.monexi.ui.theme.MonexiTheme
 fun CategoriesScreen(
     onNavigateBack: () -> Unit,
     onNavigateArchived: () -> Unit,
-    onNavigateEdit: () -> Unit,
+    onNavigateEdit: (String?) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CategoriesViewModel = viewModel(factory = CategoriesViewModel.Factory)
 ) {
@@ -60,14 +60,14 @@ fun CategoriesScreen(
         uiState = uiState,
         onNewCategoryNameChange = viewModel::onNewCategoryNameChange,
         onAddCategoryClick = viewModel::addCategory,
-        onEditCategoryClick = viewModel::startEditing,
+        onEditCategoryClick = { category -> onNavigateEdit(category.id) },
         onDeleteCategoryClick = viewModel::deleteCategory,
         onEditingCategoryNameChange = viewModel::onEditingCategoryNameChange,
         onSaveEditingClick = viewModel::saveEditing,
         onCancelEditingClick = viewModel::cancelEditing,
         onNavigateBack = onNavigateBack,
         onNavigateArchived = onNavigateArchived,
-        onNavigateEdit = onNavigateEdit,
+        onNavigateEdit = { onNavigateEdit(null) },
         onTypeChange = viewModel::onTypeChange,
         modifier = modifier.fillMaxSize()
     )
@@ -194,7 +194,7 @@ private fun CategoriesContent(
         }
 
         ExtendedFloatingActionButton(
-            onClick = { onNavigateEdit },
+            onClick = { onNavigateEdit() },
             icon = { Icon(Icons.Default.Add, contentDescription = null) },
             text = { Text("Adicionar novo") },
             modifier = Modifier
