@@ -17,22 +17,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FolderOpen
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,13 +51,7 @@ fun CategoriesScreen(
 
     CategoriesContent(
         uiState = uiState,
-        onNewCategoryNameChange = viewModel::onNewCategoryNameChange,
-        onAddCategoryClick = viewModel::addCategory,
         onEditCategoryClick = { category -> onNavigateEdit(category.id) },
-        onDeleteCategoryClick = viewModel::deleteCategory,
-        onEditingCategoryNameChange = viewModel::onEditingCategoryNameChange,
-        onSaveEditingClick = viewModel::saveEditing,
-        onCancelEditingClick = viewModel::cancelEditing,
         onNavigateBack = onNavigateBack,
         onNavigateArchived = onNavigateArchived,
         onNavigateEdit = { onNavigateEdit(null) },
@@ -76,13 +63,7 @@ fun CategoriesScreen(
 @Composable
 private fun CategoriesContent(
     uiState: CategoriesUiState,
-    onNewCategoryNameChange: (String) -> Unit,
-    onAddCategoryClick: () -> Unit,
     onEditCategoryClick: (Category) -> Unit,
-    onDeleteCategoryClick: (Category) -> Unit,
-    onEditingCategoryNameChange: (String) -> Unit,
-    onSaveEditingClick: () -> Unit,
-    onCancelEditingClick: () -> Unit,
     onNavigateBack: () -> Unit,
     onNavigateArchived: () -> Unit,
     onNavigateEdit: () -> Unit,
@@ -92,8 +73,6 @@ private fun CategoriesContent(
     val visibleCategories = uiState.categories.filter { category ->
         category.type == uiState.selectedType
     }
-
-    var showAddDialog by remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier.fillMaxSize()
@@ -203,37 +182,6 @@ private fun CategoriesContent(
                 .padding(16.dp)
         )
     }
-    
-    if (showAddDialog) {
-        AlertDialog(
-            onDismissRequest = { showAddDialog = false },
-            title = { Text("Nova Categoria") },
-            text = {
-                OutlinedTextField(
-                    value = uiState.newCategoryName,
-                    onValueChange = onNewCategoryNameChange,
-                    label = { Text("Nome da Categoria") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        onAddCategoryClick()
-                        showAddDialog = false
-                        onNewCategoryNameChange("") // Limpa o campo opcionalmente
-                    }
-                ) {
-                    Text("Adicionar")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAddDialog = false }) {
-                    Text("Cancelar")
-                }
-            }
-        )
-    }
 }
 
 @Composable
@@ -291,44 +239,10 @@ private fun CategoriesScreenPreview() {
                         name = "Viagem",
                         type = TransactionType.EXPENSE,
                         isDefault = false
-                    ),
-                    Category(
-                        id = "3",
-                        userId = "1",
-                        name = "Viagem",
-                        type = TransactionType.EXPENSE,
-                        isDefault = false
-                    ),
-                    Category(
-                        id = "3",
-                        userId = "1",
-                        name = "Viagem",
-                        type = TransactionType.EXPENSE,
-                        isDefault = false
-                    ),
-                    Category(
-                        id = "3",
-                        userId = "1",
-                        name = "Viagem",
-                        type = TransactionType.EXPENSE,
-                        isDefault = false
-                    ),
-                    Category(
-                        id = "3",
-                        userId = "1",
-                        name = "Viagem",
-                        type = TransactionType.EXPENSE,
-                        isDefault = false
                     )
                 )
             ),
-            onNewCategoryNameChange = {},
-            onAddCategoryClick = {},
             onEditCategoryClick = {},
-            onDeleteCategoryClick = {},
-            onEditingCategoryNameChange = {},
-            onSaveEditingClick = {},
-            onCancelEditingClick = {},
             onNavigateBack = {},
             onNavigateArchived = {},
             onNavigateEdit = {},

@@ -6,29 +6,26 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
-import com.moduxi.monexi.domain.model.Category
 import com.moduxi.monexi.domain.model.TransactionType
-import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.CategoryRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 class CategoriesViewModel(
-    private val categoryRepository: CategoryRepository,
-    private val authRepository: AuthRepository
+    private val categoryRepository: CategoryRepository
 ) : ViewModel() {
 
-    private val formState = MutableStateFlow(CategoriesUiState())
+    private val selectedTypeState = MutableStateFlow(TransactionType.EXPENSE)
 
     val uiState = combine(
         categoryRepository.categories,
-        formState
-    ) { categories, form ->
-        form.copy(
-            categories = categories
+        selectedTypeState
+    ) { categories, selectedType ->
+        CategoriesUiState(
+            categories = categories,
+            selectedType = selectedType
         )
     }.stateIn(
         scope = viewModelScope,
@@ -36,123 +33,8 @@ class CategoriesViewModel(
         initialValue = CategoriesUiState()
     )
 
-    fun onNewCategoryNameChange(name: String) {
-        formState.value = formState.value.copy(
-            newCategoryName = name,
-            error = null
-        )
-    }
-
-    fun addCategory() {
-        val state = formState.value
-        val name = state.newCategoryName.trim()
-
-        val currentUserId = authRepository.currentUser?.uid ?: ""
-
-        if (name.isBlank()) {
-            formState.value = state.copy(error = "Informe o nome da categoria")
-            return
-        }
-
-        val alreadyExists = uiState.value.categories.any { category ->
-            category.type == state.selectedType &&
-                    category.name.equals(name, ignoreCase = true)
-        }
-
-        if (alreadyExists) {
-            formState.value = state.copy(error = "Categoria ja existe")
-            return
-        }
-
-        viewModelScope.launch {
-            categoryRepository.addCategory(
-                Category(
-                    id = "0",
-                    userId = currentUserId,
-                    name = name,
-                    type = state.selectedType,
-                    isDefault = false
-                )
-            )
-
-            formState.value = state.copy(
-                newCategoryName = "",
-                error = null
-            )
-        }
-    }
-
-    fun startEditing(category: Category) {
-        if (category.isDefault) return
-
-        formState.value = formState.value.copy(
-            editingCategory = category,
-            editingCategoryName = category.name,
-            error = null
-        )
-    }
-
-    fun onEditingCategoryNameChange(name: String) {
-        formState.value = formState.value.copy(
-            editingCategoryName = name,
-            error = null
-        )
-    }
-
     fun onTypeChange(type: TransactionType) {
-        formState.value = formState.value.copy(
-            selectedType = type,
-            error = null
-        )
-    }
-
-    fun saveEditing() {
-        val state = formState.value
-        val category = state.editingCategory ?: return
-        val name = state.editingCategoryName.trim()
-
-        if (name.isBlank()) {
-            formState.value = state.copy(error = "Informe o nome da categoria")
-            return
-        }
-
-        val alreadyExists = uiState.value.categories.any { currentCategory ->
-            currentCategory.id != category.id &&
-                    currentCategory.name.equals(name, ignoreCase = true)
-        }
-
-        if (alreadyExists) {
-            formState.value = state.copy(error = "Categoria ja existe")
-            return
-        }
-
-        viewModelScope.launch {
-            categoryRepository.updateCategory(
-                category.copy(name = name)
-            )
-
-            formState.value = state.copy(
-                editingCategory = null,
-                editingCategoryName = "",
-                error = null
-            )
-        }
-    }
-
-    fun cancelEditing() {
-        formState.value = formState.value.copy(
-            editingCategory = null,
-            editingCategoryName = "",
-            error = null
-        )
-    }
-
-    fun deleteCategory(category: Category) {
-        if (category.isDefault) return
-
-        viewModelScope.launch {
-            categoryRepository.deleteCategory(category)
-        }
+        selectedTypeState.value = type
     }
 
     companion object {
@@ -160,8 +42,7 @@ class CategoriesViewModel(
             initializer {
                 val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MonexiApplication)
                 CategoriesViewModel(
-                    application.categoryRepository,
-                    application.authRepository
+                    application.categoryRepository
                 )
             }
         }

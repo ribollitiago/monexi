@@ -146,6 +146,10 @@ class RoomPaymentMethodRepository (
         }
     }
 
+    override suspend fun getPaymentMethodById(id: String): PaymentMethod? {
+        return paymentMethodDao.getPaymentMethodById(id)?.toDomain()
+    }
+
     override suspend fun syncFromRemote(): Result<Unit> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         val currentUserId = authRepository.currentUser?.uid
             ?: return@withContext Result.failure(Exception("Usuário não autenticado"))

@@ -1,5 +1,6 @@
 package com.moduxi.monexi.presentation.settings.payment
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,22 +15,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FolderOpen
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +37,7 @@ import com.moduxi.monexi.ui.theme.MonexiTheme
 fun PaymentMethodScreen(
     onNavigateBack: () -> Unit,
     onNavigateArchived: () -> Unit,
+    onNavigateEdit: (String?) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PaymentMethodViewModel = viewModel(factory = PaymentMethodViewModel.Factory)
 ) {
@@ -50,40 +45,28 @@ fun PaymentMethodScreen(
 
     PaymentMethodContent(
         uiState = uiState,
-        onNewPaymentMethodNameChange = viewModel::onNewPaymentMethodNameChange,
-        onAddPaymentMethodClick = viewModel::addPaymentMethod,
-        onEditPaymentMethodClick = viewModel::startEditing,
-        onDeletePaymentMethodClick = viewModel::deletePaymentMethod,
-        onEditingPaymentMethodNameChange = viewModel::onEditingPaymentMethodChange,
-        onSaveEditingClick = viewModel::saveEditing,
-        onCancelEditingClick = viewModel::cancelEditing,
         onNavigateBack = onNavigateBack,
         onNavigateArchived = onNavigateArchived,
-        modifier = modifier
+        onNavigateEdit = { onNavigateEdit(null) },
+        onPaymentMethodClick = { paymentMethod -> onNavigateEdit(paymentMethod.id) },
+        modifier = modifier.fillMaxSize()
     )
 }
 
 @Composable
 private fun PaymentMethodContent(
     uiState: PaymentMethodUiState,
-    onNewPaymentMethodNameChange: (String) -> Unit,
-    onAddPaymentMethodClick: () -> Unit,
-    onEditPaymentMethodClick: (PaymentMethod) -> Unit,
-    onDeletePaymentMethodClick: (PaymentMethod) -> Unit,
-    onEditingPaymentMethodNameChange: (String) -> Unit,
-    onSaveEditingClick: () -> Unit,
-    onCancelEditingClick: () -> Unit,
     onNavigateBack: () -> Unit,
     onNavigateArchived: () -> Unit,
+    onNavigateEdit: () -> Unit,
+    onPaymentMethodClick: (PaymentMethod) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var showAddDialog by remember { mutableStateOf(false) }
-    
-    Box (
+    Box(
         modifier = modifier.fillMaxSize()
     ) {
         Column(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxSize()
                 .padding(start = 16.dp, end = 16.dp, top = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -93,23 +76,19 @@ private fun PaymentMethodContent(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = onNavigateBack
-                ) {
+                IconButton(onClick = onNavigateBack) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Voltar"
                     )
                 }
-                Text (
+                Text(
                     text = "Métodos de Pagamento",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f)
                 )
-                IconButton(
-                    onClick = onNavigateArchived
-                ) {
+                IconButton(onClick = onNavigateArchived) {
                     Icon(
                         imageVector = Icons.Default.FolderOpen,
                         contentDescription = "Arquivados"
@@ -135,20 +114,14 @@ private fun PaymentMethodContent(
                 items(uiState.paymentMethods) { paymentMethod ->
                     PaymentMethodItem(
                         paymentMethod = paymentMethod,
-                        isEditing = uiState.editingPaymentMethod?.id == paymentMethod.id,
-                        editingName = uiState.editingPaymentMethodName,
-                        onEditClick = { onEditPaymentMethodClick(paymentMethod) },
-                        onDeleteClick = { onDeletePaymentMethodClick(paymentMethod) },
-                        onEditingNameChange = onEditingPaymentMethodNameChange,
-                        onSaveEditingClick = onSaveEditingClick,
-                        onCancelEditingClick = onCancelEditingClick
+                        onClick = { onPaymentMethodClick(paymentMethod) }
                     )
                 }
             }
         }
 
         ExtendedFloatingActionButton(
-            onClick = { showAddDialog = true },
+            onClick = { onNavigateEdit() },
             icon = { Icon(Icons.Default.Add, contentDescription = null) },
             text = { Text("Adicionar novo") },
             modifier = Modifier
@@ -157,102 +130,32 @@ private fun PaymentMethodContent(
                 .padding(16.dp)
         )
     }
-
-    if (showAddDialog) {
-        AlertDialog(
-            onDismissRequest = { showAddDialog = false },
-            title = { Text("Novo Método") },
-            text = {
-                OutlinedTextField(
-                    value = uiState.newPaymentMethodName,
-                    onValueChange = onNewPaymentMethodNameChange,
-                    label = { Text("Nome do Método") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        onAddPaymentMethodClick()
-                        showAddDialog = false
-                        onNewPaymentMethodNameChange("") // Limpa o campo opcionalmente
-                    }
-                ) {
-                    Text("Adicionar")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showAddDialog = false }) {
-                    Text("Cancelar")
-                }
-            }
-        )
-    }
 }
 
 @Composable
 private fun PaymentMethodItem(
-   paymentMethod: PaymentMethod,
-   isEditing: Boolean,
-   editingName: String,
-   onEditClick: () -> Unit,
-   onDeleteClick: () -> Unit,
-   onEditingNameChange: (String) -> Unit,
-   onSaveEditingClick: () -> Unit,
-   onCancelEditingClick: () -> Unit
+    paymentMethod: PaymentMethod,
+    onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            if (isEditing) {
-                OutlinedTextField(
-                    value = editingName,
-                    onValueChange = onEditingNameChange,
-                    label = { Text("Editar método de pagamento") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+            Text(
+                text = paymentMethod.name,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(onClick = onSaveEditingClick) {
-                        Text("Salvar")
-                    }
-
-                    TextButton(onClick = onCancelEditingClick) {
-                        Text("Cancelar")
-                    }
-                }
-            } else {
-                Text(
-                    text = paymentMethod.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-
-                Text(
-                    text = if (paymentMethod.isDefault) "Padrao" else "Criada por voce",
-                    style = MaterialTheme.typography.bodySmall
-                )
-
-                if (!paymentMethod.isDefault) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        TextButton(onClick = onEditClick) {
-                            Text("Editar")
-                        }
-
-                        TextButton(onClick = onDeleteClick) {
-                            Text("Excluir")
-                        }
-                    }
-                }
-            }
+            Text(
+                text = if (paymentMethod.isDefault) "Padrão" else "Criada por você",
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }
@@ -269,15 +172,10 @@ private fun PaymentMethodScreenPreview() {
                     PaymentMethod(id = "3", name = "Boleto", isDefault = false)
                 )
             ),
-            onNewPaymentMethodNameChange = {},
-            onAddPaymentMethodClick = {},
-            onEditPaymentMethodClick = {},
-            onDeletePaymentMethodClick = {},
-            onEditingPaymentMethodNameChange = {},
-            onSaveEditingClick = {},
-            onCancelEditingClick = {},
             onNavigateBack = {},
-            onNavigateArchived = {}
+            onNavigateArchived = {},
+            onNavigateEdit = {},
+            onPaymentMethodClick = {}
         )
     }
 }

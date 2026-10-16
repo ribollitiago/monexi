@@ -36,6 +36,7 @@ import com.moduxi.monexi.presentation.settings.categories.archived.ArchivedCateg
 import com.moduxi.monexi.presentation.settings.categories.edit.EditCategoriesScreen
 import com.moduxi.monexi.presentation.settings.payment.PaymentMethodScreen
 import com.moduxi.monexi.presentation.settings.payment.archived.ArchivedPaymentMethodScreen
+import com.moduxi.monexi.presentation.settings.payment.edit.EditPaymentMethodScreen
 
 sealed class BottomNavItem(val route: String, val label: String, val icon: ImageVector) {
     object Home : BottomNavItem("home", "Resumo", Icons.Default.Home)
@@ -66,7 +67,8 @@ fun AppNavigation(themeManager: ThemeManager) {
         "paymentMethods",
         "archivedCategories",
         "archivedPaymentMethod",
-        "editCategory"
+        "editCategory",
+        "editPaymentMethod"
     )
 
     Scaffold(
@@ -200,6 +202,13 @@ fun AppNavigation(themeManager: ThemeManager) {
                     },
                     onNavigateArchived = {
                         navController.navigate("archivedPaymentMethod")
+                    },
+                    onNavigateEdit = { id ->
+                        if (id != null) {
+                            navController.navigate("editPaymentMethod?id=$id")
+                        } else {
+                            navController.navigate("editPaymentMethod")
+                        }
                     }
                 )
             }
@@ -229,6 +238,22 @@ fun AppNavigation(themeManager: ThemeManager) {
             ) {
                 EditCategoriesScreen(
                     onCategorySaved = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable(
+                route = "editPaymentMethod?id={id}",
+                arguments = listOf(
+                    navArgument("id") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) {
+                EditPaymentMethodScreen(
+                    onPaymentMethodSaved = {
                         navController.popBackStack()
                     }
                 )
