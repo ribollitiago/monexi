@@ -139,11 +139,16 @@ private fun TransactionContent(
                             )
                         }
                     }
-                    Text(
-                        text = if (uiState.editingTransaction == null) "Nova Transação" else "Editar Transação",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (uiState.editingTransaction == null) "Nova Transação" else "Editar Transação",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 

@@ -47,6 +47,20 @@ class EditCategoriesViewModel(
         )
     }
 
+    fun onColorChange(colorHex: String) {
+        _uiState.value = _uiState.value.copy(
+            selectedColorHex = colorHex,
+            error = null
+        )
+    }
+
+    fun onIconChange(iconName: String) {
+        _uiState.value = _uiState.value.copy(
+            selectedIconName = iconName,
+            error = null
+        )
+    }
+
     fun loadCategory(id: String) {
         viewModelScope.launch {
             val category = categoryRepository.getCategoryById(id)
@@ -54,7 +68,9 @@ class EditCategoriesViewModel(
                 _uiState.value = _uiState.value.copy(
                     editingCategory = it,
                     categoryName = it.name,
-                    selectedType = it.type
+                    selectedType = it.type,
+                    selectedColorHex = it.colorHex,
+                    selectedIconName = it.iconName
                 )
             }
         }
@@ -81,7 +97,9 @@ class EditCategoriesViewModel(
                         userId = currentUserId,
                         name = name,
                         type = state.selectedType,
-                        isDefault = false
+                        isDefault = false,
+                        colorHex = state.selectedColorHex,
+                        iconName = state.selectedIconName
                     )
                 )
             } else {
@@ -89,7 +107,9 @@ class EditCategoriesViewModel(
                 categoryRepository.updateCategory(
                     editingCategory.copy(
                         name = name,
-                        type = state.selectedType
+                        type = state.selectedType,
+                        colorHex = state.selectedColorHex,
+                        iconName = state.selectedIconName
                     )
                 )
             }

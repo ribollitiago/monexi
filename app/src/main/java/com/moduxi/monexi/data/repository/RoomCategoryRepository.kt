@@ -64,7 +64,10 @@ class RoomCategoryRepository(
             "userId" to currentUserId,
             "name" to category.name,
             "type" to category.type.name,
-            "isDefault" to false
+            "isDefault" to false,
+            "isArchived" to category.isArchived,
+            "colorHex" to category.colorHex,
+            "iconName" to category.iconName
         )
 
         try {
@@ -95,7 +98,10 @@ class RoomCategoryRepository(
             "userId" to category.userId,
             "name" to category.name,
             "type" to category.type.name,
-            "isDefault" to false
+            "isDefault" to false,
+            "isArchived" to category.isArchived,
+            "colorHex" to category.colorHex,
+            "iconName" to category.iconName
         )
 
         try {
@@ -169,6 +175,8 @@ class RoomCategoryRepository(
                 val isDefault = doc.getBoolean("isDefault") ?: false
                 val categoryId = doc.getString("id") ?: doc.id
                 val isArchived = doc.getBoolean("isArchived") ?: false
+                val colorHex = doc.getString("colorHex") ?: "#1B8A5A"
+                val iconName = doc.getString("iconName") ?: "Category"
 
                 CategoryEntity(
                     id = categoryId,

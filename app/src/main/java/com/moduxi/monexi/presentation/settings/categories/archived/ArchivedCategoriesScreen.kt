@@ -1,14 +1,18 @@
 package com.moduxi.monexi.presentation.settings.categories.archived
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Unarchive
@@ -22,10 +26,18 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.moduxi.monexi.domain.model.Category
+import com.moduxi.monexi.domain.model.TransactionType
+import com.moduxi.monexi.presentation.settings.categories.CategoriesUiState
+import com.moduxi.monexi.ui.theme.MonexiTheme
+import com.moduxi.monexi.ui.theme.toCategoryIcon
+import com.moduxi.monexi.ui.theme.toComposeColor
 
 @Composable
 fun ArchivedCategoriesScreen(
@@ -53,12 +65,13 @@ fun ArchivedCategoriesContent(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             IconButton(onClick = onNavigateBack) {
                 Icon(
@@ -69,8 +82,11 @@ fun ArchivedCategoriesContent(
             Text(
                 text = "Categorias Arquivadas",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f)
             )
+            Spacer(modifier = Modifier.size(48.dp))
         }
 
         if (uiState.categoriesArchived.isEmpty()) {
@@ -91,10 +107,23 @@ fun ArchivedCategoriesContent(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(category.colorHex.toComposeColor().copy(alpha = 0.2f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = category.iconName.toCategoryIcon(),
+                                    contentDescription = category.name,
+                                    tint = category.colorHex.toComposeColor()
+                                )
+                            }
                             Column(
                                 modifier = Modifier.weight(1f)
                             ) {
@@ -122,5 +151,41 @@ fun ArchivedCategoriesContent(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ArchivedCategoriesScreenPreview() {
+    MonexiTheme() {
+        ArchivedCategoriesContent(
+            uiState = ArchivedCategoriesUiState(
+                categoriesArchived = listOf(
+                    Category(
+                        id = "1",
+                        userId = "1",
+                        name = "Alimentacao",
+                        type = TransactionType.EXPENSE,
+                        isDefault = true
+                    ),
+                    Category(
+                        id = "2",
+                        userId = "1",
+                        name = "Transporte",
+                        type = TransactionType.EXPENSE,
+                        isDefault = true
+                    ),
+                    Category(
+                        id = "3",
+                        userId = "1",
+                        name = "Viagem",
+                        type = TransactionType.INCOME,
+                        isDefault = false
+                    )
+                )
+            ),
+            onNavigateBack = {},
+            onUnarchiveCategoryClick = {}
+        )
     }
 }

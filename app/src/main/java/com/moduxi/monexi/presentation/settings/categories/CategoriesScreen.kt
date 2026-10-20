@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -38,6 +40,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.moduxi.monexi.domain.model.Category
 import com.moduxi.monexi.domain.model.TransactionType
 import com.moduxi.monexi.ui.theme.MonexiTheme
+import com.moduxi.monexi.ui.theme.toCategoryIcon
+import com.moduxi.monexi.ui.theme.toComposeColor
 
 @Composable
 fun CategoriesScreen(
@@ -85,7 +89,8 @@ private fun CategoriesContent(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 IconButton(
                     onClick = onNavigateBack
@@ -98,8 +103,7 @@ private fun CategoriesContent(
                 Text(
                     text = "Categorias",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
+                    fontWeight = FontWeight.Bold
                 )
                 IconButton(
                     onClick = onNavigateArchived
@@ -194,21 +198,32 @@ private fun CategoryItem(
             .fillMaxWidth()
             .clickable { onClick() }
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Text(
-                text = category.name,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
+        Row(
+            modifier = Modifier
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ){
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(category.colorHex.toComposeColor().copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = category.iconName.toCategoryIcon(),
+                    contentDescription = category.name,
+                    tint = category.colorHex.toComposeColor()
+                )
+            }
 
             Text(
-                text = if (category.isDefault) "Padrão" else "Criada por você",
-                style = MaterialTheme.typography.bodySmall
+                text = category.name,
+                style = MaterialTheme.typography.titleMedium
             )
         }
+
     }
 }
 

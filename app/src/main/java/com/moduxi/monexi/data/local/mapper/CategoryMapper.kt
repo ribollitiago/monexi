@@ -11,7 +11,10 @@ fun CategoryEntity.toDomain(): Category {
         name = name,
         type = TransactionType.valueOf(type),
         isDefault = isDefault,
-        isArchived = isArchived
+        isArchived = isArchived,
+        colorHex = colorHex,
+        iconName = iconName
+
     )
 }
 
@@ -22,6 +25,8 @@ fun Category.toEntity(): CategoryEntity {
         name = name,
         type = type.name,
         isDefault = isDefault,
-        isArchived = isArchived
+        isArchived = isArchived,
+        colorHex = colorHex,
+        iconName = iconName
     )
 }

@@ -9,5 +9,7 @@ data class Category (
     val name: String,
     val type: TransactionType,
     val isDefault: Boolean = false,
-    val isArchived: Boolean = false
+    val isArchived: Boolean = false,
+    val colorHex: String = "#1B8A5A",
+    val iconName: String = "Category"
 )
