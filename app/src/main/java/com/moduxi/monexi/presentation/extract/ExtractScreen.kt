@@ -1,16 +1,25 @@
 package com.moduxi.monexi.presentation.extract
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -22,10 +31,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.moduxi.monexi.domain.model.Category
 import com.moduxi.monexi.domain.model.PaymentMethod
@@ -40,16 +51,16 @@ import java.util.Locale
 @Composable
 fun ExtractScreen(
     modifier: Modifier = Modifier,
-    viewModel: ExtractViewModel = viewModel(factory = ExtractViewModel .Factory),
+    viewModel: ExtractViewModel = viewModel(factory = ExtractViewModel.Factory),
     onNavigateToTransaction: (String?) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     ExtractContent(
         uiState = uiState,
-        onSearchChange = { query ->
-            viewModel.onSearchChange(query)
-        },
+        onSearchChange = viewModel::onSearchChange,
+        onPreviousMonthClick = viewModel::previousMonth,
+        onNextMonthClick = viewModel::nextMonth,
         onTransactionClick = { id ->
             onNavigateToTransaction(id)
         },
@@ -61,6 +72,8 @@ fun ExtractScreen(
 fun ExtractContent(
     uiState: ExtractUiState,
     onSearchChange: (String) -> Unit,
+    onPreviousMonthClick: () -> Unit,
+    onNextMonthClick: () -> Unit,
     onTransactionClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -87,6 +100,7 @@ fun ExtractContent(
             transaction.amount.toString().contains(uiState.search)
         }
     }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -95,10 +109,38 @@ fun ExtractContent(
     ) {
         item {
             Text(
-                text = "Lançamentos",
+                text = "Extrato",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onPreviousMonthClick) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        contentDescription = "Mês anterior"
+                    )
+                }
+
+                Text(
+                    text = uiState.selectedMonthName,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                IconButton(onClick = onNextMonthClick) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "Próximo mês"
+                    )
+                }
+            }
         }
 
         item {
@@ -112,25 +154,42 @@ fun ExtractContent(
         }
 
         item {
-            Row (
+            Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 filters.forEach { filter ->
                     val isSelected = selectedFilter == filter
                     FilterChip(
                         selected = isSelected,
-                        onClick = { selectedFilter = filter},
+                        onClick = { selectedFilter = filter },
                         label = { Text(filter) }
                     )
                 }
             }
         }
 
-        items(filteredTransactions) { transaction ->
-            TransactionItem(
-                transaction = transaction,
-                onClick = { onTransactionClick(transaction.id) }
-            )
+        if (filteredTransactions.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Nenhum lançamento encontrado para este período.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        } else {
+            items(filteredTransactions) { transaction ->
+                TransactionItem(
+                    transaction = transaction,
+                    onClick = { onTransactionClick(transaction.id) }
+                )
+            }
         }
     }
 }
@@ -141,8 +200,10 @@ private fun TransactionItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isScheduled = transaction.date > System.currentTimeMillis()
+
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable { onClick() }
     ) {
@@ -153,13 +214,38 @@ private fun TransactionItem(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = transaction.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Row() {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = transaction.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    if (isScheduled) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(MaterialTheme.colorScheme.primaryContainer)
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "Agendado",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                }
+
+                Row {
                     Text(
                         text = transaction.category.name,
                         style = MaterialTheme.typography.bodyMedium
@@ -170,7 +256,6 @@ private fun TransactionItem(
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
-
             }
 
             Text(
@@ -197,18 +282,24 @@ private fun Double.toCurrency(): String {
     return formatter.format(this)
 }
 
+private fun Long.toFormattedDate(): String {
+    val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.forLanguageTag("pt-BR"))
+    return formatter.format(Date(this))
+}
+
 @Preview(showBackground = true)
 @Composable
 fun ExtractPreview() {
-    MonexiTheme() {
+    MonexiTheme {
         ExtractContent(
             uiState = ExtractUiState(
-                "",
-                listOf(
+                search = "",
+                selectedMonthName = "Outubro de 2026",
+                transactions = listOf(
                     Transaction(
                         id = "1",
                         userId = "1",
-                        title = "Salario",
+                        title = "Salário",
                         amount = 3200.0,
                         type = TransactionType.INCOME,
                         category = Category(
@@ -223,16 +314,13 @@ fun ExtractPreview() {
                             name = "Pix"
                         ),
                         date = System.currentTimeMillis()
-                    ),
+                    )
                 )
             ),
             onSearchChange = {},
+            onPreviousMonthClick = {},
+            onNextMonthClick = {},
             onTransactionClick = {}
         )
     }
-}
-
-private fun Long.toFormattedDate(): String {
-    val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.forLanguageTag("pt-BR"))
-    return formatter.format(Date(this))
 }

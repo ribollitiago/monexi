@@ -10,22 +10,36 @@ import com.moduxi.monexi.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 class ExtractViewModel(
     private val transactionRepository: TransactionRepository
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
+    private val _selectedCalendar = MutableStateFlow(Calendar.getInstance())
 
     val uiState = combine(
         transactionRepository.transactions,
-        _searchQuery
-    ) { transactions, query ->
+        _searchQuery,
+        _selectedCalendar
+    ) { transactions, query, calendar ->
+        val selectedYear = calendar.get(Calendar.YEAR)
+        val selectedMonth = calendar.get(Calendar.MONTH)
+
+        val monthFilteredTransactions = transactions.filter { transaction ->
+            val transCal = Calendar.getInstance().apply { timeInMillis = transaction.date }
+            transCal.get(Calendar.YEAR) == selectedYear && transCal.get(Calendar.MONTH) == selectedMonth
+        }
+
         ExtractUiState(
             search = query,
-            transactions = transactions
+            selectedMonthName = formatMonthYear(calendar.time),
+            transactions = monthFilteredTransactions
         )
     }.stateIn(
         scope = viewModelScope,
@@ -37,6 +51,26 @@ class ExtractViewModel(
         _searchQuery.value = query
     }
 
+    fun previousMonth() {
+        val newCal = (_selectedCalendar.value.clone() as Calendar).apply {
+            add(Calendar.MONTH, -1)
+        }
+        _selectedCalendar.value = newCal
+    }
+
+    fun nextMonth() {
+        val newCal = (_selectedCalendar.value.clone() as Calendar).apply {
+            add(Calendar.MONTH, 1)
+        }
+        _selectedCalendar.value = newCal
+    }
+
+    private fun formatMonthYear(date: Date): String {
+        val formatter = SimpleDateFormat("MMMM 'de' yyyy", Locale.forLanguageTag("pt-BR"))
+        val formatted = formatter.format(date)
+        return formatted.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.forLanguageTag("pt-BR")) else it.toString() }
+    }
+
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
@@ -45,5 +79,4 @@ class ExtractViewModel(
             }
         }
     }
-
 }
