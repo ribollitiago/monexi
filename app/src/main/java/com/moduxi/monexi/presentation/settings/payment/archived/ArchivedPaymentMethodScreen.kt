@@ -67,7 +67,7 @@ fun ArchivedPaymentMethodContent(
                 )
             }
             Text(
-                text = "Métodos de Pagamento Arquivados",
+                text = "Métodos Arquivados",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )

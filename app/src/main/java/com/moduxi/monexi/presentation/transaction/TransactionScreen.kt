@@ -6,14 +6,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
@@ -134,7 +137,7 @@ private fun TransactionContent(
                 Row (
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     if (uiState.editingTransaction != null) {
                         IconButton(onClick = onBackClick) {
@@ -143,9 +146,12 @@ private fun TransactionContent(
                                 contentDescription = "Voltar"
                             )
                         }
+                    } else {
+                        Spacer(modifier = Modifier.size(48.dp))
                     }
+
                     Box(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.weight(1f),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -153,6 +159,18 @@ private fun TransactionContent(
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
+                    }
+
+                    if (uiState.editingTransaction != null) {
+                        IconButton(onClick = onDeleteClick) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Excluir Transação",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.size(48.dp))
                     }
                 }
             }
@@ -269,16 +287,6 @@ private fun TransactionContent(
                 .padding(top = 8.dp)
         ) {
             Text(text = "Salvar")
-        }
-
-        if (uiState.editingTransaction != null) {
-            Button(
-                onClick = onDeleteClick,
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-            ) {
-                Text("Excluir")
-            }
         }
     }
 

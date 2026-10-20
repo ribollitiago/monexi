@@ -3,9 +3,11 @@ package com.moduxi.monexi.presentation.settings.payment.edit
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -79,7 +81,7 @@ fun EditPaymentMethodContent(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -91,8 +93,7 @@ fun EditPaymentMethodContent(
                     Text(
                         text = if (uiState.editingPaymentMethod == null) "Novo Método" else "Editar Método",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f)
+                        fontWeight = FontWeight.Bold
                     )
 
                     if (uiState.editingPaymentMethod != null) {
@@ -103,6 +104,8 @@ fun EditPaymentMethodContent(
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
+                    } else {
+                        Spacer(modifier = Modifier.size(48.dp))
                     }
                 }
             }
