@@ -73,7 +73,7 @@ private fun PaymentMethodContent(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onNavigateBack) {
@@ -85,8 +85,7 @@ private fun PaymentMethodContent(
                 Text(
                     text = "Métodos de Pagamento",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
+                    fontWeight = FontWeight.Bold
                 )
                 IconButton(onClick = onNavigateArchived) {
                     Icon(

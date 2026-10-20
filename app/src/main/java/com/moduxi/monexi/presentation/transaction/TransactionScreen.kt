@@ -21,6 +21,7 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -46,6 +47,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.focus.onFocusEvent
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.OffsetMapping
@@ -54,6 +57,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import com.moduxi.monexi.domain.model.Category
 import com.moduxi.monexi.domain.model.PaymentMethod
 import com.moduxi.monexi.domain.model.TransactionType
+import com.moduxi.monexi.ui.theme.toCategoryIcon
+import com.moduxi.monexi.ui.theme.toComposeColor
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -241,7 +246,9 @@ private fun TransactionContent(
                     options = uiState.categories,
                     selectedOption = uiState.selectedCategory,
                     onOptionSelected = onCategoryChange,
-                    optionLabel = { it.name }
+                    optionLabel = { it.name },
+                    optionIcon = { it.iconName.toCategoryIcon() },
+                    optionColor = { it.colorHex.toComposeColor() }
                 )
             }
 
@@ -309,7 +316,9 @@ private fun <T> DropdownField(
     options: List<T>,
     selectedOption: T?,
     onOptionSelected: (T) -> Unit,
-    optionLabel: (T) -> String
+    optionLabel: (T) -> String,
+    optionIcon: ((T) -> ImageVector?)? = null,
+    optionColor: ((T) -> Color?)? = null
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -322,9 +331,18 @@ private fun <T> DropdownField(
             onValueChange = {},
             label = { Text(label) },
             readOnly = true,
+            leadingIcon = if (selectedOption != null && optionColor != null) {
+                {
+                    val icon = optionIcon?.invoke(selectedOption)
+                    val tint = optionColor?.invoke(selectedOption) ?: MaterialTheme.colorScheme.primary
+                    if (icon != null){
+                        Icon(imageVector = icon, contentDescription = null, tint = tint)
+                    }
+                }
+            } else null,
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier
-                .menuAnchor()
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
                 .fillMaxWidth()
         )
         ExposedDropdownMenu(
@@ -332,12 +350,24 @@ private fun <T> DropdownField(
             onDismissRequest = {expanded = false}
         ) {
             options.forEach { selectionOption ->
+                val icon = optionIcon?.invoke(selectionOption)
+                val tint = optionColor?.invoke(selectionOption) ?: MaterialTheme.colorScheme.onSurface
+
                 DropdownMenuItem(
                     text = { Text(optionLabel(selectionOption))},
                     onClick = {
                         onOptionSelected(selectionOption)
                         expanded = false
-                    }
+                    },
+                    leadingIcon = if (icon != null) {
+                        {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = tint
+                            )
+                        }
+                    } else null
                 )
             }
         }

@@ -43,13 +43,13 @@ abstract class MonexiDatabase : RoomDatabase() {
                         val categoryDao = database.categoryDao()
                         categoryDao.insertCategories(
                             listOf(
-                                CategoryEntity(name = "Alimentação", type = TransactionType.EXPENSE.name, isDefault = true),
-                                CategoryEntity(name = "Transporte", type = TransactionType.EXPENSE.name, isDefault = true),
-                                CategoryEntity(name = "Casa", type = TransactionType.EXPENSE.name, isDefault = true),
-                                CategoryEntity(name = "Saúde", type = TransactionType.EXPENSE.name, isDefault = true),
-                                CategoryEntity(name = "Salário", type = TransactionType.INCOME.name, isDefault = true),
-                                CategoryEntity(name = "Freelance", type = TransactionType.INCOME.name, isDefault = true),
-                                CategoryEntity(name = "Investimentos", type = TransactionType.INCOME.name, isDefault = true)
+                                CategoryEntity(name = "Alimentação", type = TransactionType.EXPENSE.name, isDefault = true, iconName = "Restaurant", colorHex = "#E53935"),
+                                CategoryEntity(name = "Transporte", type = TransactionType.EXPENSE.name, isDefault = true, iconName = "DirectionsCar", colorHex = "#1E88E5"),
+                                CategoryEntity(name = "Casa", type = TransactionType.EXPENSE.name, isDefault = true, iconName = "Home", colorHex = "#8E24AA"),
+                                CategoryEntity(name = "Saúde", type = TransactionType.EXPENSE.name, isDefault = true, iconName = "MedicalServices", colorHex = "#00ACC1"),
+                                CategoryEntity(name = "Salário", type = TransactionType.INCOME.name, isDefault = true, iconName = "Work", colorHex = "#43A047"),
+                                CategoryEntity(name = "Freelance", type = TransactionType.INCOME.name, isDefault = true, iconName = "AttachMoney", colorHex = "#FB8C00"),
+                                CategoryEntity(name = "Investimentos", type = TransactionType.INCOME.name, isDefault = true, iconName = "AttachMoney", colorHex = "#3949AB")
                             )
                         )
                         val paymentMethodDao = database.paymentMethodDao()
