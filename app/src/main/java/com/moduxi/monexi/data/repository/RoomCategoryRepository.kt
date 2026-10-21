@@ -133,7 +133,9 @@ class RoomCategoryRepository(
             "name" to archivedCategory.name,
             "type" to archivedCategory.type,
             "isDefault" to archivedCategory.isDefault,
-            "isArchived" to true
+            "isArchived" to true,
+            "colorHex" to archivedCategory.colorHex,
+            "iconName" to archivedCategory.iconName
         )
 
         try {
@@ -184,7 +186,9 @@ class RoomCategoryRepository(
                     name = name,
                     type = type.name,
                     isDefault = isDefault,
-                    isArchived = isArchived
+                    isArchived = isArchived,
+                    colorHex = colorHex,
+                    iconName = iconName
                 )
             }
 

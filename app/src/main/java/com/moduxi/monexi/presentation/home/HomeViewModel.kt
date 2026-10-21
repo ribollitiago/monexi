@@ -10,14 +10,20 @@ import com.moduxi.monexi.domain.repository.TransactionRepository
 import com.moduxi.monexi.domain.usecase.CalculateBalanceUseCase
 import com.moduxi.monexi.domain.usecase.CalculateExpenseUseCase
 import com.moduxi.monexi.domain.usecase.CalculateIncomeUseCase
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 class HomeViewModel(
     private val transactionRepository: TransactionRepository
-    ) : ViewModel() {
+) : ViewModel() {
+
     private val calculateIncomeUseCase = CalculateIncomeUseCase()
     private val calculateExpenseUseCase = CalculateExpenseUseCase()
     private val calculateBalanceUseCase = CalculateBalanceUseCase(
@@ -25,25 +31,56 @@ class HomeViewModel(
         calculateExpenseUseCase = calculateExpenseUseCase
     )
 
+    private val _selectedCalendar = MutableStateFlow(Calendar.getInstance())
+
     init {
         syncTransactions()
     }
 
-    val uiState = transactionRepository.transactions
-        .map { transactions ->
-            HomeUiState(
-                balance = calculateBalanceUseCase(transactions),
-                totalIncome = calculateIncomeUseCase(transactions),
-                totalExpense = calculateExpenseUseCase(transactions),
-                transactions = transactions
-            )
+    val uiState = combine(
+        transactionRepository.transactions,
+        _selectedCalendar
+    ) { allTransactions, calendar ->
+        val selectedYear = calendar.get(Calendar.YEAR)
+        val selectedMonth = calendar.get(Calendar.MONTH)
 
+        val monthTransactions = allTransactions.filter { transaction ->
+            val transCal = Calendar.getInstance().apply { timeInMillis = transaction.date }
+            transCal.get(Calendar.YEAR) == selectedYear && transCal.get(Calendar.MONTH) == selectedMonth
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = HomeUiState()
+
+        HomeUiState(
+            balance = calculateBalanceUseCase(allTransactions),
+            totalIncome = calculateIncomeUseCase(monthTransactions),
+            totalExpense = calculateExpenseUseCase(monthTransactions),
+            selectedMonthName = formatMonthYear(calendar.time),
+            transactions = monthTransactions
         )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = HomeUiState()
+    )
+
+    fun previousMonth() {
+        val newCal = (_selectedCalendar.value.clone() as Calendar).apply {
+            add(Calendar.MONTH, -1)
+        }
+        _selectedCalendar.value = newCal
+    }
+
+    fun nextMonth() {
+        val newCal = (_selectedCalendar.value.clone() as Calendar).apply {
+            add(Calendar.MONTH, 1)
+        }
+        _selectedCalendar.value = newCal
+    }
+
+    private fun formatMonthYear(date: Date): String {
+        val formatter = SimpleDateFormat("MMMM 'de' yyyy", Locale.forLanguageTag("pt-BR"))
+        val formatted = formatter.format(date)
+        return formatted.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.forLanguageTag("pt-BR")) else it.toString() }
+    }
 
     fun syncTransactions() {
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
