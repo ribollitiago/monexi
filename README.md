@@ -6,6 +6,16 @@ Além de uma ferramenta prática de gestão financeira, o Monexi serve como estu
 
 ---
 
+## 📱 Demonstração em Vídeo
+
+Confira a demonstração prática das funcionalidades do Monexi:
+
+[![Demonstração do Monexi no YouTube Shorts](https://img.youtube.com/vi/6fFqFGbdQvc/hqdefault.jpg)](https://youtube.com/shorts/6fFqFGbdQvc)
+
+> 💡 *Clique na imagem acima para assistir ao vídeo de teste do aplicativo no YouTube Shorts.*
+
+---
+
 ## 📌 Status do Projeto
 
 Projeto em constante evolução. **Recursos já implementados:**
