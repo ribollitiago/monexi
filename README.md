@@ -1,63 +1,62 @@
-# Monexi
+# Monexi 💰
 
-Monexi e um aplicativo Android de controle financeiro pessoal, desenvolvido em Kotlin com Jetpack Compose. O objetivo do projeto e registrar receitas e despesas, organizar lancamentos por categoria e metodo de pagamento, acompanhar o saldo e evoluir gradualmente para uma experiencia mais completa com dashboard, graficos, autenticacao e sincronizacao.
+O **Monexi** é um aplicativo Android de controle financeiro pessoal moderno, desenvolvido com Kotlin e Jetpack Compose. O projeto permite registrar receitas e despesas, organizar lançamentos por categorias personalizadas e métodos de pagamento, acompanhar o saldo acumulado e visualizar a distribuição dos gastos por meio de gráficos interativos e seletores mensais.
 
-O projeto tambem serve como estudo pratico de arquitetura Android moderna, usando MVVM, Room, Flow, StateFlow, repositories, use cases e testes unitarios.
+Além de uma ferramenta prática de gestão financeira, o Monexi serve como estudo de caso de **arquitetura Android moderna**, aplicando MVVM, Room Database, Firebase Auth, Firestore, Kotlin Coroutines, Flow/StateFlow, repositories e testes unitários.
 
-## Status do projeto
+---
 
-Projeto em desenvolvimento.
+## 📌 Status do Projeto
 
-Ja implementado:
+Projeto em constante evolução. **Recursos já implementados:**
 
-- Cadastro local de transacoes financeiras.
-- Edicao e exclusao de transacoes.
-- Listagem de transacoes na tela inicial.
-- Resumo financeiro com saldo, receitas e despesas.
-- Categorias separadas por tipo de transacao: receita ou despesa.
-- Metodos de pagamento configuraveis.
-- Categorias e metodos de pagamento padrao via seed do banco local.
-- Persistencia local com Room.
-- Tema claro/escuro com DataStore.
-- Navegacao com Jetpack Navigation Compose.
-- Testes unitarios para use cases, categorias, metodos de pagamento e transacoes.
+- 🔐 **Autenticação:** Login, Cadastro de novos usuários e Logout integrado ao **Firebase Auth**.
+- 📊 **Dashboard na Tela Inicial (`HomeScreen`):**
+  - Saldo geral acumulado.
+  - **Seletor de Mês/Ano** (`< Mês Anterior` / `Próximo Mês >`).
+  - **Gráfico de Rosca (Donut Chart) de Resumo do Mês:** Comparativo de Receitas vs Despesas desenhado nativamente com `Canvas`.
+  - **Gráfico de Rosca por Categoria:** Gráfico dinâmico com proporções, percentuais (`%`) e lista detalhada por categoria com ícones e cores.
+- 📜 **Tela de Extrato / Lançamentos (`ExtractScreen`):**
+  - Lista completa de lançamentos com **Seletor de Mês**.
+  - **Busca em tempo real** por descrição, categoria ou valor formatado (`R$`).
+  - **Filtros rápidos:** *Todos*, *Entrada* (Receita) e *Saída* (Despesa).
+  - Destaque visual automático para lançamentos futuros com a tag **"Agendado"**.
+  - Formatação de data em português (`dd/MM/yyyy`).
+- 💳 **Lançamentos (`TransactionScreen`):**
+  - Criação e edição de receitas ou despesas com seleção inteligente de categoria e forma de pagamento.
+- 🎨 **Categorias com Cores e Ícones Personalizados (`EditCategoriesScreen`):**
+  - Tela dedicada para criar e editar categorias.
+  - Seletor de cores em paleta de bolinhas e catálogo de ícones do Material Design.
+- 📂 **Arquivamento e Desarquivamento:**
+  - Telas de itens arquivados (`ArchivedCategoriesScreen` e `ArchivedPaymentMethodScreen`) para restaurar ou consultar categorias/métodos desativados sem apagar o histórico de lançamentos.
+- ☁️ **Sincronização em Nuvem (Firebase Firestore):**
+  - Sincronização em background entre o banco local (Room) e o banco na nuvem (Firestore) por usuário autenticado.
+- 🌙 **Tema Claro e Escuro:** Gerenciado com `ThemeManager` e persistido via **DataStore Preferences**.
 
-Ainda planejado:
+---
 
-- Home com dashboard mais completo e graficos.
-- Tela separada para resumo/listagem de lancamentos.
-- Firebase Authentication.
-- Sincronizacao por usuario.
-- Migrations reais do Room.
-- Melhorias visuais e refinamento de UX.
+## 🛠️ Tecnologias
 
-## Tecnologias
+- **Linguagem:** Kotlin
+- **Interface:** Jetpack Compose & Material 3
+- **Navegação:** Navigation Compose
+- **Arquitetura:** MVVM (Model-View-ViewModel)
+- **Persistência Local:** Room Database (KSP) & DataStore Preferences
+- **Nuvem & Backend:** Firebase Authentication & Cloud Firestore
+- **Assincronismo:** Kotlin Coroutines, Flow e StateFlow
+- **Testes:** JUnit 4 & `kotlinx-coroutines-test`
 
-- Kotlin
-- Android SDK
-- Jetpack Compose
-- Material 3
-- Navigation Compose
-- ViewModel
-- Kotlin Coroutines
-- Flow e StateFlow
-- Room
-- KSP
-- DataStore Preferences
-- JUnit 4
-- kotlinx-coroutines-test
+---
 
-## Arquitetura
+## 🏗️ Arquitetura
 
-O projeto segue uma organizacao inspirada em MVVM com separacao entre dominio, dados e apresentacao.
-
-Fluxo principal:
+O projeto segue uma arquitetura inspirada nos princípios do **Clean Architecture** e **MVVM**:
 
 ```text
-UI Compose -> ViewModel -> Repository Interface -> Room Repository -> DAO -> Room Database
+UI Compose -> ViewModel -> Repository Interface -> Room Repository / Firestore -> Room Database / Cloud Firestore
 ```
 
-Para calculos de resumo financeiro, a Home usa use cases de dominio:
+### Principais Mapeamentos e Fluxos:
 
 ```text
 HomeViewModel -> CalculateBalanceUseCase
@@ -65,11 +64,13 @@ HomeViewModel -> CalculateBalanceUseCase
               -> CalculateExpenseUseCase
 ```
 
-Os models de dominio nao possuem anotacoes do Room. As entidades do banco ficam separadas na camada `data/local/entity`, e os mappers convertem entre `Entity` e model de dominio.
+- **Domain:** Isolar modelos do negócio (`Transaction`, `Category`, `PaymentMethod`) livres de anotações do banco de dados.
+- **Data:** Mappers convertem bidirecionalmente entre `Entity` (Room), documentos do Firestore e modelos de `Domain`.
+- **Presentation:** ViewModels expõem um único `StateFlow<UiState>` imutável reativo para a UI Compose.
 
-## Estrutura de pastas
+---
 
-Estrutura principal do modulo `app`:
+## 📁 Estrutura de Pastas
 
 ```text
 app/src/main/java/com/moduxi/monexi
@@ -85,8 +86,7 @@ app/src/main/java/com/moduxi/monexi
 │   │   ├── entity
 │   │   │   ├── CategoryEntity.kt
 │   │   │   ├── PaymentMethodEntity.kt
-│   │   │   ├── TransactionEntity.kt
-│   │   │   └── TransactionWithDetails.kt
+│   │   │   └── TransactionEntity.kt
 │   │   └── mapper
 │   │       ├── CategoryMapper.kt
 │   │       ├── PaymentMethodMapper.kt
@@ -112,6 +112,19 @@ app/src/main/java/com/moduxi/monexi
 │       ├── CalculateExpenseUseCase.kt
 │       └── CalculateIncomeUseCase.kt
 ├── presentation
+│   ├── auth
+│   │   ├── login
+│   │   │   ├── LoginScreen.kt
+│   │   │   ├── LoginUiState.kt
+│   │   │   └── LoginViewModel.kt
+│   │   └── register
+│   │       ├── RegisterScreen.kt
+│   │       ├── RegisterUiState.kt
+│   │       └── RegisterViewModel.kt
+│   ├── extract
+│   │   ├── ExtractScreen.kt
+│   │   ├── ExtractUiState.kt
+│   │   └── ExtractViewModel.kt
 │   ├── home
 │   │   ├── HomeScreen.kt
 │   │   ├── HomeUiState.kt
@@ -120,281 +133,97 @@ app/src/main/java/com/moduxi/monexi
 │   │   └── AppNavigation.kt
 │   ├── settings
 │   │   ├── SettingsScreen.kt
-│   │   ├── SettingsUiState.kt
-│   │   ├── SettingsViewModel.kt
 │   │   ├── categories
 │   │   │   ├── CategoriesScreen.kt
-│   │   │   ├── CategoriesUiState.kt
-│   │   │   └── CategoriesViewModel.kt
+│   │   │   ├── archived/ArchivedCategoriesScreen.kt
+│   │   │   └── edit/EditCategoriesScreen.kt
 │   │   └── payment
 │   │       ├── PaymentMethodScreen.kt
-│   │       ├── PaymentMethodUiState.kt
-│   │       └── PaymentMethodViewModel.kt
+│   │       ├── archived/ArchivedPaymentMethodScreen.kt
+│   │       └── edit/EditPaymentMethodScreen.kt
 │   └── transaction
 │       ├── TransactionScreen.kt
 │       ├── TransactionUiState.kt
 │       └── TransactionViewModel.kt
 └── ui
     └── theme
+        ├── CategoryUiMapper.kt
+        ├── Color.kt
+        ├── Theme.kt
+        └── Type.kt
 ```
 
-Estrutura de testes:
+---
+
+## 🚦 Rotas de Navegação (`AppNavigation`)
 
 ```text
-app/src/test/java/com/moduxi/monexi
-├── MainDispatcherRule.kt
-├── data/repository
-│   ├── FakeCategoryRepository.kt
-│   ├── FakePaymentMethodRepository.kt
-│   └── FakeTransactionRepository.kt
-├── domain/usecase
-│   ├── CalculateBalanceUseCaseTest.kt
-│   ├── CalculateExpenseUseCaseTest.kt
-│   └── CalculateIncomeUseCaseTest.kt
-└── presentation
-    ├── settings
-    │   ├── categories/CategoriesViewModelTest.kt
-    │   └── payment/PaymentMethodViewModelTest.kt
-    └── transaction/TransactionViewModelTest.kt
+login                       -> Tela de Login
+register                    -> Tela de Cadastro
+home                        -> Resumo financeiro e gráficos
+extract                     -> Histórico de lançamentos e extrato
+transaction?id={id}         -> Criar ou editar lançamento
+settings                    -> Configurações e tema
+categories                  -> Gerenciamento de categorias
+archivedCategories          -> Categorias arquivadas
+editCategory?id={id}        -> Criar/Editar categoria (cores e ícones)
+paymentMethods              -> Gerenciamento de métodos de pagamento
+archivedPaymentMethod       -> Métodos de pagamento arquivados
+editPaymentMethod?id={id}   -> Criar/Editar método de pagamento
 ```
 
-## Camadas do projeto
+---
 
-### Domain
+## 🧪 Testes
 
-Contem as regras e modelos centrais do app.
+O projeto possui testes unitários para casos de uso, repositórios em memória e ViewModels.
 
-Principais models:
-
-- `Transaction`: representa um lancamento financeiro.
-- `TransactionType`: define `INCOME` ou `EXPENSE`.
-- `Category`: categoria vinculada a um tipo de transacao.
-- `PaymentMethod`: metodo de pagamento usado no lancamento.
-
-Use cases:
-
-- `CalculateIncomeUseCase`: soma receitas.
-- `CalculateExpenseUseCase`: soma despesas.
-- `CalculateBalanceUseCase`: calcula saldo final.
-
-Interfaces de repository:
-
-- `TransactionRepository`
-- `CategoryRepository`
-- `PaymentMethodRepository`
-
-### Data
-
-Contem a persistencia local com Room e as implementacoes concretas dos repositories.
-
-O banco principal e `MonexiDatabase`, configurado com as entidades:
-
-- `CategoryEntity`
-- `PaymentMethodEntity`
-- `TransactionEntity`
-
-No primeiro uso do banco, sao criadas categorias e metodos de pagamento padrao.
-
-Categorias padrao:
-
-- Alimentacao
-- Transporte
-- Casa
-- Saude
-- Salario
-- Freelance
-- Investimentos
-
-Metodos de pagamento padrao:
-
-- Dinheiro
-- Cartao de Credito
-- Cartao de Debito
-- Pix
-
-Observacao: durante o desenvolvimento, o banco usa `fallbackToDestructiveMigration(true)`. Isso facilita alteracoes no schema, mas apaga dados locais quando a versao do banco muda sem migration real.
-
-### Presentation
-
-Contem telas Compose, ViewModels e UiStates.
-
-Telas principais:
-
-- `HomeScreen`: resumo financeiro e lista de ultimas transacoes.
-- `TransactionScreen`: criacao, edicao e exclusao de lancamentos.
-- `SettingsScreen`: acesso as configuracoes.
-- `CategoriesScreen`: gerenciamento de categorias.
-- `PaymentMethodScreen`: gerenciamento de metodos de pagamento.
-
-Navegacao principal:
-
-```text
-home
-transaction?id={id}
-settings
-categories
-paymentMethods
-```
-
-A rota de transacao aceita um `id` opcional. Quando o `id` e informado, o `TransactionViewModel` carrega a transacao correspondente e entra em modo de edicao.
-
-## Funcionalidades
-
-### Transacoes
-
-O app permite:
-
-- Criar transacoes de receita ou despesa.
-- Informar descricao, valor, data, categoria e metodo de pagamento.
-- Editar transacoes existentes.
-- Excluir transacoes.
-- Filtrar categorias automaticamente de acordo com o tipo da transacao.
-
-Exemplo de regra aplicada:
-
-```text
-Transacao de despesa -> mostra apenas categorias EXPENSE
-Transacao de receita -> mostra apenas categorias INCOME
-```
-
-### Categorias
-
-Categorias possuem:
-
-- Nome
-- Tipo: `INCOME` ou `EXPENSE`
-- Flag `isDefault`
-
-Regras principais:
-
-- Nao permite categoria sem nome.
-- Nao permite categoria duplicada para o mesmo tipo.
-- Permite mesmo nome em tipos diferentes.
-- Categorias padrao nao devem ser editadas ou excluidas.
-
-### Metodos de pagamento
-
-Metodos de pagamento possuem:
-
-- Nome
-- Flag `isDefault`
-
-Regras principais:
-
-- Nao permite metodo sem nome.
-- Nao permite metodo duplicado.
-- Metodos padrao nao devem ser editados ou excluidos.
-
-### Resumo financeiro
-
-A Home calcula:
-
-- Saldo atual
-- Total de receitas
-- Total de despesas
-- Lista de transacoes
-
-Os calculos ficam em use cases para manter a regra de negocio fora da UI.
-
-### Tema
-
-O app possui gerenciamento de tema com `ThemeManager`, usando DataStore Preferences para persistencia local da preferencia.
-
-## Testes
-
-O projeto possui testes unitarios para regras de negocio e ViewModels.
-
-Principais areas cobertas:
-
-- Calculo de receitas, despesas e saldo.
-- Cadastro, edicao, exclusao e validacoes de categorias.
-- Cadastro, edicao, exclusao e validacoes de metodos de pagamento.
-- Criacao, validacao, edicao, exclusao e carregamento de transacoes.
-
-Os testes de ViewModel usam repositories fake em memoria, evitando depender diretamente do Room em testes unitarios.
-
-Para rodar os testes:
+Para executar os testes:
 
 ```bash
+# No Linux/macOS
 ./gradlew test
-```
 
-No Windows:
-
-```powershell
+# No Windows
 .\gradlew.bat test
 ```
 
-Para gerar o build debug:
+Para gerar a build Debug:
 
 ```bash
+# No Linux/macOS
 ./gradlew assembleDebug
-```
 
-No Windows:
-
-```powershell
+# No Windows
 .\gradlew.bat assembleDebug
 ```
 
-## Como executar o projeto
+---
 
-1. Clone o repositorio:
-
-```bash
-git clone <url-do-repositorio>
-```
-
-2. Abra o projeto no Android Studio.
-
-3. Aguarde a sincronizacao do Gradle.
-
-4. Execute o app em um emulador ou dispositivo fisico.
-
-Requisitos recomendados:
-
-- Android Studio recente.
-- JDK compativel com o Android Gradle Plugin usado no projeto.
-- Emulador ou dispositivo com Android 7.0 ou superior, pois o `minSdk` e 24.
-
-## Configuracao Android
-
-Configuracao atual do modulo `app`:
+## ⚙️ Configurações do Android
 
 ```text
 applicationId: com.moduxi.monexi
-minSdk: 24
+minSdk: 24 (Android 7.0+)
 targetSdk: 37
 compileSdk: 37
 versionCode: 1
 versionName: 1.0
 ```
 
-## Decisoes tecnicas
+---
 
-- Models de dominio nao dependem do Room.
-- DAOs e entidades ficam isolados em `data/local`.
-- Repositories do dominio sao interfaces.
-- Implementacoes concretas usam Room.
-- ViewModels expõem `StateFlow` com `UiState` imutavel.
-- Testes unitarios usam fakes para validar comportamento sem banco real.
-- Categorias sao filtradas pelo tipo da transacao.
-- Transacoes salvam `categoryId` e `paymentMethodId` no banco, mas usam objetos completos no dominio.
+## 🗺️ Roadmap de Próximos Passos
 
-## Roadmap
+- [ ] **Módulo de Contas Bancárias e Carteiras:** Suporte a múltiplas contas com saldos independentes (ex: Nubank, Itaú, Carteira).
+- [ ] **Módulo de Cartões de Crédito:** Gestão de limites, dia de fechamento e fatura mensal.
+- [ ] **Transferência entre Contas:** Mover saldo entre contas sem alterar receitas/despesas globais.
+- [ ] **Leitura de Notificações Bancárias:** Leitura inteligente de notificações de compras de aplicativos bancários (via `NotificationListenerService`), oferecendo ao usuário a opção de adicionar a transação automaticamente.
+- [ ] **Substituição de `fallbackToDestructiveMigration`:** Migrations reais explícitas no Room.
+- [ ] **Notificações & Lembretes:** Alerta de contas a vencer/faturas.
 
-Proximos passos planejados:
+---
 
-- Finalizar refinamentos dos testes de transacao.
-- Criar tela dedicada para lista/resumo de lancamentos.
-- Transformar a Home em dashboard com graficos e indicadores.
-- Melhorar componentes visuais do formulario de transacao.
-- Implementar Firebase Authentication.
-- Adicionar vinculo dos dados a um usuario autenticado.
-- Planejar sincronizacao local/remota.
-- Substituir `fallbackToDestructiveMigration` por migrations reais do Room.
-- Adicionar testes instrumentados para fluxo de UI.
+## 👤 Autor
 
-## Autor
-
-Projeto desenvolvido por Ribol como estudo e evolucao pratica em desenvolvimento Android moderno com Kotlin.
+Desenvolvido por **Ribol** como projeto de estudo e evolução prática em desenvolvimento Android moderno com Kotlin e Jetpack Compose.
