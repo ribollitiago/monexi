@@ -170,6 +170,8 @@ fun AppNavigation(themeManager: ThemeManager) {
                     onNavigateToPaymentMethods = {
                         navController.navigate("paymentMethods")
                     },
+                    onNavigateToBankAccount = {},
+                    onNavigateToCreditCard = {},
                     onLogout = {
                         navController.navigate("login") {
                             popUpTo(0) { inclusive = true }
