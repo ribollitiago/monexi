@@ -2,7 +2,17 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
-    id("com.google.gms.google-services")
+}
+
+val googleServicesConfigCandidates = listOf(
+    "google-services.json",
+    "src/main/google-services.json",
+    "src/debug/google-services.json",
+    "src/release/google-services.json"
+)
+
+if (googleServicesConfigCandidates.any { file(it).exists() }) {
+    apply(plugin = "com.google.gms.google-services")
 }
 
 android {
