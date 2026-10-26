@@ -236,4 +236,4 @@ versionName: 1.0
 
 ## 👤 Autor
 
-Desenvolvido por **Ribol** como projeto de estudo e evolução prática em desenvolvimento Android moderno com Kotlin e Jetpack Compose.
+Desenvolvido por **Tiago Ribolli** como projeto de estudo e evolução prática em desenvolvimento Android moderno com Kotlin e Jetpack Compose.
