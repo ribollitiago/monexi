@@ -7,7 +7,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Brightness6
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Payment
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -33,6 +35,8 @@ import com.moduxi.monexi.ui.theme.MonexiTheme
 fun SettingsScreen (
     onNavigateToCategories: () -> Unit,
     onNavigateToPaymentMethods: () -> Unit,
+    onNavigateToBankAccount: () -> Unit,
+    onNavigateToCreditCard: () -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ){
@@ -42,6 +46,23 @@ fun SettingsScreen (
     val uiState by viewModel.uiState.collectAsState()
 
     LazyColumn(modifier = modifier.fillMaxSize()) {
+        item { SettingsSectionTitle("Conta") }
+        item {
+            SettingsItem(
+                title = "Contas Bancárias",
+                subtitle = "Gerencie suas contas",
+                icon = Icons.Default.MonetizationOn,
+                onClick = onNavigateToBankAccount
+            )
+        }
+        item {
+            SettingsItem(
+                title = "Cartões de Crédito",
+                subtitle = "Gerencie seus cartões de crédito",
+                icon = Icons.Default.CreditCard,
+                onClick = onNavigateToCreditCard
+            )
+        }
         item { SettingsSectionTitle("Personalização") }
         item {
             SettingsItem(
@@ -133,6 +154,8 @@ fun SettingsScreenPreview() {
         SettingsScreen(
             onNavigateToCategories = {},
             onNavigateToPaymentMethods = {},
+            onNavigateToCreditCard = {},
+            onNavigateToBankAccount = {},
             onLogout = {}
         )
     }
