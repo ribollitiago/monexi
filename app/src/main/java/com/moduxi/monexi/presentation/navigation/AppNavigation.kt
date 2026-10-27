@@ -34,6 +34,9 @@ import com.moduxi.monexi.presentation.settings.SettingsScreen
 import com.moduxi.monexi.presentation.settings.categories.CategoriesScreen
 import com.moduxi.monexi.presentation.settings.categories.archived.ArchivedCategoriesScreen
 import com.moduxi.monexi.presentation.settings.categories.edit.EditCategoriesScreen
+import com.moduxi.monexi.presentation.settings.credit.CreditCardScreen
+import com.moduxi.monexi.presentation.settings.credit.archived.ArchivedCreditCardScreen
+import com.moduxi.monexi.presentation.settings.credit.edit.EditCreditCardScreen
 import com.moduxi.monexi.presentation.settings.payment.PaymentMethodScreen
 import com.moduxi.monexi.presentation.settings.payment.archived.ArchivedPaymentMethodScreen
 import com.moduxi.monexi.presentation.settings.payment.edit.EditPaymentMethodScreen
@@ -64,11 +67,14 @@ fun AppNavigation(themeManager: ThemeManager) {
         "transaction?id={id}",
         "settings",
         "categories",
-        "paymentMethods",
         "archivedCategories",
-        "archivedPaymentMethod",
         "editCategory",
-        "editPaymentMethod"
+        "paymentMethods",
+        "archivedPaymentMethod",
+        "editPaymentMethod",
+        "creditCards",
+        "archivedCreditCard",
+        "editCreditCard"
     )
 
     Scaffold(
@@ -171,7 +177,9 @@ fun AppNavigation(themeManager: ThemeManager) {
                         navController.navigate("paymentMethods")
                     },
                     onNavigateToBankAccount = {},
-                    onNavigateToCreditCard = {},
+                    onNavigateToCreditCard = {
+                        navController.navigate("creditCards")
+                    },
                     onLogout = {
                         navController.navigate("login") {
                             popUpTo(0) { inclusive = true }
@@ -256,6 +264,46 @@ fun AppNavigation(themeManager: ThemeManager) {
             ) {
                 EditPaymentMethodScreen(
                     onPaymentMethodSaved = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable(route = "creditCards") {
+                CreditCardScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                    onNavigateArchived = {
+                        navController.navigate("archivedCreditCard")
+                    },
+                    onNavigateEdit = { id ->
+                        if (id != null) {
+                            navController.navigate("editCreditCard?id=$id")
+                        } else {
+                            navController.navigate("editCreditCard")
+                        }
+                    }
+                )
+            }
+            composable(
+                route = "editCreditCard?id={id}",
+                arguments = listOf(
+                    navArgument("id") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) {
+                EditCreditCardScreen(
+                    onCreditCardSaved = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable("archivedCreditCard") {
+                ArchivedCreditCardScreen(
+                    onNavigateBack = {
                         navController.popBackStack()
                     }
                 )
