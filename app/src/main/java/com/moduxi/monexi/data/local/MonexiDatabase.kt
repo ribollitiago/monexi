@@ -5,10 +5,14 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.moduxi.monexi.data.local.dao.AccountDao
 import com.moduxi.monexi.data.local.dao.CategoryDao
+import com.moduxi.monexi.data.local.dao.CreditCardDao
 import com.moduxi.monexi.data.local.dao.PaymentMethodDao
 import com.moduxi.monexi.data.local.dao.TransactionDao
+import com.moduxi.monexi.data.local.entity.AccountEntity
 import com.moduxi.monexi.data.local.entity.CategoryEntity
+import com.moduxi.monexi.data.local.entity.CreditCardEntity
 import com.moduxi.monexi.data.local.entity.PaymentMethodEntity
 import com.moduxi.monexi.data.local.entity.TransactionEntity
 import com.moduxi.monexi.domain.model.TransactionType
@@ -20,15 +24,19 @@ import kotlinx.coroutines.launch
     entities = [
         CategoryEntity::class,
         PaymentMethodEntity::class,
-        TransactionEntity::class
+        TransactionEntity::class,
+        AccountEntity::class,
+        CreditCardEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class MonexiDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun paymentMethodDao(): PaymentMethodDao
     abstract fun transactionDao(): TransactionDao
+    abstract fun accountDao(): AccountDao
+    abstract fun creditCardDao(): CreditCardDao
 
     companion object {
         @Volatile
