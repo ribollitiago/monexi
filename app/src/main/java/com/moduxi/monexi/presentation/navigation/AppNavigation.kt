@@ -33,6 +33,7 @@ import com.moduxi.monexi.presentation.extract.ExtractScreen
 import com.moduxi.monexi.presentation.settings.SettingsScreen
 import com.moduxi.monexi.presentation.settings.accounts.BankAccountScreen
 import com.moduxi.monexi.presentation.settings.accounts.archived.ArchivedBankAccountScreen
+import com.moduxi.monexi.presentation.settings.accounts.edit.EditBankAccountScreen
 import com.moduxi.monexi.presentation.settings.categories.CategoriesScreen
 import com.moduxi.monexi.presentation.settings.categories.archived.ArchivedCategoriesScreen
 import com.moduxi.monexi.presentation.settings.categories.edit.EditCategoriesScreen
@@ -78,7 +79,8 @@ fun AppNavigation(themeManager: ThemeManager) {
         "archivedCreditCard",
         "editCreditCard",
         "bankAccounts",
-        "archivedBankAccount"
+        "archivedBankAccount",
+        "editBankAccount"
     )
 
     Scaffold(
@@ -228,16 +230,6 @@ fun AppNavigation(themeManager: ThemeManager) {
                     }
                 )
             }
-            composable("bankAccounts") {
-                BankAccountScreen(
-                    onNavigateBack = {
-                        navController.popBackStack()
-                    },
-                    onNavigateArchived = {
-                        navController.navigate("archivedBankAccount")
-                    }
-                )
-            }
             composable("archivedCategories") {
                 ArchivedCategoriesScreen(
                     onNavigateBack = {
@@ -247,13 +239,6 @@ fun AppNavigation(themeManager: ThemeManager) {
             }
             composable("archivedPaymentMethod") {
                 ArchivedPaymentMethodScreen(
-                    onNavigateBack = {
-                        navController.popBackStack()
-                    }
-                )
-            }
-            composable("archivedBankAccount") {
-                ArchivedBankAccountScreen(
                     onNavigateBack = {
                         navController.popBackStack()
                     }
@@ -326,6 +311,46 @@ fun AppNavigation(themeManager: ThemeManager) {
             }
             composable("archivedCreditCard") {
                 ArchivedCreditCardScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable("bankAccounts") {
+                BankAccountScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                    onNavigateArchived = {
+                        navController.navigate("archivedBankAccount")
+                    },
+                    onNavigateEdit = { id ->
+                        if (id != null) {
+                            navController.navigate("editBankAccount?id=$id")
+                        } else {
+                            navController.navigate("editBankAccount")
+                        }
+                    }
+                )
+            }
+            composable(
+                route = "editBankAccount?id={id}",
+                arguments = listOf(
+                    navArgument("id") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) {
+                EditBankAccountScreen(
+                    onBankAccountSaved = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable("archivedBankAccount") {
+                ArchivedBankAccountScreen(
                     onNavigateBack = {
                         navController.popBackStack()
                     }

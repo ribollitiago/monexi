@@ -60,6 +60,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import com.moduxi.monexi.domain.model.Category
 import com.moduxi.monexi.domain.model.PaymentMethod
 import com.moduxi.monexi.domain.model.TransactionType
+import com.moduxi.monexi.ui.theme.CurrencyVisualTransformation
 import com.moduxi.monexi.ui.theme.toCategoryIcon
 import com.moduxi.monexi.ui.theme.toComposeColor
 import java.text.SimpleDateFormat
@@ -411,49 +412,4 @@ private fun Long.toBrazilianDateFormat(
         timeZone = TimeZone.getTimeZone("GMT")
     }
     return formatter.format(date)
-}
-
-private class CurrencyVisualTransformation : VisualTransformation {
-
-    override fun filter(text: AnnotatedString): TransformedText {
-        val digits = text.text.filter { it.isDigit() }
-
-        if (digits.isBlank()) {
-            return TransformedText(
-                text = AnnotatedString(""),
-                offsetMapping = OffsetMapping.Identity
-            )
-        }
-
-        val formatted = digits.toCurrencyDisplay()
-
-        return TransformedText(
-            text = AnnotatedString(formatted),
-            offsetMapping = object : OffsetMapping {
-                override fun originalToTransformed(offset: Int): Int {
-                    return formatted.length
-                }
-
-                override fun transformedToOriginal(offset: Int): Int {
-                    return digits.length
-                }
-            }
-        )
-    }
-}
-
-private fun String.toCurrencyDisplay(): String {
-    if (isBlank()) {
-        return ""
-    }
-
-    val cents = toLongOrNull() ?: return ""
-
-    val amount = cents / 100.0
-
-    return String.format(
-        Locale.forLanguageTag("pt-BR"),
-        "%.2f",
-        amount
-    )
 }

@@ -40,9 +40,8 @@ class EditCreditCardViewModel(
     }
 
     fun onLimitAmountChange(value: String) {
-        val amount = (value.filter { it.isDigit() }.toLongOrNull() ?: 0L) / 100.0
         _uiState.value = _uiState.value.copy(
-            creditCardLimitAmount = amount,
+            limitDigits = value.filter { it.isDigit() }.take(12),
             error = null
         )
     }
@@ -84,7 +83,7 @@ class EditCreditCardViewModel(
                 _uiState.value = _uiState.value.copy(
                     editingCreditCard = it,
                     creditCardName = it.name,
-                    creditCardLimitAmount = it.limitAmount,
+                    limitDigits = (it.limitAmount * 100).toLong().toString(),
                     creditCardClosingDay = it.closingDay,
                     creditCardDueDay = it.dueDay,
                     selectedColorHex = it.colorHex,
@@ -97,6 +96,7 @@ class EditCreditCardViewModel(
     fun saveCreditCard(onSaved: () -> Unit) {
         val state = _uiState.value
         val name = state.creditCardName.trim()
+        val limitAmount = (state.limitDigits.toLongOrNull() ?: 0L) / 100.0
 
         if (name.isBlank()) {
             _uiState.value = state.copy(error = "Informe o nome do cartão de crédito")
@@ -113,7 +113,7 @@ class EditCreditCardViewModel(
                         id = "0",
                         userId = currentUserId,
                         name = name,
-                        limitAmount = state.creditCardLimitAmount,
+                        limitAmount = limitAmount,
                         closingDay = state.creditCardClosingDay,
                         dueDay = state.creditCardDueDay,
                         colorHex = state.selectedColorHex,
@@ -125,7 +125,7 @@ class EditCreditCardViewModel(
                 creditCardRepository.updateCreditCard(
                     editingCard.copy(
                         name = name,
-                        limitAmount = state.creditCardLimitAmount,
+                        limitAmount = limitAmount,
                         closingDay = state.creditCardClosingDay,
                         dueDay = state.creditCardDueDay,
                         colorHex = state.selectedColorHex,

@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,11 +39,14 @@ import com.moduxi.monexi.domain.model.Account
 import com.moduxi.monexi.ui.theme.MonexiTheme
 import com.moduxi.monexi.ui.theme.toCategoryIcon
 import com.moduxi.monexi.ui.theme.toComposeColor
+import java.text.NumberFormat
+import java.util.Locale
 
 @Composable
 fun BankAccountScreen(
     onNavigateBack: () -> Unit,
     onNavigateArchived: () -> Unit,
+    onNavigateEdit: (String?) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: BankAccountViewModel = viewModel(factory = BankAccountViewModel.Factory)
 ) {
@@ -52,6 +56,8 @@ fun BankAccountScreen(
         uiState = uiState,
         onNavigateBack = onNavigateBack,
         onNavigateArchived = onNavigateArchived,
+        onNavigateEdit = { onNavigateEdit(null) },
+        onAccountClick = { account -> onNavigateEdit(account.id) },
         modifier = modifier.fillMaxSize()
     )
 }
@@ -61,6 +67,8 @@ private fun BankAccountContent(
     uiState: BankAccountUiState,
     onNavigateBack: () -> Unit,
     onNavigateArchived: () -> Unit,
+    onNavigateEdit: () -> Unit,
+    onAccountClick: (Account) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -114,14 +122,14 @@ private fun BankAccountContent(
                 items(uiState.accounts) { account ->
                     BankAccountItem(
                         bankAccount = account,
-                        onClick = { }
+                        onClick = { onAccountClick(account) }
                     )
                 }
             }
         }
 
         ExtendedFloatingActionButton(
-            onClick = { /* NAVEGACAO EDIT */ },
+            onClick = { onNavigateEdit() },
             icon = { Icon(Icons.Default.Add, contentDescription = null) },
             text = { Text("Adicionar novo") },
             modifier = Modifier
@@ -137,6 +145,11 @@ private fun BankAccountItem(
     bankAccount: Account,
     onClick: () -> Unit
 ) {
+    val formattedBalance = remember(bankAccount.initialBalance) {
+        val formatter = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"))
+        formatter.format(bankAccount.initialBalance)
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -174,7 +187,7 @@ private fun BankAccountItem(
                 )
 
                 Text(
-                    text = "Saldo ${bankAccount.initialBalance}",
+                    text = "Saldo $formattedBalance",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -190,11 +203,13 @@ private fun BankAccountScreenPreview() {
         BankAccountContent(
             uiState = BankAccountUiState(
                 accounts = listOf(
-                    Account(id = "1", name = "conta 1", initialBalance = 100.0)
+                    Account(id = "1", name = "Nubank", initialBalance = 100.0)
                 )
             ),
             onNavigateBack = {},
-            onNavigateArchived = {}
+            onNavigateArchived = {},
+            onNavigateEdit = {},
+            onAccountClick = {}
         )
     }
 }

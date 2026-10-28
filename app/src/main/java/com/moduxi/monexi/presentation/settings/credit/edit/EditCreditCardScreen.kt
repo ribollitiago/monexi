@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -22,17 +23,14 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,11 +40,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.moduxi.monexi.ui.theme.CurrencyVisualTransformation
 import com.moduxi.monexi.ui.theme.MonexiTheme
 import com.moduxi.monexi.ui.theme.toCategoryIcon
 import com.moduxi.monexi.ui.theme.toComposeColor
-import java.text.NumberFormat
-import java.util.Locale
 
 @Composable
 fun EditCreditCardScreen(
@@ -113,11 +110,6 @@ fun EditCreditCardContent(
         "DirectionsCar" to "Transporte"
     )
 
-    val formattedLimit = remember(uiState.creditCardLimitAmount) {
-        val formatter = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"))
-        formatter.format(uiState.creditCardLimitAmount)
-    }
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -133,7 +125,7 @@ fun EditCreditCardContent(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -145,7 +137,7 @@ fun EditCreditCardContent(
                     Text(
                         text = if (uiState.editingCreditCard == null) "Novo Cartão" else "Editar Cartão",
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Bold
                     )
 
                     if (uiState.editingCreditCard != null) {
@@ -156,6 +148,8 @@ fun EditCreditCardContent(
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
+                    } else {
+                        Spacer(modifier = Modifier.size(48.dp))
                     }
                 }
             }
@@ -172,11 +166,13 @@ fun EditCreditCardContent(
 
             item {
                 OutlinedTextField(
-                    value = formattedLimit,
+                    value = uiState.limitDigits,
                     onValueChange = onLimitAmountChange,
                     label = { Text("Limite Total") },
+                    placeholder = { Text("0,00") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    visualTransformation = CurrencyVisualTransformation(),
                     modifier = Modifier.fillMaxWidth()
                 )
             }

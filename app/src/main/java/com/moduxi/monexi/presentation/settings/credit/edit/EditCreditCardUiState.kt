@@ -4,7 +4,7 @@ import com.moduxi.monexi.domain.model.CreditCard
 
 data class EditCreditCardUiState(
     val creditCardName: String = "",
-    val creditCardLimitAmount: Double = 0.0,
+    val limitDigits: String = "",
     val creditCardClosingDay: Int = 0,
     val creditCardDueDay: Int = 0,
     val selectedColorHex: String = "#1565C0",
