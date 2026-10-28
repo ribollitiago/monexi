@@ -11,6 +11,6 @@ data class Account(
     val iconName: String = "AccountBalance",
     val isArchived: Boolean = false,
 
-    val type: AccountType,
+    val type: AccountType = AccountType.CHECKING,
     val excludeFromTotal: Boolean = false
 )

@@ -179,6 +179,7 @@ class RoomCreditCardRepository(
                 val colorHex = doc.getString("colorHex") ?: "#1565C0"
                 val iconName = doc.getString("iconName") ?: "CreditCard"
                 val isArchived = doc.getBoolean("isArchived") ?: false
+                val linkedAccountId = doc.getString("linkedAccountId") ?: ""
 
                 CreditCardEntity(
                     id = cardId,
@@ -189,7 +190,8 @@ class RoomCreditCardRepository(
                     dueDay = dueDay,
                     colorHex = colorHex,
                     iconName = iconName,
-                    isArchived = isArchived
+                    isArchived = isArchived,
+                    linkedAccountId = linkedAccountId
                 )
             }
 

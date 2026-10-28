@@ -17,5 +17,12 @@ data class TransactionEntity (
     val updatedAt: Long,
     val deletedAt: Long?,
     val syncStatus: String,
-    val remoteId: String?
+    val remoteId: String?,
+    val accountId: String? = null,
+    val creditCardId: String? = null,
+    val creditCardBillId: String? = null,
+    val installmentNumber: Int? = null,
+    val totalInstallments: Int? = null,
+    val installmentGroupId: String? = null,
+    val recurringTransactionId: String? = null
 )

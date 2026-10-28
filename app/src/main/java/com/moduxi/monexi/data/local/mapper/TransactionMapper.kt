@@ -20,7 +20,14 @@ fun Transaction.toEntity(): TransactionEntity {
         updatedAt = updatedAt,
         deletedAt = deletedAt,
         syncStatus = syncStatus.name,
-        remoteId = remoteId
+        remoteId = remoteId,
+        accountId = accountId,
+        creditCardId = creditCardId,
+        creditCardBillId = creditCardBillId,
+        installmentNumber = installmentNumber,
+        totalInstallments = totalInstallments,
+        installmentGroupId = installmentGroupId,
+        recurringTransactionId = recurringTransactionId,
     )
 }
 
@@ -59,6 +66,13 @@ fun TransactionEntity.toDomain(
         updatedAt = updatedAt,
         deletedAt = deletedAt,
         syncStatus = status,
-        remoteId = remoteId
+        remoteId = remoteId,
+        accountId = accountId,
+        creditCardId = creditCardId,
+        creditCardBillId = creditCardBillId,
+        installmentNumber = installmentNumber,
+        totalInstallments = totalInstallments,
+        installmentGroupId = installmentGroupId,
+        recurringTransactionId = recurringTransactionId
     )
 }

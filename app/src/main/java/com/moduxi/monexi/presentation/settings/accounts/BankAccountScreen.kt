@@ -36,6 +36,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.moduxi.monexi.domain.model.account.Account
+import com.moduxi.monexi.domain.model.account.AccountType
 import com.moduxi.monexi.ui.theme.MonexiTheme
 import com.moduxi.monexi.ui.theme.toCategoryIcon
 import com.moduxi.monexi.ui.theme.toComposeColor
@@ -203,7 +204,7 @@ private fun BankAccountScreenPreview() {
         BankAccountContent(
             uiState = BankAccountUiState(
                 accounts = listOf(
-                    Account(id = "1", name = "Nubank", initialBalance = 100.0)
+                    Account(id = "1", name = "Nubank", initialBalance = 100.0, type = AccountType.CHECKING)
                 )
             ),
             onNavigateBack = {},

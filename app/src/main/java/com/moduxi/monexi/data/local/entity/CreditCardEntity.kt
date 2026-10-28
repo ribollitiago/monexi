@@ -14,5 +14,6 @@ data class CreditCardEntity(
     val dueDay: Int = 12,      // Dia que vence a fatura
     val colorHex: String = "#1565C0",
     val iconName: String = "CreditCard",
-    val isArchived: Boolean = false
+    val isArchived: Boolean = false,
+    val linkedAccountId: String?
 )

@@ -12,5 +12,5 @@ data class CreditCard(
     val colorHex: String = "#1565C0",
     val iconName: String = "CreditCard",
     val isArchived: Boolean = false,
-    val linkedAccountId: String?
+    val linkedAccountId: String? = null
 )

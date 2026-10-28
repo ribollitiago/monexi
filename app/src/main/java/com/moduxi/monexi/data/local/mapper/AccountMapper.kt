@@ -11,7 +11,8 @@ fun AccountEntity.toDomain(): Account {
         initialBalance = initialBalance,
         colorHex = colorHex,
         iconName = iconName,
-        isArchived = isArchived
+        isArchived = isArchived,
+        type = type
     )
 }
 
@@ -23,6 +24,7 @@ fun Account.toEntity(): AccountEntity {
         initialBalance = initialBalance,
         colorHex = colorHex,
         iconName = iconName,
-        isArchived = isArchived
+        isArchived = isArchived,
+        type = type
     )
 }

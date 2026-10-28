@@ -165,8 +165,8 @@ private fun ArchivedCreditCardScreenPreview() {
         ArchivedCreditCardContent(
             uiState = ArchivedCreditCardUiState(
                 creditCardsArchived = listOf(
-                    CreditCard(id = "1", userId = "1", name = "Nubank", closingDay = 5, dueDay = 12),
-                    CreditCard(id = "2", userId = "2", name = "Inter", closingDay = 10, dueDay = 17)
+                    CreditCard(id = "1", userId = "1", name = "Nubank", closingDay = 5, dueDay = 12, linkedAccountId = "0"),
+                    CreditCard(id = "2", userId = "2", name = "Inter", closingDay = 10, dueDay = 17, linkedAccountId = "0")
                 )
             ),
             onNavigateBack = {},

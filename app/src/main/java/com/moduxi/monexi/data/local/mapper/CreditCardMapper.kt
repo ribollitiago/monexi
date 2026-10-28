@@ -13,7 +13,8 @@ fun CreditCardEntity.toDomain(): CreditCard {
         dueDay = dueDay,
         colorHex = colorHex,
         iconName = iconName,
-        isArchived = isArchived
+        isArchived = isArchived,
+        linkedAccountId = linkedAccountId
     )
 }
 
@@ -27,6 +28,7 @@ fun CreditCard.toEntity(): CreditCardEntity {
         dueDay = dueDay,
         colorHex = colorHex,
         iconName = iconName,
-        isArchived = isArchived
+        isArchived = isArchived,
+        linkedAccountId = linkedAccountId
     )
 }

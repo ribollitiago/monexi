@@ -6,6 +6,7 @@ import com.moduxi.monexi.data.local.entity.AccountEntity
 import com.moduxi.monexi.data.local.mapper.toDomain
 import com.moduxi.monexi.data.local.mapper.toEntity
 import com.moduxi.monexi.domain.model.account.Account
+import com.moduxi.monexi.domain.model.account.AccountType
 import com.moduxi.monexi.domain.repository.AccountRepository
 import com.moduxi.monexi.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.Flow
@@ -65,7 +66,8 @@ class RoomAccountRepository(
             "initialBalance" to account.initialBalance,
             "colorHex" to account.colorHex,
             "iconName" to account.iconName,
-            "isArchived" to account.isArchived
+            "isArchived" to account.isArchived,
+            "type" to account.type.name
         )
 
         try {
@@ -96,7 +98,8 @@ class RoomAccountRepository(
             "initialBalance" to account.initialBalance,
             "colorHex" to account.colorHex,
             "iconName" to account.iconName,
-            "isArchived" to account.isArchived
+            "isArchived" to account.isArchived,
+            "type" to account.type.name
         )
 
         try {
@@ -129,7 +132,8 @@ class RoomAccountRepository(
             "initialBalance" to archivedAccount.initialBalance,
             "colorHex" to archivedAccount.colorHex,
             "iconName" to archivedAccount.iconName,
-            "isArchived" to true
+            "isArchived" to true,
+            "type" to archivedAccount.type.name
         )
 
         try {
@@ -172,6 +176,13 @@ class RoomAccountRepository(
                 val iconName = doc.getString("iconName") ?: "AccountBalance"
                 val isArchived = doc.getBoolean("isArchived") ?: false
 
+                val typeString = doc.getString("type") ?: AccountType.CHECKING.name
+                val type = try {
+                    AccountType.valueOf(typeString)
+                } catch (e: Exception) {
+                    AccountType.CHECKING
+                }
+
                 AccountEntity(
                     id = accountId,
                     userId = currentUserId,
@@ -179,7 +190,8 @@ class RoomAccountRepository(
                     initialBalance = initialBalance,
                     colorHex = colorHex,
                     iconName = iconName,
-                    isArchived = isArchived
+                    isArchived = isArchived,
+                    type = type
                 )
             }
 

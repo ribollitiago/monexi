@@ -18,13 +18,13 @@ data class Transaction(
     val syncStatus: SyncStatus = SyncStatus.PENDING_CREATE,
     val remoteId: String? = null,
 
-    val accountId: String?,
-    val creditCardId: String?,
-    val creditCardBillId: String?,
+    val accountId: String? = null,
+    val creditCardId: String? = null,
+    val creditCardBillId: String? = null,
 
-    val installmentNumber: Int?,
-    val totalInstallments: Int?,
-    val installmentGroupId: String?,
+    val installmentNumber: Int? = null,
+    val totalInstallments: Int? = null,
+    val installmentGroupId: String? = null,
 
-    val recurringTransactionId: String?
+    val recurringTransactionId: String? = null
 )
