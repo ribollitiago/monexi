@@ -146,7 +146,6 @@ fun EditCreditCardContent(
                         text = if (uiState.editingCreditCard == null) "Novo Cartão" else "Editar Cartão",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f)
                     )
 
                     if (uiState.editingCreditCard != null) {

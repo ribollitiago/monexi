@@ -91,8 +91,7 @@ private fun CreditCardContent(
                 Text(
                     text = "Cartões de Crédito",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
+                    fontWeight = FontWeight.Bold
                 )
                 IconButton(onClick = onNavigateArchived) {
                     Icon(

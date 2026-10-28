@@ -31,6 +31,8 @@ import com.moduxi.monexi.presentation.auth.login.LoginScreen
 import com.moduxi.monexi.presentation.auth.register.RegisterScreen
 import com.moduxi.monexi.presentation.extract.ExtractScreen
 import com.moduxi.monexi.presentation.settings.SettingsScreen
+import com.moduxi.monexi.presentation.settings.accounts.BankAccountScreen
+import com.moduxi.monexi.presentation.settings.accounts.archived.ArchivedBankAccountScreen
 import com.moduxi.monexi.presentation.settings.categories.CategoriesScreen
 import com.moduxi.monexi.presentation.settings.categories.archived.ArchivedCategoriesScreen
 import com.moduxi.monexi.presentation.settings.categories.edit.EditCategoriesScreen
@@ -74,7 +76,9 @@ fun AppNavigation(themeManager: ThemeManager) {
         "editPaymentMethod",
         "creditCards",
         "archivedCreditCard",
-        "editCreditCard"
+        "editCreditCard",
+        "bankAccounts",
+        "archivedBankAccount"
     )
 
     Scaffold(
@@ -90,7 +94,7 @@ fun AppNavigation(themeManager: ThemeManager) {
                     items.forEach { item ->
                         NavigationBarItem(
                             selected = when (item.route) {
-                                "settings" -> currentRoute == "settings" || currentRoute == "categories" || currentRoute == "paymentMethods"
+                                "settings" -> currentRoute == "settings" || currentRoute == "categories" || currentRoute == "paymentMethods" || currentRoute == "bankAccounts"
                                 "transaction" -> currentRoute?.startsWith("transaction") == true
                                 else -> currentRoute == item.route
                             },
@@ -176,7 +180,9 @@ fun AppNavigation(themeManager: ThemeManager) {
                     onNavigateToPaymentMethods = {
                         navController.navigate("paymentMethods")
                     },
-                    onNavigateToBankAccount = {},
+                    onNavigateToBankAccount = {
+                        navController.navigate("bankAccounts")
+                    },
                     onNavigateToCreditCard = {
                         navController.navigate("creditCards")
                     },
@@ -222,6 +228,16 @@ fun AppNavigation(themeManager: ThemeManager) {
                     }
                 )
             }
+            composable("bankAccounts") {
+                BankAccountScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                    onNavigateArchived = {
+                        navController.navigate("archivedBankAccount")
+                    }
+                )
+            }
             composable("archivedCategories") {
                 ArchivedCategoriesScreen(
                     onNavigateBack = {
@@ -231,6 +247,13 @@ fun AppNavigation(themeManager: ThemeManager) {
             }
             composable("archivedPaymentMethod") {
                 ArchivedPaymentMethodScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable("archivedBankAccount") {
+                ArchivedBankAccountScreen(
                     onNavigateBack = {
                         navController.popBackStack()
                     }

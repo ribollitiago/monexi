@@ -81,8 +81,7 @@ fun ArchivedCreditCardContent(
                 text = "Cartões Arquivados",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.weight(1f)
+                textAlign = TextAlign.Center
             )
 
             Spacer(modifier = Modifier.size(48.dp))
