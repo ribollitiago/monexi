@@ -6,22 +6,23 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.moduxi.monexi.domain.model.Category
-import com.moduxi.monexi.domain.model.PaymentMethod
-import com.moduxi.monexi.domain.model.Transaction
-import com.moduxi.monexi.domain.model.TransactionType
+import com.moduxi.monexi.domain.model.category.Category
+import com.moduxi.monexi.domain.model.payment.PaymentMethod
+import com.moduxi.monexi.domain.model.transaction.Transaction
+import com.moduxi.monexi.domain.model.transaction.TransactionType
 import com.moduxi.monexi.domain.repository.CategoryRepository
 import com.moduxi.monexi.domain.repository.PaymentMethodRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.lifecycle.viewModelScope
 import com.moduxi.monexi.MonexiApplication
-import com.moduxi.monexi.domain.model.SyncStatus
+import com.moduxi.monexi.domain.model.transaction.SyncStatus
 import com.moduxi.monexi.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class TransactionViewModel(
     private val transactionRepository: TransactionRepository,
@@ -177,7 +178,7 @@ class TransactionViewModel(
         }
 
         val transaction = Transaction(
-            id = editingTransaction?.id ?: java.util.UUID.randomUUID().toString(),
+            id = editingTransaction?.id ?: UUID.randomUUID().toString(),
             userId = currentUserId,
             title = state.description,
             amount = amount,

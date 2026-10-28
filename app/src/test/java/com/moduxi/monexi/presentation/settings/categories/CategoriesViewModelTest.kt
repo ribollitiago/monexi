@@ -3,9 +3,8 @@ package com.moduxi.monexi.presentation.settings.categories
 import com.moduxi.monexi.MainDispatcherRule
 import com.moduxi.monexi.data.repository.FakeAuthRepository
 import com.moduxi.monexi.data.repository.FakeCategoryRepository
-import com.moduxi.monexi.domain.model.Category
-import com.moduxi.monexi.domain.model.TransactionType
-import com.moduxi.monexi.domain.repository.CategoryRepository
+import com.moduxi.monexi.domain.model.category.Category
+import com.moduxi.monexi.domain.model.transaction.TransactionType
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher

@@ -1,6 +1,6 @@
 package com.moduxi.monexi.presentation.extract
 
-import com.moduxi.monexi.domain.model.Transaction
+import com.moduxi.monexi.domain.model.transaction.Transaction
 
 data class ExtractUiState(
     val search: String = "",

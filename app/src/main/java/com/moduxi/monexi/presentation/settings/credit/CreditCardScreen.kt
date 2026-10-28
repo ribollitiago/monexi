@@ -34,7 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.moduxi.monexi.domain.model.CreditCard
+import com.moduxi.monexi.domain.model.creditcard.CreditCard
 import com.moduxi.monexi.ui.theme.MonexiTheme
 import com.moduxi.monexi.ui.theme.toCategoryIcon
 import com.moduxi.monexi.ui.theme.toComposeColor

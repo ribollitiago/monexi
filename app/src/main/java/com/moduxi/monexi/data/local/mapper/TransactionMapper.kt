@@ -1,11 +1,11 @@
 package com.moduxi.monexi.data.local.mapper
 
 import com.moduxi.monexi.data.local.entity.TransactionEntity
-import com.moduxi.monexi.domain.model.Category
-import com.moduxi.monexi.domain.model.PaymentMethod
-import com.moduxi.monexi.domain.model.SyncStatus
-import com.moduxi.monexi.domain.model.Transaction
-import com.moduxi.monexi.domain.model.TransactionType
+import com.moduxi.monexi.domain.model.category.Category
+import com.moduxi.monexi.domain.model.payment.PaymentMethod
+import com.moduxi.monexi.domain.model.transaction.SyncStatus
+import com.moduxi.monexi.domain.model.transaction.Transaction
+import com.moduxi.monexi.domain.model.transaction.TransactionType
 
 fun Transaction.toEntity(): TransactionEntity {
     return TransactionEntity(

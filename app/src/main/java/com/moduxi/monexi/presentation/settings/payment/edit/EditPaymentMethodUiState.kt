@@ -1,6 +1,6 @@
 package com.moduxi.monexi.presentation.settings.payment.edit
 
-import com.moduxi.monexi.domain.model.PaymentMethod
+import com.moduxi.monexi.domain.model.payment.PaymentMethod
 
 data class EditPaymentMethodUiState (
     val paymentMethodName: String = "",

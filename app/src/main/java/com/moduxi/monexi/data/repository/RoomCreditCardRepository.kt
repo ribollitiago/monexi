@@ -5,7 +5,7 @@ import com.moduxi.monexi.data.local.dao.CreditCardDao
 import com.moduxi.monexi.data.local.entity.CreditCardEntity
 import com.moduxi.monexi.data.local.mapper.toDomain
 import com.moduxi.monexi.data.local.mapper.toEntity
-import com.moduxi.monexi.domain.model.CreditCard
+import com.moduxi.monexi.domain.model.creditcard.CreditCard
 import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.CreditCardRepository
 import kotlinx.coroutines.flow.Flow

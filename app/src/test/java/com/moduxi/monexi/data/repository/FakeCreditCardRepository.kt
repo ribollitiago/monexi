@@ -1,6 +1,6 @@
 package com.moduxi.monexi.data.repository
 
-import com.moduxi.monexi.domain.model.CreditCard
+import com.moduxi.monexi.domain.model.creditcard.CreditCard
 import com.moduxi.monexi.domain.repository.CreditCardRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

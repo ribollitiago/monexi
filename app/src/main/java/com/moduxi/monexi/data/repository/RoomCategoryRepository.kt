@@ -5,8 +5,8 @@ import com.moduxi.monexi.data.local.dao.CategoryDao
 import com.moduxi.monexi.data.local.entity.CategoryEntity
 import com.moduxi.monexi.data.local.mapper.toDomain
 import com.moduxi.monexi.data.local.mapper.toEntity
-import com.moduxi.monexi.domain.model.Category
-import com.moduxi.monexi.domain.model.TransactionType
+import com.moduxi.monexi.domain.model.category.Category
+import com.moduxi.monexi.domain.model.transaction.TransactionType
 import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.CategoryRepository
 import kotlinx.coroutines.flow.Flow

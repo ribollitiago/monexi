@@ -1,9 +1,9 @@
 package com.moduxi.monexi.domain.usecase
 
-import com.moduxi.monexi.domain.model.Category
-import com.moduxi.monexi.domain.model.PaymentMethod
-import com.moduxi.monexi.domain.model.Transaction
-import com.moduxi.monexi.domain.model.TransactionType
+import com.moduxi.monexi.domain.model.category.Category
+import com.moduxi.monexi.domain.model.payment.PaymentMethod
+import com.moduxi.monexi.domain.model.transaction.Transaction
+import com.moduxi.monexi.domain.model.transaction.TransactionType
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

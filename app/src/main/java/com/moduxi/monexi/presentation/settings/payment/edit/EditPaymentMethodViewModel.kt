@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
-import com.moduxi.monexi.domain.model.PaymentMethod
+import com.moduxi.monexi.domain.model.payment.PaymentMethod
 import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.PaymentMethodRepository
 import kotlinx.coroutines.flow.MutableStateFlow

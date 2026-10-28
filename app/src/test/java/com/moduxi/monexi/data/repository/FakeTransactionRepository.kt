@@ -1,6 +1,6 @@
 package com.moduxi.monexi.data.repository
 
-import com.moduxi.monexi.domain.model.Transaction
+import com.moduxi.monexi.domain.model.transaction.Transaction
 import com.moduxi.monexi.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

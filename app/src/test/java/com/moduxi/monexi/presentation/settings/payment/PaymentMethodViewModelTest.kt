@@ -3,7 +3,7 @@ package com.moduxi.monexi.presentation.settings.payment
 import com.moduxi.monexi.MainDispatcherRule
 import com.moduxi.monexi.data.repository.FakeAuthRepository
 import com.moduxi.monexi.data.repository.FakePaymentMethodRepository
-import com.moduxi.monexi.domain.model.PaymentMethod
+import com.moduxi.monexi.domain.model.payment.PaymentMethod
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher

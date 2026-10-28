@@ -3,7 +3,7 @@ package com.moduxi.monexi.data.repository
 import com.moduxi.monexi.data.local.dao.TransactionDao
 import com.moduxi.monexi.data.local.mapper.toDomain
 import com.moduxi.monexi.data.local.mapper.toEntity
-import com.moduxi.monexi.domain.model.Transaction
+import com.moduxi.monexi.domain.model.transaction.Transaction
 import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.CategoryRepository
 import com.moduxi.monexi.domain.repository.PaymentMethodRepository
@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import android.util.Log
-import com.moduxi.monexi.domain.model.SyncStatus
+import com.moduxi.monexi.domain.model.transaction.SyncStatus
 
 class RoomTransactionRepository(
     private val transactionDao: TransactionDao,

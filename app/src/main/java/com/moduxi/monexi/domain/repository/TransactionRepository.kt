@@ -1,6 +1,6 @@
 package com.moduxi.monexi.domain.repository
 
-import com.moduxi.monexi.domain.model.Transaction
+import com.moduxi.monexi.domain.model.transaction.Transaction
 import kotlinx.coroutines.flow.Flow
 
 interface TransactionRepository {

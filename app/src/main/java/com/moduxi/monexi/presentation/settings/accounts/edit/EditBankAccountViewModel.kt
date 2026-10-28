@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
-import com.moduxi.monexi.domain.model.Account
+import com.moduxi.monexi.domain.model.account.Account
 import com.moduxi.monexi.domain.repository.AccountRepository
 import com.moduxi.monexi.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow

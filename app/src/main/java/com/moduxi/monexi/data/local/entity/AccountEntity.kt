@@ -2,7 +2,6 @@ package com.moduxi.monexi.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.moduxi.monexi.domain.model.Account
 
 @Entity(tableName = "accounts")
 data class AccountEntity(

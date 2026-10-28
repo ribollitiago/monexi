@@ -1,7 +1,7 @@
 package com.moduxi.monexi.data.local.mapper
 
 import com.moduxi.monexi.data.local.entity.PaymentMethodEntity
-import com.moduxi.monexi.domain.model.PaymentMethod
+import com.moduxi.monexi.domain.model.payment.PaymentMethod
 
 fun PaymentMethodEntity.toDomain(): PaymentMethod {
     return PaymentMethod(

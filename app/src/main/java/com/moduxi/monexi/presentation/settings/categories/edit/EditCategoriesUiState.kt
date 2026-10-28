@@ -1,7 +1,7 @@
 package com.moduxi.monexi.presentation.settings.categories.edit
 
-import com.moduxi.monexi.domain.model.Category
-import com.moduxi.monexi.domain.model.TransactionType
+import com.moduxi.monexi.domain.model.category.Category
+import com.moduxi.monexi.domain.model.transaction.TransactionType
 
 data class EditCategoriesUiState(
     val selectedType: TransactionType = TransactionType.EXPENSE,

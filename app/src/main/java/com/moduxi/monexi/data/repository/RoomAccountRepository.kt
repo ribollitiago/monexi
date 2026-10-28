@@ -5,7 +5,7 @@ import com.moduxi.monexi.data.local.dao.AccountDao
 import com.moduxi.monexi.data.local.entity.AccountEntity
 import com.moduxi.monexi.data.local.mapper.toDomain
 import com.moduxi.monexi.data.local.mapper.toEntity
-import com.moduxi.monexi.domain.model.Account
+import com.moduxi.monexi.domain.model.account.Account
 import com.moduxi.monexi.domain.repository.AccountRepository
 import com.moduxi.monexi.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.Flow

@@ -1,6 +1,6 @@
 package com.moduxi.monexi.domain.repository
 
-import com.moduxi.monexi.domain.model.Account
+import com.moduxi.monexi.domain.model.account.Account
 import kotlinx.coroutines.flow.Flow
 
 interface AccountRepository {

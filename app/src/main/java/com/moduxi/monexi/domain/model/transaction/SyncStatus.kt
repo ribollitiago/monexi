@@ -1,4 +1,4 @@
-package com.moduxi.monexi.domain.model
+package com.moduxi.monexi.domain.model.transaction
 
 enum class SyncStatus {
     SYNCED,

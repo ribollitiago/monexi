@@ -1,6 +1,6 @@
 package com.moduxi.monexi.presentation.home
 
-import com.moduxi.monexi.domain.model.Transaction
+import com.moduxi.monexi.domain.model.transaction.Transaction
 
 data class HomeUiState(
     val balance: Double = 0.0,

@@ -1,6 +1,6 @@
 package com.moduxi.monexi.data.repository
 
-import com.moduxi.monexi.domain.model.Account
+import com.moduxi.monexi.domain.model.account.Account
 import com.moduxi.monexi.domain.repository.AccountRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

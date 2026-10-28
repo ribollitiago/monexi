@@ -1,7 +1,7 @@
 package com.moduxi.monexi.data.local.mapper
 
 import com.moduxi.monexi.data.local.entity.AccountEntity
-import com.moduxi.monexi.domain.model.Account
+import com.moduxi.monexi.domain.model.account.Account
 
 fun AccountEntity.toDomain(): Account {
     return Account(

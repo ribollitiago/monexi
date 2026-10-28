@@ -15,7 +15,7 @@ import com.moduxi.monexi.data.local.entity.CategoryEntity
 import com.moduxi.monexi.data.local.entity.CreditCardEntity
 import com.moduxi.monexi.data.local.entity.PaymentMethodEntity
 import com.moduxi.monexi.data.local.entity.TransactionEntity
-import com.moduxi.monexi.domain.model.TransactionType
+import com.moduxi.monexi.domain.model.transaction.TransactionType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

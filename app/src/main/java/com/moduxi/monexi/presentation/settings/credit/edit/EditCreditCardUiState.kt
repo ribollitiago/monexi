@@ -1,6 +1,6 @@
 package com.moduxi.monexi.presentation.settings.credit.edit
 
-import com.moduxi.monexi.domain.model.CreditCard
+import com.moduxi.monexi.domain.model.creditcard.CreditCard
 
 data class EditCreditCardUiState(
     val creditCardName: String = "",

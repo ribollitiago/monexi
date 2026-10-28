@@ -2,13 +2,10 @@ package com.moduxi.monexi.data.repository
 
 import com.google.firebase.firestore.FirebaseFirestore
 import com.moduxi.monexi.data.local.dao.PaymentMethodDao
-import com.moduxi.monexi.data.local.entity.CategoryEntity
 import com.moduxi.monexi.data.local.entity.PaymentMethodEntity
 import com.moduxi.monexi.data.local.mapper.toDomain
 import com.moduxi.monexi.data.local.mapper.toEntity
-import com.moduxi.monexi.domain.model.Category
-import com.moduxi.monexi.domain.model.PaymentMethod
-import com.moduxi.monexi.domain.model.TransactionType
+import com.moduxi.monexi.domain.model.payment.PaymentMethod
 import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.PaymentMethodRepository
 import kotlinx.coroutines.flow.Flow

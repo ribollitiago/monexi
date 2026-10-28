@@ -1,6 +1,6 @@
 package com.moduxi.monexi.presentation.settings.accounts.edit
 
-import com.moduxi.monexi.domain.model.Account
+import com.moduxi.monexi.domain.model.account.Account
 
 data class EditBankAccountUiState(
     val accountName: String = "",

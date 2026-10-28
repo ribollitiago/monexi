@@ -1,7 +1,7 @@
 package com.moduxi.monexi.data.local.mapper
 
 import com.moduxi.monexi.data.local.entity.CreditCardEntity
-import com.moduxi.monexi.domain.model.CreditCard
+import com.moduxi.monexi.domain.model.creditcard.CreditCard
 
 fun CreditCardEntity.toDomain(): CreditCard {
     return CreditCard(

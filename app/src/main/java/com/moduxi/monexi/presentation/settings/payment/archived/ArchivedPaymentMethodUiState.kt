@@ -1,6 +1,6 @@
 package com.moduxi.monexi.presentation.settings.payment.archived
 
-import com.moduxi.monexi.domain.model.PaymentMethod
+import com.moduxi.monexi.domain.model.payment.PaymentMethod
 
 data class ArchivedPaymentMethodUiState(
     val paymentMethodsArchived: List<PaymentMethod> = emptyList(),
