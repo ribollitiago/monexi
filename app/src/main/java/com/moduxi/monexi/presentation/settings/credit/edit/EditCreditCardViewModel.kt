@@ -8,16 +8,20 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
+import com.moduxi.monexi.domain.model.account.Account
 import com.moduxi.monexi.domain.model.creditcard.CreditCard
+import com.moduxi.monexi.domain.repository.AccountRepository
 import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.CreditCardRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class EditCreditCardViewModel(
     private val creditCardRepository: CreditCardRepository,
+    private val accountRepository: AccountRepository,
     private val authRepository: AuthRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -27,6 +31,13 @@ class EditCreditCardViewModel(
 
     init {
         val creditCardId: String? = savedStateHandle.get<String>("id")
+        viewModelScope.launch {
+            accountRepository.accounts.collect { accounts ->
+                _uiState.value = _uiState.value.copy(
+                    accounts = accounts
+                )
+            }
+        }
         if (!creditCardId.isNullOrEmpty()) {
             loadCreditCard(creditCardId)
         }
@@ -76,9 +87,16 @@ class EditCreditCardViewModel(
         )
     }
 
+    fun onAccountChange(account: Account?) {
+        _uiState.value = _uiState.value.copy(
+            selectedAccount = account
+        )
+    }
+
     fun loadCreditCard(id: String) {
         viewModelScope.launch {
             val card = creditCardRepository.getCreditCardById(id)
+            val accountsList = accountRepository.allAccounts.first()
             card?.let {
                 _uiState.value = _uiState.value.copy(
                     editingCreditCard = it,
@@ -87,7 +105,8 @@ class EditCreditCardViewModel(
                     creditCardClosingDay = it.closingDay,
                     creditCardDueDay = it.dueDay,
                     selectedColorHex = it.colorHex,
-                    selectedIconName = it.iconName
+                    selectedIconName = it.iconName,
+                    selectedAccount = it.linkedAccountId?.let { accountId -> accountsList.firstOrNull { acc -> acc.id == accountId } }
                 )
             }
         }
@@ -118,6 +137,7 @@ class EditCreditCardViewModel(
                         dueDay = state.creditCardDueDay,
                         colorHex = state.selectedColorHex,
                         iconName = state.selectedIconName,
+                        linkedAccountId = state.selectedAccount?.id,
                         isArchived = false
                     )
                 )
@@ -129,6 +149,7 @@ class EditCreditCardViewModel(
                         closingDay = state.creditCardClosingDay,
                         dueDay = state.creditCardDueDay,
                         colorHex = state.selectedColorHex,
+                        linkedAccountId = state.selectedAccount?.id,
                         iconName = state.selectedIconName
                     )
                 )
@@ -152,6 +173,7 @@ class EditCreditCardViewModel(
                 val savedStateHandle = createSavedStateHandle()
                 EditCreditCardViewModel(
                     creditCardRepository = application.creditCardRepository,
+                    accountRepository = application.accountRepository,
                     authRepository = application.authRepository,
                     savedStateHandle = savedStateHandle
                 )

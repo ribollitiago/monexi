@@ -22,8 +22,8 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,26 +35,29 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusEvent
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.focus.onFocusEvent
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalFocusManager
+import com.moduxi.monexi.domain.model.account.Account
 import com.moduxi.monexi.domain.model.category.Category
+import com.moduxi.monexi.domain.model.creditcard.CreditCard
 import com.moduxi.monexi.domain.model.payment.PaymentMethod
 import com.moduxi.monexi.domain.model.transaction.TransactionType
+import com.moduxi.monexi.ui.components.DropdownField
 import com.moduxi.monexi.ui.theme.CurrencyVisualTransformation
 import com.moduxi.monexi.ui.theme.toCategoryIcon
 import com.moduxi.monexi.ui.theme.toComposeColor
@@ -79,6 +82,8 @@ fun TransactionScreen(
         onDateChange = viewModel::onDateChange,
         onCategoryChange = viewModel::onCategoryChange,
         onPaymentMethodChange = viewModel::onPaymentMethodChange,
+        onAccountChange = viewModel::onAccountChange,
+        onCreditCardChange = viewModel::onCreditCardChange,
         onDeleteClick = {
             uiState.editingTransaction?.let { transaction ->
                 viewModel.deleteTransaction(transaction)
@@ -105,6 +110,8 @@ private fun TransactionContent(
     onDateChange: (Long) -> Unit,
     onCategoryChange: (Category) -> Unit,
     onPaymentMethodChange: (PaymentMethod) -> Unit,
+    onAccountChange: (Account) -> Unit,
+    onCreditCardChange: (CreditCard) -> Unit,
     onDeleteClick: () -> Unit,
     onSaveClick: () -> Unit,
     onBackClick: () -> Unit,
@@ -118,6 +125,8 @@ private fun TransactionContent(
         initialSelectedDateMillis = uiState.dateMillis
     )
 
+    val isCreditCardSelected = uiState.selectedPaymentMethod?.name?.contains("Crédito", ignoreCase = true) == true
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -130,7 +139,7 @@ private fun TransactionContent(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
-                Row (
+                Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -208,6 +217,7 @@ private fun TransactionContent(
                     }
                 }
             }
+
             item {
                 OutlinedTextField(
                     value = uiState.description,
@@ -216,6 +226,19 @@ private fun TransactionContent(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+
+            item {
+                OutlinedTextField(
+                    value = uiState.amountDigits,
+                    onValueChange = onAmountChange,
+                    label = { Text("Valor") },
+                    placeholder = { Text("0,00") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    visualTransformation = CurrencyVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
             item {
                 OutlinedTextField(
                     value = uiState.dateMillis.toBrazilianDateFormat(),
@@ -232,27 +255,6 @@ private fun TransactionContent(
                         }
                 )
             }
-            item {
-                OutlinedTextField(
-                    value = uiState.amountDigits,
-                    onValueChange = onAmountChange,
-                    label = { Text("Valor") },
-                    placeholder = { Text("0,00") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    visualTransformation = CurrencyVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            item {
-                DropdownField(
-                    label = "Forma de Pagamento",
-                    options = uiState.paymentMethods,
-                    selectedOption = uiState.selectedPaymentMethod,
-                    onOptionSelected = onPaymentMethodChange,
-                    optionLabel = { it.name }
-                )
-            }
 
             item {
                 DropdownField(
@@ -266,6 +268,42 @@ private fun TransactionContent(
                 )
             }
 
+            item {
+                DropdownField(
+                    label = "Forma de Pagamento",
+                    options = uiState.paymentMethods,
+                    selectedOption = uiState.selectedPaymentMethod,
+                    onOptionSelected = onPaymentMethodChange,
+                    optionLabel = { it.name }
+                )
+            }
+
+            if (isCreditCardSelected && uiState.creditCards.isNotEmpty()) {
+                item {
+                    DropdownField(
+                        label = "Cartão de Crédito",
+                        options = uiState.creditCards,
+                        selectedOption = uiState.selectedCreditCard,
+                        onOptionSelected = onCreditCardChange,
+                        optionLabel = { it.name },
+                        optionIcon = { it.iconName.toCategoryIcon() },
+                        optionColor = { it.colorHex.toComposeColor() }
+                    )
+                }
+            } else if (!isCreditCardSelected && uiState.accounts.isNotEmpty()) {
+                item {
+                    DropdownField(
+                        label = "Conta / Carteira",
+                        options = uiState.accounts,
+                        selectedOption = uiState.selectedAccount,
+                        onOptionSelected = onAccountChange,
+                        optionLabel = { it.name },
+                        optionIcon = { it.iconName.toCategoryIcon() },
+                        optionColor = { it.colorHex.toComposeColor() }
+                    )
+                }
+            }
+
             uiState.error?.let { error ->
                 item {
                     Text(
@@ -276,6 +314,7 @@ private fun TransactionContent(
                 }
             }
         }
+
         Button(
             onClick = onSaveClick,
             modifier = Modifier
@@ -313,70 +352,6 @@ private fun TransactionContent(
         }
     }
 }
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun <T> DropdownField(
-    label: String,
-    options: List<T>,
-    selectedOption: T?,
-    onOptionSelected: (T) -> Unit,
-    optionLabel: (T) -> String,
-    optionIcon: ((T) -> ImageVector?)? = null,
-    optionColor: ((T) -> Color?)? = null
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded }
-    ) {
-        OutlinedTextField(
-            value = selectedOption?.let { optionLabel(it) } ?: "",
-            onValueChange = {},
-            label = { Text(label) },
-            readOnly = true,
-            leadingIcon = if (selectedOption != null && optionColor != null) {
-                {
-                    val icon = optionIcon?.invoke(selectedOption)
-                    val tint = optionColor?.invoke(selectedOption) ?: MaterialTheme.colorScheme.primary
-                    if (icon != null){
-                        Icon(imageVector = icon, contentDescription = null, tint = tint)
-                    }
-                }
-            } else null,
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier
-                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
-                .fillMaxWidth()
-        )
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = {expanded = false}
-        ) {
-            options.forEach { selectionOption ->
-                val icon = optionIcon?.invoke(selectionOption)
-                val tint = optionColor?.invoke(selectionOption) ?: MaterialTheme.colorScheme.onSurface
-
-                DropdownMenuItem(
-                    text = { Text(optionLabel(selectionOption))},
-                    onClick = {
-                        onOptionSelected(selectionOption)
-                        expanded = false
-                    },
-                    leadingIcon = if (icon != null) {
-                        {
-                            Icon(
-                                imageVector = icon,
-                                contentDescription = null,
-                                tint = tint
-                            )
-                        }
-                    } else null
-                )
-            }
-        }
-    }
-}
 
 @Preview(showBackground = true)
 @Composable
@@ -390,6 +365,8 @@ private fun TransactionScreenPreview() {
             onDateChange = {},
             onCategoryChange = {},
             onPaymentMethodChange = {},
+            onAccountChange = {},
+            onCreditCardChange = {},
             onDeleteClick = {},
             onSaveClick = {},
             onBackClick = {}

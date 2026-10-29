@@ -4,22 +4,27 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.createSavedStateHandle
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.moduxi.monexi.MonexiApplication
+import com.moduxi.monexi.domain.model.account.Account
 import com.moduxi.monexi.domain.model.category.Category
+import com.moduxi.monexi.domain.model.creditcard.CreditCard
 import com.moduxi.monexi.domain.model.payment.PaymentMethod
+import com.moduxi.monexi.domain.model.transaction.SyncStatus
 import com.moduxi.monexi.domain.model.transaction.Transaction
 import com.moduxi.monexi.domain.model.transaction.TransactionType
+import com.moduxi.monexi.domain.repository.AccountRepository
+import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.CategoryRepository
+import com.moduxi.monexi.domain.repository.CreditCardRepository
 import com.moduxi.monexi.domain.repository.PaymentMethodRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
-import androidx.lifecycle.viewModelScope
-import com.moduxi.monexi.MonexiApplication
-import com.moduxi.monexi.domain.model.transaction.SyncStatus
-import com.moduxi.monexi.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -28,17 +33,21 @@ class TransactionViewModel(
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
     private val paymentMethodRepository: PaymentMethodRepository,
+    private val accountRepository: AccountRepository,
+    private val creditCardRepository: CreditCardRepository,
     private val authRepository: AuthRepository,
     private val savedStateHandle: SavedStateHandle
-    ) : ViewModel() {
+) : ViewModel() {
 
     private val formState = MutableStateFlow(TransactionUiState())
 
     val uiState = combine(
         categoryRepository.categories,
         paymentMethodRepository.paymentMethods,
+        accountRepository.accounts,
+        creditCardRepository.creditCards,
         formState
-    ) { categories, paymentMethods, form ->
+    ) { categories, paymentMethods, accounts, creditCards, form ->
         val filteredCategories = categories.filter { category ->
             category.type == form.type && !category.isArchived
         }
@@ -46,10 +55,14 @@ class TransactionViewModel(
         form.copy(
             categories = filteredCategories,
             paymentMethods = paymentMethods,
+            accounts = accounts,
+            creditCards = creditCards,
             selectedCategory = form.selectedCategory
                 ?.takeIf { it.type == form.type }
                 ?: filteredCategories.firstOrNull(),
-            selectedPaymentMethod = form.selectedPaymentMethod ?: paymentMethods.firstOrNull()
+            selectedPaymentMethod = form.selectedPaymentMethod ?: paymentMethods.firstOrNull(),
+            selectedAccount = form.selectedAccount ?: accounts.firstOrNull(),
+            selectedCreditCard = form.selectedCreditCard ?: creditCards.firstOrNull()
         )
     }.stateIn(
         scope = viewModelScope,
@@ -104,19 +117,38 @@ class TransactionViewModel(
         )
     }
 
-    fun startEditing(transaction: Transaction) {
+    fun onAccountChange(account: Account) {
         formState.value = formState.value.copy(
-            editingTransaction = transaction,
-            description = transaction.title,
-            amountDigits = (transaction.amount * 100).toLong().toString(),
-            type = transaction.type,
-            selectedCategory = transaction.category,
-            selectedPaymentMethod = transaction.paymentMethod,
-            dateMillis = transaction.date,
-            error = null
+            selectedAccount = account
         )
     }
-    
+
+    fun onCreditCardChange(creditCard: CreditCard) {
+        formState.value = formState.value.copy(
+            selectedCreditCard = creditCard
+        )
+    }
+
+    fun startEditing(transaction: Transaction) {
+        viewModelScope.launch {
+            val accountsList = accountRepository.allAccounts.first()
+            val creditCardsList = creditCardRepository.allCreditCards.first()
+
+            formState.value = formState.value.copy(
+                editingTransaction = transaction,
+                description = transaction.title,
+                amountDigits = (transaction.amount * 100).toLong().toString(),
+                type = transaction.type,
+                selectedCategory = transaction.category,
+                selectedPaymentMethod = transaction.paymentMethod,
+                selectedAccount = transaction.accountId?.let { id -> accountsList.firstOrNull { it.id == id } },
+                selectedCreditCard = transaction.creditCardId?.let { id -> creditCardsList.firstOrNull { it.id == id } },
+                dateMillis = transaction.date,
+                error = null
+            )
+        }
+    }
+
     fun cancelEditing() {
         formState.value = TransactionUiState()
     }
@@ -177,6 +209,8 @@ class TransactionViewModel(
             return
         }
 
+        val isCreditCardPayment = paymentMethod.name.contains("Crédito", ignoreCase = true)
+
         val transaction = Transaction(
             id = editingTransaction?.id ?: UUID.randomUUID().toString(),
             userId = currentUserId,
@@ -193,7 +227,9 @@ class TransactionViewModel(
             } else {
                 SyncStatus.PENDING_UPDATE
             },
-            remoteId = editingTransaction?.remoteId
+            remoteId = editingTransaction?.remoteId,
+            accountId = if (!isCreditCardPayment) state.selectedAccount?.id else null,
+            creditCardId = if (isCreditCardPayment) state.selectedCreditCard?.id else null
         )
 
         viewModelScope.launch {
@@ -216,6 +252,8 @@ class TransactionViewModel(
                     transactionRepository = application.transactionRepository,
                     categoryRepository = application.categoryRepository,
                     paymentMethodRepository = application.paymentMethodRepository,
+                    accountRepository = application.accountRepository,
+                    creditCardRepository = application.creditCardRepository,
                     authRepository = application.authRepository,
                     savedStateHandle = savedStateHandle
                 )

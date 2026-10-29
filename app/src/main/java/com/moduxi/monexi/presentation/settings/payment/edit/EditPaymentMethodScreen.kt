@@ -96,7 +96,7 @@ fun EditPaymentMethodContent(
                         fontWeight = FontWeight.Bold
                     )
 
-                    if (uiState.editingPaymentMethod != null) {
+                    if (uiState.editingPaymentMethod != null && !uiState.editingPaymentMethod.isDefault) {
                         IconButton(onClick = onDeleteClick) {
                             Icon(
                                 imageVector = Icons.Default.Delete,

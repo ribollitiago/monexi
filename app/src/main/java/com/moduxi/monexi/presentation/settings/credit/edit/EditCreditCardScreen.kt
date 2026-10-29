@@ -31,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +41,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.moduxi.monexi.domain.model.account.Account
+import com.moduxi.monexi.ui.components.DropdownField
 import com.moduxi.monexi.ui.theme.CurrencyVisualTransformation
 import com.moduxi.monexi.ui.theme.MonexiTheme
 import com.moduxi.monexi.ui.theme.toCategoryIcon
@@ -61,6 +64,7 @@ fun EditCreditCardScreen(
         onDueDayChange = viewModel::onDueDayChange,
         onColorChange = viewModel::onColorChange,
         onIconChange = viewModel::onIconChange,
+        onAccountChange = viewModel::onAccountChange,
         modifier = modifier,
         onSaveClick = {
             viewModel.saveCreditCard(
@@ -85,6 +89,7 @@ fun EditCreditCardContent(
     onDueDayChange: (String) -> Unit,
     onColorChange: (String) -> Unit,
     onIconChange: (String) -> Unit,
+    onAccountChange: (Account?) -> Unit,
     modifier: Modifier = Modifier,
     onSaveClick: () -> Unit,
     onDeleteClick: () -> Unit,
@@ -109,6 +114,10 @@ fun EditCreditCardContent(
         "Home" to "Moradia",
         "DirectionsCar" to "Transporte"
     )
+
+    val accountOptions: List<Account?> = remember(uiState.accounts) {
+        listOf<Account?>(null) + uiState.accounts
+    }
 
     Column(
         modifier = modifier
@@ -185,7 +194,7 @@ fun EditCreditCardContent(
                     OutlinedTextField(
                         value = if (uiState.creditCardClosingDay > 0) uiState.creditCardClosingDay.toString() else "",
                         onValueChange = onClosingDayChange,
-                        label = { Text("Dia do Fechamento") },
+                        label = { Text("Dia Fechamento") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f)
@@ -194,12 +203,24 @@ fun EditCreditCardContent(
                     OutlinedTextField(
                         value = if (uiState.creditCardDueDay > 0) uiState.creditCardDueDay.toString() else "",
                         onValueChange = onDueDayChange,
-                        label = { Text("Dia do Vencimento") },
+                        label = { Text("Dia Vencimento") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f)
                     )
                 }
+            }
+
+            item {
+                DropdownField(
+                    label = "Conta Pagamento da Fatura",
+                    options = accountOptions,
+                    selectedOption = uiState.selectedAccount,
+                    onOptionSelected = onAccountChange,
+                    optionLabel = { account -> account?.name ?: "Nenhuma conta vinculada" },
+                    optionIcon = { account -> account?.iconName?.toCategoryIcon() },
+                    optionColor = { account -> account?.colorHex?.toComposeColor() }
+                )
             }
 
             item {
@@ -317,7 +338,8 @@ fun EditCreditCardPreview() {
             onClosingDayChange = {},
             onDueDayChange = {},
             onColorChange = {},
-            onIconChange = {}
+            onIconChange = {},
+            onAccountChange = {}
         )
     }
 }
