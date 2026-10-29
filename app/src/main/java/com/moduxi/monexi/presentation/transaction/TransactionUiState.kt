@@ -12,6 +12,7 @@ data class TransactionUiState(
     val description: String = "",
     val amountDigits: String = "",
     val dateMillis: Long = System.currentTimeMillis(),
+    val totalInstallments: Int = 1,
     val selectedCategory: Category? = null,
     val selectedPaymentMethod: PaymentMethod? = null,
     val selectedAccount: Account? = null,

@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.Calendar
 import java.util.UUID
 
 class TransactionViewModel(
@@ -105,6 +106,12 @@ class TransactionViewModel(
         )
     }
 
+    fun onInstallmentsChange(installments: Int) {
+        formState.value = formState.value.copy(
+            totalInstallments = installments
+        )
+    }
+
     fun onCategoryChange(category: Category) {
         formState.value = formState.value.copy(
             selectedCategory = category
@@ -143,6 +150,7 @@ class TransactionViewModel(
                 selectedPaymentMethod = transaction.paymentMethod,
                 selectedAccount = transaction.accountId?.let { id -> accountsList.firstOrNull { it.id == id } },
                 selectedCreditCard = transaction.creditCardId?.let { id -> creditCardsList.firstOrNull { it.id == id } },
+                totalInstallments = transaction.totalInstallments ?: 1,
                 dateMillis = transaction.date,
                 error = null
             )
@@ -210,36 +218,71 @@ class TransactionViewModel(
         }
 
         val isCreditCardPayment = paymentMethod.name.contains("Crédito", ignoreCase = true)
-
-        val transaction = Transaction(
-            id = editingTransaction?.id ?: UUID.randomUUID().toString(),
-            userId = currentUserId,
-            title = state.description,
-            amount = amount,
-            type = state.type,
-            category = category,
-            paymentMethod = paymentMethod,
-            date = state.dateMillis,
-            updatedAt = System.currentTimeMillis(),
-            deletedAt = editingTransaction?.deletedAt,
-            syncStatus = if (editingTransaction == null) {
-                SyncStatus.PENDING_CREATE
-            } else {
-                SyncStatus.PENDING_UPDATE
-            },
-            remoteId = editingTransaction?.remoteId,
-            accountId = if (!isCreditCardPayment) state.selectedAccount?.id else null,
-            creditCardId = if (isCreditCardPayment) state.selectedCreditCard?.id else null
-        )
+        val installmentsCount = if (isCreditCardPayment) state.totalInstallments else 1
 
         viewModelScope.launch {
-            if (editingTransaction == null) {
-                transactionRepository.addTransaction(transaction)
+            if (installmentsCount > 1 && isCreditCardPayment) {
+                val installmentAmount = amount / installmentsCount
+                val groupId = UUID.randomUUID().toString()
+
+                val installmentsList = (1..installmentsCount).map { i ->
+                    val installmentDate = addMonthsToDate(state.dateMillis, i - 1)
+                    Transaction(
+                        id = if (i == 1 && editingTransaction != null) editingTransaction.id else UUID.randomUUID().toString(),
+                        userId = currentUserId,
+                        title = "${state.description} ($i/$installmentsCount)",
+                        amount = installmentAmount,
+                        type = state.type,
+                        category = category,
+                        paymentMethod = paymentMethod,
+                        date = installmentDate,
+                        updatedAt = System.currentTimeMillis(),
+                        deletedAt = editingTransaction?.deletedAt,
+                        syncStatus = SyncStatus.PENDING_CREATE,
+                        creditCardId = state.selectedCreditCard?.id,
+                        installmentNumber = i,
+                        totalInstallments = installmentsCount,
+                        installmentGroupId = groupId
+                    )
+                }
+
+                transactionRepository.addTransactions(installmentsList)
             } else {
-                transactionRepository.updateTransaction(transaction)
+                val transaction = Transaction(
+                    id = editingTransaction?.id ?: UUID.randomUUID().toString(),
+                    userId = currentUserId,
+                    title = state.description,
+                    amount = amount,
+                    type = state.type,
+                    category = category,
+                    paymentMethod = paymentMethod,
+                    date = state.dateMillis,
+                    updatedAt = System.currentTimeMillis(),
+                    deletedAt = editingTransaction?.deletedAt,
+                    syncStatus = if (editingTransaction == null) SyncStatus.PENDING_CREATE else SyncStatus.PENDING_UPDATE,
+                    remoteId = editingTransaction?.remoteId,
+                    accountId = if (!isCreditCardPayment) state.selectedAccount?.id else null,
+                    creditCardId = if (isCreditCardPayment) state.selectedCreditCard?.id else null,
+                    installmentNumber = if (isCreditCardPayment) 1 else null,
+                    totalInstallments = if (isCreditCardPayment) 1 else null
+                )
+
+                if (editingTransaction == null) {
+                    transactionRepository.addTransaction(transaction)
+                } else {
+                    transactionRepository.updateTransaction(transaction)
+                }
             }
             onSaved()
         }
+    }
+
+    private fun addMonthsToDate(baseDateMillis: Long, monthsToAdd: Int): Long {
+        val calendar = Calendar.getInstance().apply {
+            timeInMillis = baseDateMillis
+            add(Calendar.MONTH, monthsToAdd)
+        }
+        return calendar.timeInMillis
     }
 
     companion object {

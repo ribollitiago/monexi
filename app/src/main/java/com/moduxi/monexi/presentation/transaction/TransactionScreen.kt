@@ -18,13 +18,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -42,8 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusEvent
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -61,7 +57,9 @@ import com.moduxi.monexi.ui.components.DropdownField
 import com.moduxi.monexi.ui.theme.CurrencyVisualTransformation
 import com.moduxi.monexi.ui.theme.toCategoryIcon
 import com.moduxi.monexi.ui.theme.toComposeColor
+import java.text.NumberFormat
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
@@ -80,6 +78,7 @@ fun TransactionScreen(
         onDescriptionChange = viewModel::onDescriptionChange,
         onAmountChange = viewModel::onAmountChange,
         onDateChange = viewModel::onDateChange,
+        onInstallmentsChange = viewModel::onInstallmentsChange,
         onCategoryChange = viewModel::onCategoryChange,
         onPaymentMethodChange = viewModel::onPaymentMethodChange,
         onAccountChange = viewModel::onAccountChange,
@@ -108,6 +107,7 @@ private fun TransactionContent(
     onDescriptionChange: (String) -> Unit,
     onAmountChange: (String) -> Unit,
     onDateChange: (Long) -> Unit,
+    onInstallmentsChange: (Int) -> Unit,
     onCategoryChange: (Category) -> Unit,
     onPaymentMethodChange: (PaymentMethod) -> Unit,
     onAccountChange: (Account) -> Unit,
@@ -290,6 +290,56 @@ private fun TransactionContent(
                         optionColor = { it.colorHex.toComposeColor() }
                     )
                 }
+
+                item {
+                    DropdownField(
+                        label = "Parcelamento",
+                        options = (1..12).toList(),
+                        selectedOption = uiState.totalInstallments,
+                        onOptionSelected = onInstallmentsChange,
+                        optionLabel = { count -> if (count == 1) "À vista / 1x" else "${count}x" }
+                    )
+                }
+
+                item {
+                    val totalAmount = (uiState.amountDigits.toLongOrNull() ?: 0L) / 100.0
+                    val count = uiState.totalInstallments
+                    val installmentVal = if (count > 0) totalAmount / count else totalAmount
+                    val formattedInstallment = remember(installmentVal) {
+                        val formatter = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"))
+                        formatter.format(installmentVal)
+                    }
+                    val closingDay = uiState.selectedCreditCard?.closingDay ?: 5
+                    val invoiceMonth = remember(uiState.dateMillis, closingDay) {
+                        calculateInvoiceMonthName(uiState.dateMillis, closingDay)
+                    }
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "Será lançado como",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = "$count parcela${if (count > 1) "s" else ""} de $formattedInstallment",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "na fatura de $invoiceMonth",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
             } else if (!isCreditCardSelected && uiState.accounts.isNotEmpty()) {
                 item {
                     DropdownField(
@@ -363,6 +413,7 @@ private fun TransactionScreenPreview() {
             onDescriptionChange = {},
             onAmountChange = {},
             onDateChange = {},
+            onInstallmentsChange = {},
             onCategoryChange = {},
             onPaymentMethodChange = {},
             onAccountChange = {},
@@ -384,4 +435,16 @@ private fun Long.toBrazilianDateFormat(
         timeZone = TimeZone.getTimeZone("GMT")
     }
     return formatter.format(date)
+}
+
+private fun calculateInvoiceMonthName(transactionDateMillis: Long, closingDay: Int): String {
+    val calendar = Calendar.getInstance().apply {
+        timeInMillis = transactionDateMillis
+    }
+    val day = calendar.get(Calendar.DAY_OF_MONTH)
+    if (day > closingDay) {
+        calendar.add(Calendar.MONTH, 1)
+    }
+    val monthFormat = SimpleDateFormat("MMMM", Locale.forLanguageTag("pt-BR"))
+    return monthFormat.format(calendar.time)
 }
