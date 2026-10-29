@@ -2,10 +2,12 @@ package com.moduxi.monexi.data.repository
 
 import com.google.firebase.firestore.FirebaseFirestore
 import com.moduxi.monexi.data.local.dao.CreditCardDao
+import com.moduxi.monexi.data.local.dao.TransactionDao
 import com.moduxi.monexi.data.local.entity.CreditCardEntity
 import com.moduxi.monexi.data.local.mapper.toDomain
 import com.moduxi.monexi.data.local.mapper.toEntity
 import com.moduxi.monexi.domain.model.creditcard.CreditCard
+import com.moduxi.monexi.domain.model.transaction.Transaction
 import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.CreditCardRepository
 import kotlinx.coroutines.flow.Flow
@@ -14,6 +16,7 @@ import kotlinx.coroutines.tasks.await
 
 class RoomCreditCardRepository(
     private val creditCardDao: CreditCardDao,
+    private val transactionDao: TransactionDao,
     private val authRepository: AuthRepository
 ) : CreditCardRepository {
 

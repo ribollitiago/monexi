@@ -14,5 +14,6 @@ data class AccountEntity(
     val colorHex: String = "#1B8A5A",
     val iconName: String = "AccountBalance",
     val isArchived: Boolean = false,
-    val type: AccountType = AccountType.CHECKING
+    val type: AccountType = AccountType.CHECKING,
+    val excludeFromTotal: Boolean = false
 )

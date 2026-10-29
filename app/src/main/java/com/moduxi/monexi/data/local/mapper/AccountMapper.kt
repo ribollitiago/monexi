@@ -12,7 +12,8 @@ fun AccountEntity.toDomain(): Account {
         colorHex = colorHex,
         iconName = iconName,
         isArchived = isArchived,
-        type = type
+        type = type,
+        excludeFromTotal = excludeFromTotal
     )
 }
 
@@ -25,6 +26,7 @@ fun Account.toEntity(): AccountEntity {
         colorHex = colorHex,
         iconName = iconName,
         isArchived = isArchived,
-        type = type
+        type = type,
+        excludeFromTotal = excludeFromTotal
     )
 }

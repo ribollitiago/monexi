@@ -11,6 +11,7 @@ import com.moduxi.monexi.data.repository.RoomTransactionRepository
 import com.moduxi.monexi.data.repository.local.ThemeManager
 import com.moduxi.monexi.domain.repository.AccountRepository
 import com.moduxi.monexi.domain.repository.AuthRepository
+import com.moduxi.monexi.domain.repository.CategoryRepository
 import com.moduxi.monexi.domain.repository.CreditCardRepository
 import com.moduxi.monexi.domain.repository.PaymentMethodRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
@@ -21,7 +22,7 @@ class MonexiApplication : Application() {
 
     val authRepository: AuthRepository by lazy { FirebaseAuthRepository() }
 
-    val categoryRepository: RoomCategoryRepository by lazy {
+    val categoryRepository: CategoryRepository by lazy {
         RoomCategoryRepository(
             categoryDao = database.categoryDao(),
             authRepository = authRepository
@@ -45,6 +46,7 @@ class MonexiApplication : Application() {
     val creditCardRepository: CreditCardRepository by lazy {
         RoomCreditCardRepository(
             creditCardDao = database.creditCardDao(),
+            transactionDao = database.transactionDao(),
             authRepository = authRepository
         )
     }

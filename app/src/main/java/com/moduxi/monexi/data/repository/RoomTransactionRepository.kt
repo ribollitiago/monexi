@@ -1,8 +1,12 @@
 package com.moduxi.monexi.data.repository
 
+import android.util.Log
+import com.google.firebase.firestore.FirebaseFirestore
 import com.moduxi.monexi.data.local.dao.TransactionDao
+import com.moduxi.monexi.data.local.entity.TransactionEntity
 import com.moduxi.monexi.data.local.mapper.toDomain
 import com.moduxi.monexi.data.local.mapper.toEntity
+import com.moduxi.monexi.domain.model.transaction.SyncStatus
 import com.moduxi.monexi.domain.model.transaction.Transaction
 import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.CategoryRepository
@@ -14,8 +18,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
-import android.util.Log
-import com.moduxi.monexi.domain.model.transaction.SyncStatus
 
 class RoomTransactionRepository(
     private val transactionDao: TransactionDao,
@@ -36,27 +38,79 @@ class RoomTransactionRepository(
         }
     }
 
-    override suspend fun addTransaction(transaction: Transaction) {
-        transactionDao.insertTransaction(transaction.toEntity())
+    override fun getTransactionsByAccount(accountId: String): Flow<List<Transaction>> = combine(
+        categoryRepository.allCategories,
+        paymentMethodRepository.allPaymentMethods
+    ) { categories, paymentMethods ->
+        Pair(categories, paymentMethods)
+    }.flatMapLatest { (categories, paymentMethods) ->
+        val currentUserId = authRepository.currentUser?.uid ?: ""
+        transactionDao.observeTransactionsByAccount(currentUserId, accountId).map { list ->
+            list.mapNotNull { it.toDomain(categories, paymentMethods) }
+        }
+    }
 
+    override fun getTotalIncomeByAccount(accountId: String): Flow<Double> {
+        val currentUserId = authRepository.currentUser?.uid ?: ""
+        return transactionDao.observeTotalIncomeByAccount(currentUserId, accountId)
+    }
+
+    override fun getTotalExpenseByAccount(accountId: String): Flow<Double> {
+        val currentUserId = authRepository.currentUser?.uid ?: ""
+        return transactionDao.observeTotalExpenseByAccount(currentUserId, accountId)
+    }
+
+    override fun getTransactionsByCreditCard(creditCardId: String): Flow<List<Transaction>> = combine(
+        categoryRepository.allCategories,
+        paymentMethodRepository.allPaymentMethods
+    ) { categories, paymentMethods ->
+        Pair(categories, paymentMethods)
+    }.flatMapLatest { (categories, paymentMethods) ->
+        val currentUserId = authRepository.currentUser?.uid ?: ""
+        transactionDao.observeTransactionsByCreditCard(currentUserId, creditCardId).map { list ->
+            list.mapNotNull { it.toDomain(categories, paymentMethods) }
+        }
+    }
+
+    override fun getTotalSpendByCreditCard(creditCardId: String): Flow<Double> {
+        val currentUserId = authRepository.currentUser?.uid ?: ""
+        return transactionDao.observeTotalSpendByCreditCard(currentUserId, creditCardId)
+    }
+
+    override suspend fun addTransaction(transaction: Transaction) {
         val currentUserId = authRepository.currentUser?.uid ?: return
         if (currentUserId.isEmpty()) {
             Log.e("FirestoreSync", "Erro: Usuário não autenticado no Firebase!")
             return
         }
 
+        val entity = transaction.copy(userId = currentUserId).toEntity()
+        transactionDao.insertTransaction(entity)
+
         val transactionData = hashMapOf(
             "id" to transaction.id,
+            "userId" to currentUserId,
             "title" to transaction.title,
             "amount" to transaction.amount,
             "type" to transaction.type.name,
             "categoryId" to transaction.category.id,
             "paymentMethodId" to transaction.paymentMethod.id,
-            "date" to transaction.date
+            "date" to transaction.date,
+            "updatedAt" to transaction.updatedAt,
+            "deletedAt" to transaction.deletedAt,
+            "syncStatus" to transaction.syncStatus.name,
+            "remoteId" to transaction.remoteId,
+            "accountId" to transaction.accountId,
+            "creditCardId" to transaction.creditCardId,
+            "creditCardBillId" to transaction.creditCardBillId,
+            "installmentNumber" to transaction.installmentNumber,
+            "totalInstallments" to transaction.totalInstallments,
+            "installmentGroupId" to transaction.installmentGroupId,
+            "recurringTransactionId" to transaction.recurringTransactionId
         )
 
         try {
-            com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            FirebaseFirestore.getInstance()
                 .collection("users")
                 .document(currentUserId)
                 .collection("transactions")
@@ -71,29 +125,45 @@ class RoomTransactionRepository(
         }
     }
 
-    override suspend fun updateTransaction(transaction: Transaction) {
-        val updatedEntity = transaction.copy(syncStatus = SyncStatus.PENDING_UPDATE).toEntity()
-        transactionDao.updateTransaction(updatedEntity)
-
+    override suspend fun addTransactions(transactions: List<Transaction>) {
         val currentUserId = authRepository.currentUser?.uid ?: return
+        val entities = transactions.map { it.copy(userId = currentUserId).toEntity() }
+        transactionDao.insertTransactions(entities)
+
+        transactions.forEach { transaction ->
+            addTransaction(transaction)
+        }
+    }
+
+    override suspend fun updateTransaction(transaction: Transaction) {
+        val currentUserId = authRepository.currentUser?.uid ?: return
+        val updatedEntity = transaction.copy(userId = currentUserId, syncStatus = SyncStatus.PENDING_UPDATE).toEntity()
+        transactionDao.updateTransaction(updatedEntity)
 
         val transactionData = hashMapOf(
             "id" to transaction.id,
+            "userId" to currentUserId,
             "title" to transaction.title,
             "amount" to transaction.amount,
             "type" to transaction.type.name,
             "categoryId" to transaction.category.id,
             "paymentMethodId" to transaction.paymentMethod.id,
             "date" to transaction.date,
-            "userId" to transaction.userId,
             "updatedAt" to transaction.updatedAt,
             "deletedAt" to transaction.deletedAt,
             "syncStatus" to SyncStatus.SYNCED.name,
-            "remoteId" to transaction.remoteId
+            "remoteId" to transaction.remoteId,
+            "accountId" to transaction.accountId,
+            "creditCardId" to transaction.creditCardId,
+            "creditCardBillId" to transaction.creditCardBillId,
+            "installmentNumber" to transaction.installmentNumber,
+            "totalInstallments" to transaction.totalInstallments,
+            "installmentGroupId" to transaction.installmentGroupId,
+            "recurringTransactionId" to transaction.recurringTransactionId
         )
 
         try {
-            com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            FirebaseFirestore.getInstance()
                 .collection("users")
                 .document(currentUserId)
                 .collection("transactions")
@@ -106,27 +176,33 @@ class RoomTransactionRepository(
     }
 
     override suspend fun deleteTransaction(transaction: Transaction) {
-        transactionDao.updateTransaction(transaction.toEntity())
-
         val currentUserId = authRepository.currentUser?.uid ?: return
+        transactionDao.updateTransaction(transaction.copy(userId = currentUserId).toEntity())
 
         val transactionData = hashMapOf(
             "id" to transaction.id,
+            "userId" to currentUserId,
             "title" to transaction.title,
             "amount" to transaction.amount,
             "type" to transaction.type.name,
             "categoryId" to transaction.category.id,
             "paymentMethodId" to transaction.paymentMethod.id,
             "date" to transaction.date,
-            "userId" to transaction.userId,
             "updatedAt" to transaction.updatedAt,
             "deletedAt" to transaction.deletedAt,
             "syncStatus" to transaction.syncStatus.name,
-            "remoteId" to transaction.remoteId
+            "remoteId" to transaction.remoteId,
+            "accountId" to transaction.accountId,
+            "creditCardId" to transaction.creditCardId,
+            "creditCardBillId" to transaction.creditCardBillId,
+            "installmentNumber" to transaction.installmentNumber,
+            "totalInstallments" to transaction.totalInstallments,
+            "installmentGroupId" to transaction.installmentGroupId,
+            "recurringTransactionId" to transaction.recurringTransactionId
         )
 
         try {
-            com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            FirebaseFirestore.getInstance()
                 .collection("users")
                 .document(currentUserId)
                 .collection("transactions")
@@ -152,7 +228,7 @@ class RoomTransactionRepository(
             ?: return@withContext Result.failure(Exception("Usuário não autenticado"))
 
         try {
-            val snapshot = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            val snapshot = FirebaseFirestore.getInstance()
                 .collection("users")
                 .document(currentUserId)
                 .collection("transactions")
@@ -182,7 +258,15 @@ class RoomTransactionRepository(
                 val syncStatus = doc.getString("syncStatus") ?: SyncStatus.SYNCED.name
                 val remoteId = doc.getString("remoteId")
 
-                com.moduxi.monexi.data.local.entity.TransactionEntity(
+                val accountId = doc.getString("accountId")
+                val creditCardId = doc.getString("creditCardId")
+                val creditCardBillId = doc.getString("creditCardBillId")
+                val installmentNumber = (doc.get("installmentNumber") as? Number)?.toInt()
+                val totalInstallments = (doc.get("totalInstallments") as? Number)?.toInt()
+                val installmentGroupId = doc.getString("installmentGroupId")
+                val recurringTransactionId = doc.getString("recurringTransactionId")
+
+                TransactionEntity(
                     id = transactionId,
                     userId = currentUserId,
                     title = title,
@@ -194,7 +278,14 @@ class RoomTransactionRepository(
                     updatedAt = updatedAt,
                     deletedAt = deletedAt,
                     syncStatus = syncStatus,
-                    remoteId = remoteId
+                    remoteId = remoteId,
+                    accountId = accountId,
+                    creditCardId = creditCardId,
+                    creditCardBillId = creditCardBillId,
+                    installmentNumber = installmentNumber,
+                    totalInstallments = totalInstallments,
+                    installmentGroupId = installmentGroupId,
+                    recurringTransactionId = recurringTransactionId
                 )
             }
 
