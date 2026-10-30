@@ -120,10 +120,10 @@ private fun BankAccountContent(
                 contentPadding = PaddingValues(bottom = 88.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(uiState.accounts) { account ->
+                items(uiState.accounts) { item ->
                     BankAccountItem(
-                        bankAccount = account,
-                        onClick = { onAccountClick(account) }
+                        item = item,
+                        onClick = { onAccountClick(item.account) }
                     )
                 }
             }
@@ -143,12 +143,12 @@ private fun BankAccountContent(
 
 @Composable
 private fun BankAccountItem(
-    bankAccount: Account,
+    item: AccountWithBalance,
     onClick: () -> Unit
 ) {
-    val formattedBalance = remember(bankAccount.initialBalance) {
+    val formattedBalance = remember(item.currentBalance) {
         val formatter = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"))
-        formatter.format(bankAccount.initialBalance)
+        formatter.format(item.currentBalance)
     }
 
     Card(
@@ -161,7 +161,7 @@ private fun BankAccountItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            val cardColor = bankAccount.colorHex.toComposeColor()
+            val cardColor = item.account.colorHex.toComposeColor()
 
             Box(
                 modifier = Modifier
@@ -171,8 +171,8 @@ private fun BankAccountItem(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = bankAccount.iconName.toCategoryIcon(),
-                    contentDescription = bankAccount.name,
+                    imageVector = item.account.iconName.toCategoryIcon(),
+                    contentDescription = item.account.name,
                     tint = cardColor
                 )
             }
@@ -182,7 +182,7 @@ private fun BankAccountItem(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = bankAccount.name,
+                    text = item.account.name,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -204,7 +204,10 @@ private fun BankAccountScreenPreview() {
         BankAccountContent(
             uiState = BankAccountUiState(
                 accounts = listOf(
-                    Account(id = "1", name = "Nubank", initialBalance = 100.0, type = AccountType.CHECKING)
+                    AccountWithBalance(
+                        account = Account(id = "1", name = "Nubank", initialBalance = 100.0, type = AccountType.CHECKING),
+                        currentBalance = 0.0
+                    )
                 )
             ),
             onNavigateBack = {},
