@@ -6,10 +6,13 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
+import com.moduxi.monexi.domain.repository.AccountRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
+import com.moduxi.monexi.domain.usecase.CalculateAccountBalanceUseCase
 import com.moduxi.monexi.domain.usecase.CalculateBalanceUseCase
 import com.moduxi.monexi.domain.usecase.CalculateExpenseUseCase
 import com.moduxi.monexi.domain.usecase.CalculateIncomeUseCase
+import com.moduxi.monexi.presentation.settings.accounts.AccountWithBalance
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -21,15 +24,13 @@ import java.util.Date
 import java.util.Locale
 
 class HomeViewModel(
-    private val transactionRepository: TransactionRepository
+    private val transactionRepository: TransactionRepository,
+    private val accountRepository: AccountRepository
 ) : ViewModel() {
 
     private val calculateIncomeUseCase = CalculateIncomeUseCase()
     private val calculateExpenseUseCase = CalculateExpenseUseCase()
-    private val calculateBalanceUseCase = CalculateBalanceUseCase(
-        calculateIncomeUseCase = calculateIncomeUseCase,
-        calculateExpenseUseCase = calculateExpenseUseCase
-    )
+    private val calculateAccountBalanceUseCase = CalculateAccountBalanceUseCase()
 
     private val _selectedCalendar = MutableStateFlow(Calendar.getInstance())
 
@@ -39,8 +40,9 @@ class HomeViewModel(
 
     val uiState = combine(
         transactionRepository.transactions,
+        accountRepository.accounts,
         _selectedCalendar
-    ) { allTransactions, calendar ->
+    ) { allTransactions, allAccounts, calendar ->
         val selectedYear = calendar.get(Calendar.YEAR)
         val selectedMonth = calendar.get(Calendar.MONTH)
 
@@ -49,8 +51,25 @@ class HomeViewModel(
             transCal.get(Calendar.YEAR) == selectedYear && transCal.get(Calendar.MONTH) == selectedMonth
         }
 
+        val accountsWithBalance = allAccounts.map { account ->
+            AccountWithBalance(
+                account = account,
+                currentBalance = calculateAccountBalanceUseCase(account, allTransactions)
+            )
+        }
+
+        val netWorth = accountsWithBalance
+            .filter { !it.account.excludeFromTotal }
+            .sumOf { it.currentBalance }
+
+        val benefitsTotal = accountsWithBalance
+            .filter { it.account.excludeFromTotal }
+            .sumOf { it.currentBalance}
+
         HomeUiState(
-            balance = calculateBalanceUseCase(allTransactions),
+            netWorth = netWorth,
+            benefitsTotal = benefitsTotal,
+            accounts = accountsWithBalance,
             totalIncome = calculateIncomeUseCase(monthTransactions),
             totalExpense = calculateExpenseUseCase(monthTransactions),
             selectedMonthName = formatMonthYear(calendar.time),
@@ -92,7 +111,10 @@ class HomeViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MonexiApplication
-                HomeViewModel(application.transactionRepository)
+                HomeViewModel(
+                    application.transactionRepository,
+                    application.accountRepository
+                    )
             }
         }
     }
