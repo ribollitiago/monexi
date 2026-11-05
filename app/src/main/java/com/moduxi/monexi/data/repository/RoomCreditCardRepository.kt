@@ -1,5 +1,6 @@
 package com.moduxi.monexi.data.repository
 
+import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.moduxi.monexi.data.local.dao.CreditCardDao
 import com.moduxi.monexi.data.local.dao.TransactionDao
@@ -9,9 +10,12 @@ import com.moduxi.monexi.data.local.mapper.toEntity
 import com.moduxi.monexi.domain.model.creditcard.CreditCard
 import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.CreditCardRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import java.util.UUID
 
 class RoomCreditCardRepository(
     private val creditCardDao: CreditCardDao,
@@ -46,12 +50,12 @@ class RoomCreditCardRepository(
     override suspend fun addCreditCard(creditCard: CreditCard) {
         val currentUserId = authRepository.currentUser?.uid ?: ""
         if (currentUserId.isEmpty()) {
-            android.util.Log.e("FirestoreSync", "Erro ao adicionar cartão: Usuário não logado!")
+            Log.e("FirestoreSync", "Erro ao adicionar cartão: Usuário não logado!")
             return
         }
 
         val creditCardId = if (creditCard.id == "0" || creditCard.id.isEmpty()) {
-            java.util.UUID.randomUUID().toString()
+            UUID.randomUUID().toString()
         } else {
             creditCard.id
         }
@@ -82,10 +86,10 @@ class RoomCreditCardRepository(
                 .set(cardData)
                 .await()
 
-            android.util.Log.d("FirestoreSync", "Cartão $creditCardId salvo no Firestore com sucesso!")
+            Log.d("FirestoreSync", "Cartão $creditCardId salvo no Firestore com sucesso!")
         } catch (e: Exception) {
             e.printStackTrace()
-            android.util.Log.e("FirestoreSync", "Erro ao salvar cartão no Firestore: ${e.message}", e)
+            Log.e("FirestoreSync", "Erro ao salvar cartão no Firestore: ${e.message}", e)
         }
     }
 
@@ -116,10 +120,10 @@ class RoomCreditCardRepository(
                 .set(cardData)
                 .await()
 
-            android.util.Log.d("FirestoreSync", "Cartão ${creditCard.id} atualizado no Firestore com sucesso!")
+            Log.d("FirestoreSync", "Cartão ${creditCard.id} atualizado no Firestore com sucesso!")
         } catch (e: Exception) {
             e.printStackTrace()
-            android.util.Log.e("FirestoreSync", "Erro ao atualizar cartão no Firestore: ${e.message}", e)
+            Log.e("FirestoreSync", "Erro ao atualizar cartão no Firestore: ${e.message}", e)
         }
     }
 
@@ -152,10 +156,10 @@ class RoomCreditCardRepository(
                 .set(cardData)
                 .await()
 
-            android.util.Log.d("FirestoreSync", "Cartão ${archivedCard.id} arquivado no Firestore com sucesso!")
+            Log.d("FirestoreSync", "Cartão ${archivedCard.id} arquivado no Firestore com sucesso!")
         } catch (e: Exception) {
             e.printStackTrace()
-            android.util.Log.e("FirestoreSync", "Erro ao arquivar cartão no Firestore: ${e.message}", e)
+            Log.e("FirestoreSync", "Erro ao arquivar cartão no Firestore: ${e.message}", e)
         }
     }
 
@@ -163,7 +167,7 @@ class RoomCreditCardRepository(
         return creditCardDao.getCreditCardById(id)?.toDomain()
     }
 
-    override suspend fun syncFromRemote(): Result<Unit> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    override suspend fun syncFromRemote(): Result<Unit> = withContext(Dispatchers.IO) {
         val currentUserId = authRepository.currentUser?.uid
             ?: return@withContext Result.failure(Exception("Usuário não autenticado"))
 

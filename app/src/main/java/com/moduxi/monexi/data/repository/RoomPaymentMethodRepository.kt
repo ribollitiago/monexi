@@ -1,5 +1,6 @@
 package com.moduxi.monexi.data.repository
 
+import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.moduxi.monexi.data.local.dao.PaymentMethodDao
 import com.moduxi.monexi.data.local.entity.PaymentMethodEntity
@@ -8,10 +9,12 @@ import com.moduxi.monexi.data.local.mapper.toEntity
 import com.moduxi.monexi.domain.model.payment.PaymentMethod
 import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.PaymentMethodRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
-import kotlin.collections.map
+import kotlinx.coroutines.withContext
+import java.util.UUID
 
 class RoomPaymentMethodRepository (
     private val paymentMethodDao: PaymentMethodDao,
@@ -45,12 +48,12 @@ class RoomPaymentMethodRepository (
     override suspend fun addPaymentMethod(paymentMethod: PaymentMethod) {
         val currentUserId = authRepository.currentUser?.uid ?: ""
         if (currentUserId.isEmpty()) {
-            android.util.Log.e("FirestoreSync", "Erro ao adicionar método de pagamento: Usuário não logado!")
+            Log.e("FirestoreSync", "Erro ao adicionar método de pagamento: Usuário não logado!")
             return
         }
 
         val paymentMethodId = if (paymentMethod.id == "0" || paymentMethod.id.isEmpty()) {
-            java.util.UUID.randomUUID().toString()
+            UUID.randomUUID().toString()
         } else {
             paymentMethod.id
         }
@@ -68,7 +71,7 @@ class RoomPaymentMethodRepository (
         )
 
         try {
-            com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            FirebaseFirestore.getInstance()
                 .collection("users")
                 .document(currentUserId)
                 .collection("paymentMethods")
@@ -76,10 +79,10 @@ class RoomPaymentMethodRepository (
                 .set(paymentMethodData)
                 .await()
 
-            android.util.Log.d("FirestoreSync", "Método de Pagamento $paymentMethodId salva no Firestore com sucesso!")
+            Log.d("FirestoreSync", "Método de Pagamento $paymentMethodId salva no Firestore com sucesso!")
         } catch (e: Exception) {
             e.printStackTrace()
-            android.util.Log.e("FirestoreSync", "Erro ao salvar o Método de Pagamento no Firestore: ${e.message}", e)
+            Log.e("FirestoreSync", "Erro ao salvar o Método de Pagamento no Firestore: ${e.message}", e)
         }
     }
 
@@ -99,7 +102,7 @@ class RoomPaymentMethodRepository (
         )
 
         try {
-            com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            FirebaseFirestore.getInstance()
                 .collection("users")
                 .document(currentUserId)
                 .collection("paymentMethods")
@@ -130,7 +133,7 @@ class RoomPaymentMethodRepository (
         )
 
         try {
-            com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            FirebaseFirestore.getInstance()
                 .collection("users")
                 .document(currentUserId)
                 .collection("paymentMethods")
@@ -147,7 +150,7 @@ class RoomPaymentMethodRepository (
         return paymentMethodDao.getPaymentMethodById(id)?.toDomain()
     }
 
-    override suspend fun syncFromRemote(): Result<Unit> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    override suspend fun syncFromRemote(): Result<Unit> = withContext(Dispatchers.IO) {
         val currentUserId = authRepository.currentUser?.uid
             ?: return@withContext Result.failure(Exception("Usuário não autenticado"))
 

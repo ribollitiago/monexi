@@ -1,5 +1,6 @@
 package com.moduxi.monexi.data.repository
 
+import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.moduxi.monexi.data.local.dao.CategoryDao
 import com.moduxi.monexi.data.local.entity.CategoryEntity
@@ -9,9 +10,12 @@ import com.moduxi.monexi.domain.model.category.Category
 import com.moduxi.monexi.domain.model.transaction.TransactionType
 import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.CategoryRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import java.util.UUID
 
 class RoomCategoryRepository(
     private val categoryDao: CategoryDao,
@@ -45,12 +49,12 @@ class RoomCategoryRepository(
     override suspend fun addCategory(category: Category) {
         val currentUserId = authRepository.currentUser?.uid ?: ""
         if (currentUserId.isEmpty()) {
-            android.util.Log.e("FirestoreSync", "Erro ao adicionar categoria: Usuário não logado!")
+            Log.e("FirestoreSync", "Erro ao adicionar categoria: Usuário não logado!")
             return
         }
 
         val categoryId = if (category.id == "0" || category.id.isEmpty()) {
-            java.util.UUID.randomUUID().toString()
+            UUID.randomUUID().toString()
         } else {
             category.id
         }
@@ -71,7 +75,7 @@ class RoomCategoryRepository(
         )
 
         try {
-            com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            FirebaseFirestore.getInstance()
                 .collection("users")
                 .document(currentUserId)
                 .collection("categories")
@@ -79,10 +83,10 @@ class RoomCategoryRepository(
                 .set(categoryData)
                 .await()
 
-            android.util.Log.d("FirestoreSync", "Categoria $categoryId salva no Firestore com sucesso!")
+            Log.d("FirestoreSync", "Categoria $categoryId salva no Firestore com sucesso!")
         } catch (e: Exception) {
             e.printStackTrace()
-            android.util.Log.e("FirestoreSync", "Erro ao salvar categoria no Firestore: ${e.message}", e)
+            Log.e("FirestoreSync", "Erro ao salvar categoria no Firestore: ${e.message}", e)
         }
     }
 
@@ -105,7 +109,7 @@ class RoomCategoryRepository(
         )
 
         try {
-            com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            FirebaseFirestore.getInstance()
                 .collection("users")
                 .document(currentUserId)
                 .collection("categories")
@@ -139,7 +143,7 @@ class RoomCategoryRepository(
         )
 
         try {
-            com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            FirebaseFirestore.getInstance()
                 .collection("users")
                 .document(currentUserId)
                 .collection("categories")
@@ -147,10 +151,10 @@ class RoomCategoryRepository(
                 .set(categoryData)
                 .await()
 
-            android.util.Log.d("FirestoreSync", "Categoria ${archivedCategory.id} arquivada no Firestore com sucesso!")
+            Log.d("FirestoreSync", "Categoria ${archivedCategory.id} arquivada no Firestore com sucesso!")
         } catch (e: Exception) {
             e.printStackTrace()
-            android.util.Log.e("FirestoreSync", "Erro ao arquivar categoria no Firestore: ${e.message}", e)
+            Log.e("FirestoreSync", "Erro ao arquivar categoria no Firestore: ${e.message}", e)
         }
     }
 
@@ -158,7 +162,7 @@ class RoomCategoryRepository(
         return categoryDao.getCategoryById(id)?.toDomain()
     }
 
-    override suspend fun syncFromRemote(): Result<Unit> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    override suspend fun syncFromRemote(): Result<Unit> = withContext(Dispatchers.IO) {
         val currentUserId = authRepository.currentUser?.uid
             ?: return@withContext Result.failure(Exception("Usuário não autenticado"))
 
@@ -173,7 +177,11 @@ class RoomCategoryRepository(
             val remoteCategories = snapshot.documents.mapNotNull { doc ->
                 val name = doc.getString("name") ?: return@mapNotNull null
                 val typeStr = doc.getString("type") ?: "EXPENSE"
-                val type = try { TransactionType.valueOf(typeStr) } catch (e: Exception) { TransactionType.EXPENSE }
+                val type = try {
+                    TransactionType.valueOf(typeStr)
+                } catch (e: Exception) {
+                    TransactionType.EXPENSE
+                }
                 val isDefault = doc.getBoolean("isDefault") ?: false
                 val categoryId = doc.getString("id") ?: doc.id
                 val isArchived = doc.getBoolean("isArchived") ?: false

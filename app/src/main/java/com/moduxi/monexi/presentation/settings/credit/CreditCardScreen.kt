@@ -43,7 +43,8 @@ import com.moduxi.monexi.ui.theme.toComposeColor
 fun CreditCardScreen(
     onNavigateBack: () -> Unit,
     onNavigateArchived: () -> Unit,
-    onNavigateEdit: (String?) -> Unit,
+    onNavigateNew: () -> Unit,
+    onNavigateBills: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CreditCardViewModel = viewModel(factory = CreditCardViewModel.Factory)
 ) {
@@ -53,8 +54,8 @@ fun CreditCardScreen(
         uiState = uiState,
         onNavigateBack = onNavigateBack,
         onNavigateArchived = onNavigateArchived,
-        onNavigateEdit = { onNavigateEdit(null) },
-        onCreditCardClick = { creditCard -> onNavigateEdit(creditCard.id) },
+        onNavigateNew = onNavigateNew,
+        onCreditCardClick = { creditCard -> onNavigateBills(creditCard.id) },
         modifier = modifier.fillMaxSize()
     )
 }
@@ -64,7 +65,7 @@ private fun CreditCardContent(
     uiState: CreditCardUiState,
     onNavigateBack: () -> Unit,
     onNavigateArchived: () -> Unit,
-    onNavigateEdit: () -> Unit,
+    onNavigateNew: () -> Unit,
     onCreditCardClick: (CreditCard) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -126,7 +127,7 @@ private fun CreditCardContent(
         }
 
         ExtendedFloatingActionButton(
-            onClick = { onNavigateEdit() },
+            onClick = { onNavigateNew() },
             icon = { Icon(Icons.Default.Add, contentDescription = null) },
             text = { Text("Adicionar novo") },
             modifier = Modifier
@@ -201,7 +202,7 @@ private fun CreditCardScreenPreview() {
             ),
             onNavigateBack = {},
             onNavigateArchived = {},
-            onNavigateEdit = {},
+            onNavigateNew = {},
             onCreditCardClick = {}
         )
     }

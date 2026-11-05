@@ -12,12 +12,14 @@ import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.CategoryRepository
 import com.moduxi.monexi.domain.repository.PaymentMethodRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 
 class RoomTransactionRepository(
     private val transactionDao: TransactionDao,
@@ -223,7 +225,7 @@ class RoomTransactionRepository(
         return entity.toDomain(categories, paymentMethods)
     }
 
-    override suspend fun syncFromRemote(): Result<Unit> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    override suspend fun syncFromRemote(): Result<Unit> = withContext(Dispatchers.IO) {
         val currentUserId = authRepository.currentUser?.uid
             ?: return@withContext Result.failure(Exception("Usuário não autenticado"))
 
@@ -253,7 +255,8 @@ class RoomTransactionRepository(
                 val paymentMethodId = doc.getString("paymentMethodId") ?: ""
                 val date = (doc.get("date") as? Number)?.toLong() ?: System.currentTimeMillis()
                 val transactionId = doc.getString("id") ?: doc.id
-                val updatedAt = (doc.get("updatedAt") as? Number)?.toLong() ?: System.currentTimeMillis()
+                val updatedAt =
+                    (doc.get("updatedAt") as? Number)?.toLong() ?: System.currentTimeMillis()
                 val deletedAt = (doc.get("deletedAt") as? Number)?.toLong()
                 val syncStatus = doc.getString("syncStatus") ?: SyncStatus.SYNCED.name
                 val remoteId = doc.getString("remoteId")

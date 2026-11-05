@@ -39,6 +39,8 @@ import com.moduxi.monexi.presentation.settings.categories.archived.ArchivedCateg
 import com.moduxi.monexi.presentation.settings.categories.edit.EditCategoriesScreen
 import com.moduxi.monexi.presentation.settings.credit.CreditCardScreen
 import com.moduxi.monexi.presentation.settings.credit.archived.ArchivedCreditCardScreen
+import com.moduxi.monexi.presentation.settings.credit.bills.CreditCardBillDetailScreen
+import com.moduxi.monexi.presentation.settings.credit.bills.CreditCardBillsScreen
 import com.moduxi.monexi.presentation.settings.credit.edit.EditCreditCardScreen
 import com.moduxi.monexi.presentation.settings.payment.PaymentMethodScreen
 import com.moduxi.monexi.presentation.settings.payment.archived.ArchivedPaymentMethodScreen
@@ -284,12 +286,43 @@ fun AppNavigation(themeManager: ThemeManager) {
                     onNavigateArchived = {
                         navController.navigate("archivedCreditCard")
                     },
-                    onNavigateEdit = { id ->
-                        if (id != null) {
-                            navController.navigate("editCreditCard?id=$id")
-                        } else {
-                            navController.navigate("editCreditCard")
-                        }
+                    onNavigateNew = {
+                        navController.navigate("editCreditCard")
+                    },
+                    onNavigateBills = { cardId ->
+                        navController.navigate("creditCardBills?cardId=$cardId")
+                    }
+                )
+            }
+            composable(
+                route = "creditCardBills?cardId={cardId}",
+                arguments = listOf(navArgument("cardId") { type = NavType.StringType })
+            ) {
+                CreditCardBillsScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                    onNavigateEdit = { cardId ->
+                        navController.navigate("editCreditCard?id=$cardId")
+                    },
+                    onNavigateToBillDetail = { cardId, month, year ->
+                        navController.navigate("creditCardBillDetail?cardId=$cardId&month=$month&year=$year")
+                    }
+                )
+            }
+            composable(
+                route = "creditCardBillDetail?cardId={cardId}&month={month}&year={year}",
+                arguments = listOf(
+                    navArgument("cardId") { type = NavType.StringType },
+                    navArgument("month") { type = NavType.IntType },
+                    navArgument("year") { type = NavType.IntType }
+                )
+            ) {
+                CreditCardBillDetailScreen(
+                    month = it.arguments?.getInt("month") ?: 1,
+                    year = it.arguments?.getInt("year") ?: 2026,
+                    onNavigateBack = {
+                        navController.popBackStack()
                     }
                 )
             }

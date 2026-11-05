@@ -53,15 +53,26 @@ class TransactionViewModel(
             category.type == form.type && !category.isArchived
         }
 
+        val filteredPaymentMethods = if (form.type == TransactionType.INCOME) {
+            paymentMethods.filter { pm ->
+                val name = pm.name.lowercase()
+                !name.contains("crédito") && !name.contains("debito") && !name.contains("débito") && !name.contains("cartão")
+            }
+        } else {
+            paymentMethods
+        }
+
         form.copy(
             categories = filteredCategories,
-            paymentMethods = paymentMethods,
+            paymentMethods = filteredPaymentMethods,
             accounts = accounts,
             creditCards = creditCards,
             selectedCategory = form.selectedCategory
                 ?.takeIf { it.type == form.type }
                 ?: filteredCategories.firstOrNull(),
-            selectedPaymentMethod = form.selectedPaymentMethod ?: paymentMethods.firstOrNull(),
+            selectedPaymentMethod = form.selectedPaymentMethod
+                ?.takeIf { filteredPaymentMethods.contains(it) }
+                ?: filteredPaymentMethods.firstOrNull(),
             selectedAccount = form.selectedAccount ?: accounts.firstOrNull(),
             selectedCreditCard = form.selectedCreditCard ?: creditCards.firstOrNull()
         )

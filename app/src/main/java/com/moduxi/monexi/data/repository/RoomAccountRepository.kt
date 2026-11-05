@@ -1,5 +1,6 @@
 package com.moduxi.monexi.data.repository
 
+import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
 import com.moduxi.monexi.data.local.dao.AccountDao
 import com.moduxi.monexi.data.local.entity.AccountEntity
@@ -9,9 +10,12 @@ import com.moduxi.monexi.domain.model.account.Account
 import com.moduxi.monexi.domain.model.account.AccountType
 import com.moduxi.monexi.domain.repository.AccountRepository
 import com.moduxi.monexi.domain.repository.AuthRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import java.util.UUID
 
 class RoomAccountRepository(
     private val accountDao: AccountDao,
@@ -45,12 +49,12 @@ class RoomAccountRepository(
     override suspend fun addAccount(account: Account) {
         val currentUserId = authRepository.currentUser?.uid ?: ""
         if (currentUserId.isEmpty()) {
-            android.util.Log.e("FirestoreSync", "Erro ao adicionar conta: Usuário não logado!")
+            Log.e("FirestoreSync", "Erro ao adicionar conta: Usuário não logado!")
             return
         }
 
         val accountId = if (account.id == "0" || account.id.isEmpty()) {
-            java.util.UUID.randomUUID().toString()
+            UUID.randomUUID().toString()
         } else {
             account.id
         }
@@ -79,10 +83,10 @@ class RoomAccountRepository(
                 .set(accountData)
                 .await()
 
-            android.util.Log.d("FirestoreSync", "Conta $accountId salva no Firestore com sucesso!")
+            Log.d("FirestoreSync", "Conta $accountId salva no Firestore com sucesso!")
         } catch (e: Exception) {
             e.printStackTrace()
-            android.util.Log.e("FirestoreSync", "Erro ao salvar conta no Firestore: ${e.message}", e)
+            Log.e("FirestoreSync", "Erro ao salvar conta no Firestore: ${e.message}", e)
         }
     }
 
@@ -111,10 +115,10 @@ class RoomAccountRepository(
                 .set(accountData)
                 .await()
 
-            android.util.Log.d("FirestoreSync", "Conta ${account.id} atualizada no Firestore com sucesso!")
+            Log.d("FirestoreSync", "Conta ${account.id} atualizada no Firestore com sucesso!")
         } catch (e: Exception) {
             e.printStackTrace()
-            android.util.Log.e("FirestoreSync", "Erro ao atualizar conta no Firestore: ${e.message}", e)
+            Log.e("FirestoreSync", "Erro ao atualizar conta no Firestore: ${e.message}", e)
         }
     }
 
@@ -145,10 +149,10 @@ class RoomAccountRepository(
                 .set(accountData)
                 .await()
 
-            android.util.Log.d("FirestoreSync", "Conta ${archivedAccount.id} arquivada no Firestore com sucesso!")
+            Log.d("FirestoreSync", "Conta ${archivedAccount.id} arquivada no Firestore com sucesso!")
         } catch (e: Exception) {
             e.printStackTrace()
-            android.util.Log.e("FirestoreSync", "Erro ao arquivar conta no Firestore: ${e.message}", e)
+            Log.e("FirestoreSync", "Erro ao arquivar conta no Firestore: ${e.message}", e)
         }
     }
 
@@ -156,7 +160,7 @@ class RoomAccountRepository(
         return accountDao.getAccountById(id)?.toDomain()
     }
 
-    override suspend fun syncFromRemote(): Result<Unit> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    override suspend fun syncFromRemote(): Result<Unit> = withContext(Dispatchers.IO) {
         val currentUserId = authRepository.currentUser?.uid
             ?: return@withContext Result.failure(Exception("Usuário não autenticado"))
 
