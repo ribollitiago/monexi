@@ -7,7 +7,6 @@ import com.moduxi.monexi.data.local.entity.CreditCardEntity
 import com.moduxi.monexi.data.local.mapper.toDomain
 import com.moduxi.monexi.data.local.mapper.toEntity
 import com.moduxi.monexi.domain.model.creditcard.CreditCard
-import com.moduxi.monexi.domain.model.transaction.Transaction
 import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.CreditCardRepository
 import kotlinx.coroutines.flow.Flow
@@ -70,7 +69,8 @@ class RoomCreditCardRepository(
             "dueDay" to creditCard.dueDay,
             "colorHex" to creditCard.colorHex,
             "iconName" to creditCard.iconName,
-            "isArchived" to creditCard.isArchived
+            "isArchived" to creditCard.isArchived,
+            "linkedAccountId" to creditCard.linkedAccountId
         )
 
         try {
@@ -103,7 +103,8 @@ class RoomCreditCardRepository(
             "dueDay" to creditCard.dueDay,
             "colorHex" to creditCard.colorHex,
             "iconName" to creditCard.iconName,
-            "isArchived" to creditCard.isArchived
+            "isArchived" to creditCard.isArchived,
+            "linkedAccountId" to creditCard.linkedAccountId
         )
 
         try {
@@ -138,7 +139,8 @@ class RoomCreditCardRepository(
             "dueDay" to archivedCard.dueDay,
             "colorHex" to archivedCard.colorHex,
             "iconName" to archivedCard.iconName,
-            "isArchived" to true
+            "isArchived" to true,
+            "linkedAccountId" to archivedCard.linkedAccountId
         )
 
         try {
@@ -182,7 +184,7 @@ class RoomCreditCardRepository(
                 val colorHex = doc.getString("colorHex") ?: "#1565C0"
                 val iconName = doc.getString("iconName") ?: "CreditCard"
                 val isArchived = doc.getBoolean("isArchived") ?: false
-                val linkedAccountId = doc.getString("linkedAccountId") ?: ""
+                val linkedAccountId = doc.getString("linkedAccountId")
 
                 CreditCardEntity(
                     id = cardId,

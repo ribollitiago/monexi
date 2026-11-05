@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
 import com.moduxi.monexi.domain.repository.AccountRepository
+import com.moduxi.monexi.domain.repository.CreditCardRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
 import com.moduxi.monexi.domain.usecase.CalculateAccountBalanceUseCase
 import com.moduxi.monexi.domain.usecase.CalculateBalanceUseCase
@@ -25,7 +26,8 @@ import java.util.Locale
 
 class HomeViewModel(
     private val transactionRepository: TransactionRepository,
-    private val accountRepository: AccountRepository
+    private val accountRepository: AccountRepository,
+    private val creditCardRepository: CreditCardRepository
 ) : ViewModel() {
 
     private val calculateIncomeUseCase = CalculateIncomeUseCase()
@@ -104,6 +106,8 @@ class HomeViewModel(
     fun syncTransactions() {
         viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             transactionRepository.syncFromRemote()
+            accountRepository.syncFromRemote()
+            creditCardRepository.syncFromRemote()
         }
     }
 
@@ -113,8 +117,9 @@ class HomeViewModel(
                 val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MonexiApplication
                 HomeViewModel(
                     application.transactionRepository,
-                    application.accountRepository
-                    )
+                    application.accountRepository,
+                    application.creditCardRepository
+                )
             }
         }
     }
