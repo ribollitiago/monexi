@@ -14,6 +14,7 @@ import com.moduxi.monexi.domain.usecase.CalculateCreditCardBillsUseCase
 import com.moduxi.monexi.domain.usecase.PayCreditCardBillUseCase
 import com.moduxi.monexi.domain.repository.AccountRepository
 import com.moduxi.monexi.domain.repository.AuthRepository
+import com.moduxi.monexi.domain.repository.CategoryRepository
 import com.moduxi.monexi.domain.repository.CreditCardRepository
 import com.moduxi.monexi.domain.repository.PaymentMethodRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
@@ -28,13 +29,14 @@ class CreditCardBillsViewModel(
     private val accountRepository: AccountRepository,
     private val paymentMethodRepository: PaymentMethodRepository,
     private val transactionRepository: TransactionRepository,
+    private val categoryRepository: CategoryRepository,
     private val authRepository: AuthRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val creditCardId: String = savedStateHandle.get<String>("cardId") ?: ""
     private val calculateBillsUseCase = CalculateCreditCardBillsUseCase()
-    private val payBillUseCase = PayCreditCardBillUseCase(transactionRepository)
+    private val payBillUseCase = PayCreditCardBillUseCase(transactionRepository, categoryRepository)
 
     private val _isLoading = MutableStateFlow(false)
     private val _error = MutableStateFlow<String?>(null)
@@ -86,6 +88,7 @@ class CreditCardBillsViewModel(
                     accountRepository = application.accountRepository,
                     paymentMethodRepository = application.paymentMethodRepository,
                     transactionRepository = application.transactionRepository,
+                    categoryRepository = application.categoryRepository,
                     authRepository = application.authRepository,
                     savedStateHandle = savedStateHandle
                 )

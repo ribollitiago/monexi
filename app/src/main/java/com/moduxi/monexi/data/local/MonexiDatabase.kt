@@ -55,6 +55,7 @@ abstract class MonexiDatabase : RoomDatabase() {
                                 CategoryEntity(name = "Transporte", type = TransactionType.EXPENSE.name, isDefault = true, iconName = "DirectionsCar", colorHex = "#1E88E5"),
                                 CategoryEntity(name = "Casa", type = TransactionType.EXPENSE.name, isDefault = true, iconName = "Home", colorHex = "#8E24AA"),
                                 CategoryEntity(name = "Saúde", type = TransactionType.EXPENSE.name, isDefault = true, iconName = "MedicalServices", colorHex = "#00ACC1"),
+                                CategoryEntity(name = "Fatura de Cartão", type = TransactionType.EXPENSE.name, isDefault = true, iconName = "AttachMoney", colorHex = "#FB8C00"),
                                 CategoryEntity(name = "Salário", type = TransactionType.INCOME.name, isDefault = true, iconName = "Work", colorHex = "#43A047"),
                                 CategoryEntity(name = "Freelance", type = TransactionType.INCOME.name, isDefault = true, iconName = "AttachMoney", colorHex = "#FB8C00"),
                                 CategoryEntity(name = "Investimentos", type = TransactionType.INCOME.name, isDefault = true, iconName = "AttachMoney", colorHex = "#3949AB")

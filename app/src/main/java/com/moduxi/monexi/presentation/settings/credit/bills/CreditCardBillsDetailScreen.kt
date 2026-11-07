@@ -11,8 +11,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -22,6 +24,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -80,18 +83,16 @@ fun CreditCardBillDetailContent(
     val bill = uiState.bills.firstOrNull { it.month == month && it.year == year }
     val creditCard = uiState.creditCard
 
-    var selectedAccount by remember(uiState.accounts, creditCard) {
-        mutableStateOf(
-            uiState.accounts.firstOrNull { it.id == creditCard?.linkedAccountId }
-                ?: uiState.accounts.firstOrNull()
-        )
+    var showPayDialog by remember { mutableStateOf(false) }
+
+    val selectedAccount = remember(uiState.accounts, creditCard) {
+        uiState.accounts.firstOrNull { it.id == creditCard?.linkedAccountId }
+            ?: uiState.accounts.firstOrNull()
     }
 
-    var selectedPaymentMethod by remember(uiState.paymentMethods) {
-        mutableStateOf(
-            uiState.paymentMethods.firstOrNull { it.name.contains("Pix", ignoreCase = true) || it.name.contains("Débito", ignoreCase = true) }
-                ?: uiState.paymentMethods.firstOrNull()
-        )
+    val selectedPaymentMethod = remember(uiState.paymentMethods) {
+        uiState.paymentMethods.firstOrNull { it.name.contains("Pix", ignoreCase = true) || it.name.contains("Débito", ignoreCase = true) }
+            ?: uiState.paymentMethods.firstOrNull()
     }
 
     val formattedAmount = remember(bill) {
@@ -131,27 +132,23 @@ fun CreditCardBillDetailContent(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(text = "Total da Fatura", style = MaterialTheme.typography.bodyMedium)
-                    Text(text = formattedAmount, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                }
-            }
-
-            if (uiState.accounts.isNotEmpty() && selectedAccount != null && selectedPaymentMethod != null) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(text = "Pagar com a Conta:", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-
-                    AccountDropdown(
-                        accounts = uiState.accounts,
-                        selectedAccount = selectedAccount!!,
-                        onAccountSelected = { selectedAccount = it }
-                    )
-
-                    Button(
-                        onClick = {
-                            onPayBill(bill, selectedAccount!!.id, selectedPaymentMethod!!)
-                        },
-                        modifier = Modifier.fillMaxWidth()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Pagar Fatura")
+                        Text(
+                            text = formattedAmount,
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+
+                        Button(
+                            onClick = { showPayDialog = true }
+                        ) {
+                            Text("Pagar Fatura")
+                        }
                     }
                 }
             }
@@ -183,45 +180,151 @@ fun CreditCardBillDetailContent(
             }
         }
     }
+
+    if (showPayDialog && bill != null) {
+        PayBillDialog(
+            billAmount = formattedAmount,
+            accounts = uiState.accounts,
+            paymentMethods = uiState.paymentMethods,
+            initialSelectedAccount = selectedAccount,
+            initialSelectedPaymentMethod = selectedPaymentMethod,
+            onDismiss = { showPayDialog = false },
+            onConfirm = { account, paymentMethod ->
+                onPayBill(bill, account.id, paymentMethod)
+                showPayDialog = false
+            }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AccountDropdown(
+private fun PayBillDialog(
+    billAmount: String,
     accounts: List<Account>,
-    selectedAccount: Account,
-    onAccountSelected: (Account) -> Unit
+    paymentMethods: List<PaymentMethod>,
+    initialSelectedAccount: Account?,
+    initialSelectedPaymentMethod: PaymentMethod?,
+    onDismiss: () -> Unit,
+    onConfirm: (Account, PaymentMethod) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
-
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded }
-    ) {
-        OutlinedTextField(
-            value = selectedAccount.name,
-            onValueChange = {},
-            readOnly = true,
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier
-                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
-                .fillMaxWidth()
+    var selectedAccount by remember(accounts) {
+        mutableStateOf(initialSelectedAccount ?: accounts.firstOrNull())
+    }
+    var selectedPaymentMethod by remember(paymentMethods) {
+        mutableStateOf(
+            initialSelectedPaymentMethod
+                ?: paymentMethods.firstOrNull { it.name.contains("Pix", ignoreCase = true) || it.name.contains("Débito", ignoreCase = true) }
+                ?: paymentMethods.firstOrNull()
         )
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            accounts.forEach { account ->
-                androidx.compose.material3.DropdownMenuItem(
-                    text = { Text(account.name) },
-                    onClick = {
-                        onAccountSelected(account)
-                        expanded = false
-                    }
+    }
+
+    var accountExpanded by remember { mutableStateOf(false) }
+    var methodExpanded by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Pagar Fatura", fontWeight = FontWeight.Bold) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = "Valor Total: $billAmount",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary
                 )
+
+                if (accounts.isNotEmpty() && selectedAccount != null) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(text = "Conta de Débito:", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                        ExposedDropdownMenuBox(
+                            expanded = accountExpanded,
+                            onExpandedChange = { accountExpanded = !accountExpanded }
+                        ) {
+                            OutlinedTextField(
+                                value = selectedAccount!!.name,
+                                onValueChange = {},
+                                readOnly = true,
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = accountExpanded) },
+                                modifier = Modifier
+                                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
+                                    .fillMaxWidth()
+                            )
+                            ExposedDropdownMenu(
+                                expanded = accountExpanded,
+                                onDismissRequest = { accountExpanded = false }
+                            ) {
+                                accounts.forEach { acc ->
+                                    DropdownMenuItem(
+                                        text = { Text(acc.name) },
+                                        onClick = {
+                                            selectedAccount = acc
+                                            accountExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    Text("Nenhuma conta cadastrada para débito.", color = MaterialTheme.colorScheme.error)
+                }
+
+                if (paymentMethods.isNotEmpty() && selectedPaymentMethod != null) {
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(text = "Forma de Pagamento:", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                        ExposedDropdownMenuBox(
+                            expanded = methodExpanded,
+                            onExpandedChange = { methodExpanded = !methodExpanded }
+                        ) {
+                            OutlinedTextField(
+                                value = selectedPaymentMethod!!.name,
+                                onValueChange = {},
+                                readOnly = true,
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = methodExpanded) },
+                                modifier = Modifier
+                                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
+                                    .fillMaxWidth()
+                            )
+                            ExposedDropdownMenu(
+                                expanded = methodExpanded,
+                                onDismissRequest = { methodExpanded = false }
+                            ) {
+                                paymentMethods.forEach { method ->
+                                    DropdownMenuItem(
+                                        text = { Text(method.name) },
+                                        onClick = {
+                                            selectedPaymentMethod = method
+                                            methodExpanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                enabled = selectedAccount != null && selectedPaymentMethod != null,
+                onClick = {
+                    val acc = selectedAccount
+                    val method = selectedPaymentMethod
+                    if (acc != null && method != null) {
+                        onConfirm(acc, method)
+                    }
+                }
+            ) {
+                Text("Confirmar Pagamento")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
             }
         }
-    }
+    )
 }
 
 @Preview(showBackground = true)

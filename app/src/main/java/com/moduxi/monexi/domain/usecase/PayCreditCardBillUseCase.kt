@@ -7,11 +7,14 @@ import com.moduxi.monexi.domain.model.payment.PaymentMethod
 import com.moduxi.monexi.domain.model.transaction.SyncStatus
 import com.moduxi.monexi.domain.model.transaction.Transaction
 import com.moduxi.monexi.domain.model.transaction.TransactionType
+import com.moduxi.monexi.domain.repository.CategoryRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
+import kotlinx.coroutines.flow.firstOrNull
 import java.util.UUID
 
 class PayCreditCardBillUseCase(
-    private val transactionRepository: TransactionRepository
+    private val transactionRepository: TransactionRepository,
+    private val categoryRepository: CategoryRepository
 ) {
 
     suspend operator fun invoke(
@@ -21,18 +24,23 @@ class PayCreditCardBillUseCase(
         paymentMethod: PaymentMethod,
         userId: String
     ) {
+        val categories = categoryRepository.categories.firstOrNull() ?: emptyList()
+        val category = categories.firstOrNull { it.name.contains("Fatura", ignoreCase = true) }
+            ?: categories.firstOrNull { it.type == TransactionType.EXPENSE }
+            ?: Category(
+                id = "bill_payment",
+                name = "Fatura de Cartão",
+                type = TransactionType.EXPENSE,
+                isDefault = true
+            )
+
         val paymentTransaction = Transaction(
             id = UUID.randomUUID().toString(),
             userId = userId,
             title = "Pagamento Fatura - ${creditCard.name} (${bill.month}/${bill.year})",
             amount = bill.totalAmount,
             type = TransactionType.EXPENSE,
-            category = Category(
-                id = "bill_payment",
-                name = "Fatura de Cartão",
-                type = TransactionType.EXPENSE,
-                isDefault = true
-            ),
+            category = category,
             paymentMethod = paymentMethod,
             date = bill.dueDateMillis,
             updatedAt = System.currentTimeMillis(),
