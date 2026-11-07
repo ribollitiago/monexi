@@ -20,7 +20,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavType
@@ -42,9 +41,6 @@ import com.moduxi.monexi.presentation.settings.credit.archived.ArchivedCreditCar
 import com.moduxi.monexi.presentation.settings.credit.bills.CreditCardBillDetailScreen
 import com.moduxi.monexi.presentation.settings.credit.bills.CreditCardBillsScreen
 import com.moduxi.monexi.presentation.settings.credit.edit.EditCreditCardScreen
-import com.moduxi.monexi.presentation.settings.payment.PaymentMethodScreen
-import com.moduxi.monexi.presentation.settings.payment.archived.ArchivedPaymentMethodScreen
-import com.moduxi.monexi.presentation.settings.payment.edit.EditPaymentMethodScreen
 
 sealed class BottomNavItem(val route: String, val label: String, val icon: ImageVector) {
     object Home : BottomNavItem("home", "Resumo", Icons.Default.Home)
@@ -74,9 +70,6 @@ fun AppNavigation(themeManager: ThemeManager) {
         "categories",
         "archivedCategories",
         "editCategory",
-        "paymentMethods",
-        "archivedPaymentMethod",
-        "editPaymentMethod",
         "creditCards",
         "archivedCreditCard",
         "editCreditCard",
@@ -98,7 +91,7 @@ fun AppNavigation(themeManager: ThemeManager) {
                     items.forEach { item ->
                         NavigationBarItem(
                             selected = when (item.route) {
-                                "settings" -> currentRoute == "settings" || currentRoute == "categories" || currentRoute == "paymentMethods" || currentRoute == "bankAccounts"
+                                "settings" -> currentRoute == "settings" || currentRoute == "categories" || currentRoute == "bankAccounts"
                                 "transaction" -> currentRoute?.startsWith("transaction") == true
                                 else -> currentRoute == item.route
                             },
@@ -171,7 +164,6 @@ fun AppNavigation(themeManager: ThemeManager) {
             ) {
                 TransactionScreen(
                     onTransactionSaved = {
-                        // Se for uma barra de navegação, o popBackStack vai voltar para a Home
                         navController.popBackStack()
                     }
                 )
@@ -180,9 +172,6 @@ fun AppNavigation(themeManager: ThemeManager) {
                 SettingsScreen(
                     onNavigateToCategories = {
                         navController.navigate("categories")
-                    },
-                    onNavigateToPaymentMethods = {
-                        navController.navigate("paymentMethods")
                     },
                     onNavigateToBankAccount = {
                         navController.navigate("bankAccounts")
@@ -215,32 +204,8 @@ fun AppNavigation(themeManager: ThemeManager) {
                     }
                 )
             }
-            composable ("paymentMethods") {
-                PaymentMethodScreen(
-                    onNavigateBack = {
-                        navController.popBackStack()
-                    },
-                    onNavigateArchived = {
-                        navController.navigate("archivedPaymentMethod")
-                    },
-                    onNavigateEdit = { id ->
-                        if (id != null) {
-                            navController.navigate("editPaymentMethod?id=$id")
-                        } else {
-                            navController.navigate("editPaymentMethod")
-                        }
-                    }
-                )
-            }
             composable("archivedCategories") {
                 ArchivedCategoriesScreen(
-                    onNavigateBack = {
-                        navController.popBackStack()
-                    }
-                )
-            }
-            composable("archivedPaymentMethod") {
-                ArchivedPaymentMethodScreen(
                     onNavigateBack = {
                         navController.popBackStack()
                     }
@@ -258,22 +223,6 @@ fun AppNavigation(themeManager: ThemeManager) {
             ) {
                 EditCategoriesScreen(
                     onCategorySaved = {
-                        navController.popBackStack()
-                    }
-                )
-            }
-            composable(
-                route = "editPaymentMethod?id={id}",
-                arguments = listOf(
-                    navArgument("id") {
-                        type = NavType.StringType
-                        nullable = true
-                        defaultValue = null
-                    }
-                )
-            ) {
-                EditPaymentMethodScreen(
-                    onPaymentMethodSaved = {
                         navController.popBackStack()
                     }
                 )

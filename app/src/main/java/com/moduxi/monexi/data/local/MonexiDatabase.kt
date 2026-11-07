@@ -64,10 +64,21 @@ abstract class MonexiDatabase : RoomDatabase() {
                         val paymentMethodDao = database.paymentMethodDao()
                         paymentMethodDao.insertPaymentMethods(
                             listOf(
+                                PaymentMethodEntity(name = "Pix", isDefault = true),
                                 PaymentMethodEntity(name = "Dinheiro", isDefault = true),
-                                PaymentMethodEntity(name = "Cartão de Crédito", isDefault = true),
+                                PaymentMethodEntity(name = "Transferência Bancária", isDefault = true),
                                 PaymentMethodEntity(name = "Cartão de Débito", isDefault = true),
-                                PaymentMethodEntity(name = "Pix", isDefault = true)
+                                PaymentMethodEntity(name = "Cartão de Crédito", isDefault = true)
+                            )
+                        )
+                        val accountDao = database.accountDao()
+                        accountDao.insertAccount(
+                            AccountEntity(
+                                name = "Carteira",
+                                initialBalance = 0.0,
+                                colorHex = "#43A047",
+                                iconName = "AttachMoney",
+                                type = com.moduxi.monexi.domain.model.account.AccountType.CASH
                             )
                         )
                     }

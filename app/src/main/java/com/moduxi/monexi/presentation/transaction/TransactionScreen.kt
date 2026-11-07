@@ -125,7 +125,16 @@ private fun TransactionContent(
         initialSelectedDateMillis = uiState.dateMillis
     )
 
-    val isCreditCardSelected = uiState.selectedPaymentMethod?.name?.contains("Crédito", ignoreCase = true) == true
+    val availablePaymentMethods = remember(uiState.paymentMethods, uiState.type) {
+        if (uiState.type == TransactionType.INCOME) {
+            uiState.paymentMethods.filter { !it.name.contains("Crédito", ignoreCase = true) }
+        } else {
+            uiState.paymentMethods
+        }
+    }
+
+    val isCreditCardSelected = uiState.type == TransactionType.EXPENSE &&
+            uiState.selectedPaymentMethod?.name?.contains("Crédito", ignoreCase = true) == true
 
     Column(
         modifier = modifier
@@ -271,7 +280,7 @@ private fun TransactionContent(
             item {
                 DropdownField(
                     label = "Forma de Pagamento",
-                    options = uiState.paymentMethods,
+                    options = availablePaymentMethods,
                     selectedOption = uiState.selectedPaymentMethod,
                     onOptionSelected = onPaymentMethodChange,
                     optionLabel = { it.name }

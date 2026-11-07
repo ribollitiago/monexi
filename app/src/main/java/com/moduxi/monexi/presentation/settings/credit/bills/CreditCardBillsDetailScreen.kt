@@ -208,14 +208,17 @@ private fun PayBillDialog(
     onDismiss: () -> Unit,
     onConfirm: (Account, PaymentMethod) -> Unit
 ) {
+    val validPaymentMethods = remember(paymentMethods) {
+        paymentMethods.filter { !it.name.contains("Crédito", ignoreCase = true) }
+    }
+
     var selectedAccount by remember(accounts) {
         mutableStateOf(initialSelectedAccount ?: accounts.firstOrNull())
     }
-    var selectedPaymentMethod by remember(paymentMethods) {
+    var selectedPaymentMethod by remember(validPaymentMethods) {
         mutableStateOf(
-            initialSelectedPaymentMethod
-                ?: paymentMethods.firstOrNull { it.name.contains("Pix", ignoreCase = true) || it.name.contains("Débito", ignoreCase = true) }
-                ?: paymentMethods.firstOrNull()
+            validPaymentMethods.firstOrNull { it.name.contains("Pix", ignoreCase = true) || it.name.contains("Débito", ignoreCase = true) }
+                ?: validPaymentMethods.firstOrNull()
         )
     }
 
@@ -270,7 +273,7 @@ private fun PayBillDialog(
                     Text("Nenhuma conta cadastrada para débito.", color = MaterialTheme.colorScheme.error)
                 }
 
-                if (paymentMethods.isNotEmpty() && selectedPaymentMethod != null) {
+                if (validPaymentMethods.isNotEmpty() && selectedPaymentMethod != null) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(text = "Forma de Pagamento:", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
                         ExposedDropdownMenuBox(
@@ -290,7 +293,7 @@ private fun PayBillDialog(
                                 expanded = methodExpanded,
                                 onDismissRequest = { methodExpanded = false }
                             ) {
-                                paymentMethods.forEach { method ->
+                                validPaymentMethods.forEach { method ->
                                     DropdownMenuItem(
                                         text = { Text(method.name) },
                                         onClick = {
