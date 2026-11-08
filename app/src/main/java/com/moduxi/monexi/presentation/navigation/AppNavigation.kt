@@ -33,6 +33,7 @@ import com.moduxi.monexi.presentation.settings.SettingsScreen
 import com.moduxi.monexi.presentation.settings.accounts.BankAccountScreen
 import com.moduxi.monexi.presentation.settings.accounts.archived.ArchivedBankAccountScreen
 import com.moduxi.monexi.presentation.settings.accounts.edit.EditBankAccountScreen
+import com.moduxi.monexi.presentation.settings.accounts.statement.BankAccountStatementScreen
 import com.moduxi.monexi.presentation.settings.categories.CategoriesScreen
 import com.moduxi.monexi.presentation.settings.categories.archived.ArchivedCategoriesScreen
 import com.moduxi.monexi.presentation.settings.categories.edit.EditCategoriesScreen
@@ -75,7 +76,8 @@ fun AppNavigation(themeManager: ThemeManager) {
         "editCreditCard",
         "bankAccounts",
         "archivedBankAccount",
-        "editBankAccount"
+        "editBankAccount",
+        "bankAccountStatement?accountId={accountId}"
     )
 
     Scaffold(
@@ -91,7 +93,7 @@ fun AppNavigation(themeManager: ThemeManager) {
                     items.forEach { item ->
                         NavigationBarItem(
                             selected = when (item.route) {
-                                "settings" -> currentRoute == "settings" || currentRoute == "categories" || currentRoute == "bankAccounts"
+                                "settings" -> currentRoute == "settings" || currentRoute == "categories" || currentRoute == "bankAccounts" || currentRoute?.startsWith("bankAccountStatement") == true
                                 "transaction" -> currentRoute?.startsWith("transaction") == true
                                 else -> currentRoute == item.route
                             },
@@ -306,12 +308,31 @@ fun AppNavigation(themeManager: ThemeManager) {
                     onNavigateArchived = {
                         navController.navigate("archivedBankAccount")
                     },
-                    onNavigateEdit = { id ->
-                        if (id != null) {
-                            navController.navigate("editBankAccount?id=$id")
-                        } else {
-                            navController.navigate("editBankAccount")
-                        }
+                    onNavigateNew = {
+                        navController.navigate("editBankAccount")
+                    },
+                    onNavigateStatement = { accountId ->
+                        navController.navigate("bankAccountStatement?accountId=$accountId")
+                    }
+                )
+            }
+            composable(
+                route = "bankAccountStatement?accountId={accountId}",
+                arguments = listOf(
+                    navArgument("accountId") {
+                        type = NavType.StringType
+                    }
+                )
+            ) {
+                BankAccountStatementScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                    onNavigateEdit = { accountId ->
+                        navController.navigate("editBankAccount?id=$accountId")
+                    },
+                    onNavigateToTransaction = { transactionId ->
+                        navController.navigate("transaction?id=$transactionId")
                     }
                 )
             }

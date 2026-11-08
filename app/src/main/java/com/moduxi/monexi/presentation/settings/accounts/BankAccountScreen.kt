@@ -47,7 +47,8 @@ import java.util.Locale
 fun BankAccountScreen(
     onNavigateBack: () -> Unit,
     onNavigateArchived: () -> Unit,
-    onNavigateEdit: (String?) -> Unit,
+    onNavigateNew: () -> Unit,
+    onNavigateStatement: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: BankAccountViewModel = viewModel(factory = BankAccountViewModel.Factory)
 ) {
@@ -57,8 +58,8 @@ fun BankAccountScreen(
         uiState = uiState,
         onNavigateBack = onNavigateBack,
         onNavigateArchived = onNavigateArchived,
-        onNavigateEdit = { onNavigateEdit(null) },
-        onAccountClick = { account -> onNavigateEdit(account.id) },
+        onNavigateNew = onNavigateNew,
+        onAccountClick = { account -> onNavigateStatement(account.id) },
         modifier = modifier.fillMaxSize()
     )
 }
@@ -68,7 +69,7 @@ private fun BankAccountContent(
     uiState: BankAccountUiState,
     onNavigateBack: () -> Unit,
     onNavigateArchived: () -> Unit,
-    onNavigateEdit: () -> Unit,
+    onNavigateNew: () -> Unit,
     onAccountClick: (Account) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -130,7 +131,7 @@ private fun BankAccountContent(
         }
 
         ExtendedFloatingActionButton(
-            onClick = { onNavigateEdit() },
+            onClick = { onNavigateNew() },
             icon = { Icon(Icons.Default.Add, contentDescription = null) },
             text = { Text("Adicionar novo") },
             modifier = Modifier
@@ -212,7 +213,7 @@ private fun BankAccountScreenPreview() {
             ),
             onNavigateBack = {},
             onNavigateArchived = {},
-            onNavigateEdit = {},
+            onNavigateNew = {},
             onAccountClick = {}
         )
     }
