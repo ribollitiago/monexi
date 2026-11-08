@@ -365,6 +365,51 @@ class TransactionViewModel(
         val installmentsCount = if (isCreditCardPayment) state.totalInstallments else 1
 
         viewModelScope.launch {
+            val allTransactions = transactionRepository.transactions.first()
+
+            // Validações de Saldo / Limite para novas Despesas
+            if (state.type == TransactionType.EXPENSE && editingTransaction == null) {
+                if (isCreditCardPayment) {
+                    val card = state.selectedCreditCard
+                    if (card != null) {
+                        val totalSpent = allTransactions
+                            .filter { it.creditCardId == card.id && it.deletedAt == null && it.type == TransactionType.EXPENSE }
+                            .sumOf { it.amount }
+                        val availableLimit = card.limitAmount - totalSpent
+
+                        if (amount > availableLimit) {
+                            val formattedLimit = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"))
+                                .format(availableLimit.coerceAtLeast(0.0))
+                            formState.value = formState.value.copy(
+                                error = "Limite insuficiente no cartão ${card.name} ($formattedLimit disponível)"
+                            )
+                            return@launch
+                        }
+                    } else {
+                        formState.value = formState.value.copy(error = "Selecione um cartão de crédito")
+                        return@launch
+                    }
+                } else {
+                    val account = state.selectedAccount
+                    if (account != null) {
+                        val calculateBalance = CalculateAccountBalanceUseCase()
+                        val availableBalance = calculateBalance(account, allTransactions)
+
+                        if (amount > availableBalance) {
+                            val formattedBalance = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"))
+                                .format(availableBalance)
+                            formState.value = formState.value.copy(
+                                error = "Saldo insuficiente na conta ${account.name} ($formattedBalance disponível)"
+                            )
+                            return@launch
+                        }
+                    } else {
+                        formState.value = formState.value.copy(error = "Selecione uma conta bancária")
+                        return@launch
+                    }
+                }
+            }
+
             if (installmentsCount > 1 && isCreditCardPayment) {
                 val installmentAmount = amount / installmentsCount
                 val groupId = UUID.randomUUID().toString()
