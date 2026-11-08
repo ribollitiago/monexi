@@ -32,13 +32,13 @@ Projeto em constante evolução. **Recursos já implementados:**
   - **Filtros rápidos:** *Todos*, *Entrada* (Receita) e *Saída* (Despesa).
   - Formatação de data em português (`dd/MM/yyyy`).
 - 💳 **Lançamentos & Transferências (`TransactionScreen`):**
-  - Criação e edição de receitas, despesas e **Transferências entre Contas** com validação em tempo real de saldo disponível.
+  - Criação e edição de receitas, despesas e **Transferências entre Contas** com validação em tempo real de saldo disponível na conta de origem.
   - **Validação de Saldo e Limite:** Travas automáticas para impedir despesas acima do saldo da conta bancária ou acima do limite disponível no cartão de crédito.
   - Compras parceladas no Cartão de Crédito (de 1x até 12x com distribuição automática nas faturas).
 - 🏦 **Contas Bancárias e Múltiplas Carteiras (`BankAccountScreen`):**
   - Gestão de contas por tipo (*Conta Corrente*, *Conta Poupança*, *Vale Alimentação/Refeição*, *Investimentos*, *Dinheiro/Carteira*).
   - Conta padrão `"Carteira"` criada automaticamente na instalação.
-  - **Extrato Específico da Conta:** Histórico de transações exclusivo de cada conta com saldo atualizado e botão de edição rápido no header.
+  - **Extrato Específico da Conta (`BankAccountStatementScreen`):** Histórico de transações exclusivo de cada conta com saldo atualizado e botão de edição rápido no header.
 - 💳 **Cartões de Crédito & Faturas (`CreditCardScreen`):**
   - Cadastro de cartões com controle de limite, dia de fechamento e dia de vencimento.
   - Visualização de Faturas mensais e listagem de lançamentos da fatura.
