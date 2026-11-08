@@ -10,7 +10,7 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.MonetizationOn
-import androidx.compose.material.icons.filled.Payment
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -22,21 +22,17 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.moduxi.monexi.data.repository.local.ThemeManager
 import com.moduxi.monexi.ui.theme.MonexiTheme
 
 @Composable
 fun SettingsScreen (
     onNavigateToCategories: () -> Unit,
-    onNavigateToPaymentMethods: () -> Unit,
     onNavigateToBankAccount: () -> Unit,
     onNavigateToCreditCard: () -> Unit,
+    onNavigateToRecurring: () -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ){
@@ -74,10 +70,10 @@ fun SettingsScreen (
         }
         item {
             SettingsItem(
-                title = "Métodos de Pagamento",
-                subtitle = "Cartão, Dinheiro, Pix",
-                icon = Icons.Default.Payment,
-                onClick = onNavigateToPaymentMethods
+                title = "Lançamentos Recorrentes",
+                subtitle = "Assinaturas e contas fixas mensais",
+                icon = Icons.Default.Repeat,
+                onClick = onNavigateToRecurring
             )
         }
         item { HorizontalDivider() }
@@ -153,9 +149,9 @@ fun SettingsScreenPreview() {
     MonexiTheme {
         SettingsScreen(
             onNavigateToCategories = {},
-            onNavigateToPaymentMethods = {},
             onNavigateToCreditCard = {},
             onNavigateToBankAccount = {},
+            onNavigateToRecurring = {},
             onLogout = {}
         )
     }

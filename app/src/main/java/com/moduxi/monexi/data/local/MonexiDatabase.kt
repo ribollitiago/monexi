@@ -5,13 +5,19 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.moduxi.monexi.data.local.dao.AccountDao
 import com.moduxi.monexi.data.local.dao.CategoryDao
+import com.moduxi.monexi.data.local.dao.CreditCardDao
 import com.moduxi.monexi.data.local.dao.PaymentMethodDao
+import com.moduxi.monexi.data.local.dao.RecurringTransactionDao
 import com.moduxi.monexi.data.local.dao.TransactionDao
+import com.moduxi.monexi.data.local.entity.AccountEntity
 import com.moduxi.monexi.data.local.entity.CategoryEntity
+import com.moduxi.monexi.data.local.entity.CreditCardEntity
 import com.moduxi.monexi.data.local.entity.PaymentMethodEntity
+import com.moduxi.monexi.data.local.entity.RecurringTransactionEntity
 import com.moduxi.monexi.data.local.entity.TransactionEntity
-import com.moduxi.monexi.domain.model.TransactionType
+import com.moduxi.monexi.domain.model.transaction.TransactionType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -20,15 +26,21 @@ import kotlinx.coroutines.launch
     entities = [
         CategoryEntity::class,
         PaymentMethodEntity::class,
-        TransactionEntity::class
+        TransactionEntity::class,
+        AccountEntity::class,
+        CreditCardEntity::class,
+        RecurringTransactionEntity::class
     ],
-    version = 8,
+    version = 12,
     exportSchema = false
 )
 abstract class MonexiDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun paymentMethodDao(): PaymentMethodDao
     abstract fun transactionDao(): TransactionDao
+    abstract fun accountDao(): AccountDao
+    abstract fun creditCardDao(): CreditCardDao
+    abstract fun recurringTransactionDao(): RecurringTransactionDao
 
     companion object {
         @Volatile
@@ -47,6 +59,7 @@ abstract class MonexiDatabase : RoomDatabase() {
                                 CategoryEntity(name = "Transporte", type = TransactionType.EXPENSE.name, isDefault = true, iconName = "DirectionsCar", colorHex = "#1E88E5"),
                                 CategoryEntity(name = "Casa", type = TransactionType.EXPENSE.name, isDefault = true, iconName = "Home", colorHex = "#8E24AA"),
                                 CategoryEntity(name = "Saúde", type = TransactionType.EXPENSE.name, isDefault = true, iconName = "MedicalServices", colorHex = "#00ACC1"),
+                                CategoryEntity(name = "Fatura de Cartão", type = TransactionType.EXPENSE.name, isDefault = true, iconName = "AttachMoney", colorHex = "#FB8C00"),
                                 CategoryEntity(name = "Salário", type = TransactionType.INCOME.name, isDefault = true, iconName = "Work", colorHex = "#43A047"),
                                 CategoryEntity(name = "Freelance", type = TransactionType.INCOME.name, isDefault = true, iconName = "AttachMoney", colorHex = "#FB8C00"),
                                 CategoryEntity(name = "Investimentos", type = TransactionType.INCOME.name, isDefault = true, iconName = "AttachMoney", colorHex = "#3949AB")
@@ -55,10 +68,21 @@ abstract class MonexiDatabase : RoomDatabase() {
                         val paymentMethodDao = database.paymentMethodDao()
                         paymentMethodDao.insertPaymentMethods(
                             listOf(
+                                PaymentMethodEntity(name = "Pix", isDefault = true),
                                 PaymentMethodEntity(name = "Dinheiro", isDefault = true),
-                                PaymentMethodEntity(name = "Cartão de Crédito", isDefault = true),
+                                PaymentMethodEntity(name = "Transferência Bancária", isDefault = true),
                                 PaymentMethodEntity(name = "Cartão de Débito", isDefault = true),
-                                PaymentMethodEntity(name = "Pix", isDefault = true)
+                                PaymentMethodEntity(name = "Cartão de Crédito", isDefault = true)
+                            )
+                        )
+                        val accountDao = database.accountDao()
+                        accountDao.insertAccount(
+                            AccountEntity(
+                                name = "Carteira",
+                                initialBalance = 0.0,
+                                colorHex = "#43A047",
+                                iconName = "AttachMoney",
+                                type = com.moduxi.monexi.domain.model.account.AccountType.CASH
                             )
                         )
                     }

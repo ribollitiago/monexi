@@ -20,7 +20,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavType
@@ -31,12 +30,19 @@ import com.moduxi.monexi.presentation.auth.login.LoginScreen
 import com.moduxi.monexi.presentation.auth.register.RegisterScreen
 import com.moduxi.monexi.presentation.extract.ExtractScreen
 import com.moduxi.monexi.presentation.settings.SettingsScreen
+import com.moduxi.monexi.presentation.settings.accounts.BankAccountScreen
+import com.moduxi.monexi.presentation.settings.accounts.archived.ArchivedBankAccountScreen
+import com.moduxi.monexi.presentation.settings.accounts.edit.EditBankAccountScreen
+import com.moduxi.monexi.presentation.settings.accounts.statement.BankAccountStatementScreen
 import com.moduxi.monexi.presentation.settings.categories.CategoriesScreen
 import com.moduxi.monexi.presentation.settings.categories.archived.ArchivedCategoriesScreen
 import com.moduxi.monexi.presentation.settings.categories.edit.EditCategoriesScreen
-import com.moduxi.monexi.presentation.settings.payment.PaymentMethodScreen
-import com.moduxi.monexi.presentation.settings.payment.archived.ArchivedPaymentMethodScreen
-import com.moduxi.monexi.presentation.settings.payment.edit.EditPaymentMethodScreen
+import com.moduxi.monexi.presentation.settings.credit.CreditCardScreen
+import com.moduxi.monexi.presentation.settings.credit.archived.ArchivedCreditCardScreen
+import com.moduxi.monexi.presentation.settings.credit.bills.CreditCardBillDetailScreen
+import com.moduxi.monexi.presentation.settings.credit.bills.CreditCardBillsScreen
+import com.moduxi.monexi.presentation.settings.credit.edit.EditCreditCardScreen
+import com.moduxi.monexi.presentation.settings.recurring.RecurringTransactionsScreen
 
 sealed class BottomNavItem(val route: String, val label: String, val icon: ImageVector) {
     object Home : BottomNavItem("home", "Resumo", Icons.Default.Home)
@@ -64,11 +70,16 @@ fun AppNavigation(themeManager: ThemeManager) {
         "transaction?id={id}",
         "settings",
         "categories",
-        "paymentMethods",
         "archivedCategories",
-        "archivedPaymentMethod",
         "editCategory",
-        "editPaymentMethod"
+        "creditCards",
+        "archivedCreditCard",
+        "editCreditCard",
+        "bankAccounts",
+        "archivedBankAccount",
+        "editBankAccount",
+        "bankAccountStatement?accountId={accountId}",
+        "recurring"
     )
 
     Scaffold(
@@ -84,7 +95,7 @@ fun AppNavigation(themeManager: ThemeManager) {
                     items.forEach { item ->
                         NavigationBarItem(
                             selected = when (item.route) {
-                                "settings" -> currentRoute == "settings" || currentRoute == "categories" || currentRoute == "paymentMethods"
+                                "settings" -> currentRoute == "settings" || currentRoute == "categories" || currentRoute == "bankAccounts" || currentRoute == "recurring" || currentRoute?.startsWith("bankAccountStatement") == true
                                 "transaction" -> currentRoute?.startsWith("transaction") == true
                                 else -> currentRoute == item.route
                             },
@@ -157,7 +168,6 @@ fun AppNavigation(themeManager: ThemeManager) {
             ) {
                 TransactionScreen(
                     onTransactionSaved = {
-                        // Se for uma barra de navegação, o popBackStack vai voltar para a Home
                         navController.popBackStack()
                     }
                 )
@@ -167,11 +177,15 @@ fun AppNavigation(themeManager: ThemeManager) {
                     onNavigateToCategories = {
                         navController.navigate("categories")
                     },
-                    onNavigateToPaymentMethods = {
-                        navController.navigate("paymentMethods")
+                    onNavigateToBankAccount = {
+                        navController.navigate("bankAccounts")
                     },
-                    onNavigateToBankAccount = {},
-                    onNavigateToCreditCard = {},
+                    onNavigateToCreditCard = {
+                        navController.navigate("creditCards")
+                    },
+                    onNavigateToRecurring = {
+                        navController.navigate("recurring")
+                    },
                     onLogout = {
                         navController.navigate("login") {
                             popUpTo(0) { inclusive = true }
@@ -197,32 +211,8 @@ fun AppNavigation(themeManager: ThemeManager) {
                     }
                 )
             }
-            composable ("paymentMethods") {
-                PaymentMethodScreen(
-                    onNavigateBack = {
-                        navController.popBackStack()
-                    },
-                    onNavigateArchived = {
-                        navController.navigate("archivedPaymentMethod")
-                    },
-                    onNavigateEdit = { id ->
-                        if (id != null) {
-                            navController.navigate("editPaymentMethod?id=$id")
-                        } else {
-                            navController.navigate("editPaymentMethod")
-                        }
-                    }
-                )
-            }
             composable("archivedCategories") {
                 ArchivedCategoriesScreen(
-                    onNavigateBack = {
-                        navController.popBackStack()
-                    }
-                )
-            }
-            composable("archivedPaymentMethod") {
-                ArchivedPaymentMethodScreen(
                     onNavigateBack = {
                         navController.popBackStack()
                     }
@@ -244,8 +234,56 @@ fun AppNavigation(themeManager: ThemeManager) {
                     }
                 )
             }
+            composable(route = "creditCards") {
+                CreditCardScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                    onNavigateArchived = {
+                        navController.navigate("archivedCreditCard")
+                    },
+                    onNavigateNew = {
+                        navController.navigate("editCreditCard")
+                    },
+                    onNavigateBills = { cardId ->
+                        navController.navigate("creditCardBills?cardId=$cardId")
+                    }
+                )
+            }
             composable(
-                route = "editPaymentMethod?id={id}",
+                route = "creditCardBills?cardId={cardId}",
+                arguments = listOf(navArgument("cardId") { type = NavType.StringType })
+            ) {
+                CreditCardBillsScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                    onNavigateEdit = { cardId ->
+                        navController.navigate("editCreditCard?id=$cardId")
+                    },
+                    onNavigateToBillDetail = { cardId, month, year ->
+                        navController.navigate("creditCardBillDetail?cardId=$cardId&month=$month&year=$year")
+                    }
+                )
+            }
+            composable(
+                route = "creditCardBillDetail?cardId={cardId}&month={month}&year={year}",
+                arguments = listOf(
+                    navArgument("cardId") { type = NavType.StringType },
+                    navArgument("month") { type = NavType.IntType },
+                    navArgument("year") { type = NavType.IntType }
+                )
+            ) {
+                CreditCardBillDetailScreen(
+                    month = it.arguments?.getInt("month") ?: 1,
+                    year = it.arguments?.getInt("year") ?: 2026,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable(
+                route = "editCreditCard?id={id}",
                 arguments = listOf(
                     navArgument("id") {
                         type = NavType.StringType
@@ -254,8 +292,81 @@ fun AppNavigation(themeManager: ThemeManager) {
                     }
                 )
             ) {
-                EditPaymentMethodScreen(
-                    onPaymentMethodSaved = {
+                EditCreditCardScreen(
+                    onCreditCardSaved = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable("archivedCreditCard") {
+                ArchivedCreditCardScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable("bankAccounts") {
+                BankAccountScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                    onNavigateArchived = {
+                        navController.navigate("archivedBankAccount")
+                    },
+                    onNavigateNew = {
+                        navController.navigate("editBankAccount")
+                    },
+                    onNavigateStatement = { accountId ->
+                        navController.navigate("bankAccountStatement?accountId=$accountId")
+                    }
+                )
+            }
+            composable(
+                route = "bankAccountStatement?accountId={accountId}",
+                arguments = listOf(
+                    navArgument("accountId") {
+                        type = NavType.StringType
+                    }
+                )
+            ) {
+                BankAccountStatementScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                    onNavigateEdit = { accountId ->
+                        navController.navigate("editBankAccount?id=$accountId")
+                    },
+                    onNavigateToTransaction = { transactionId ->
+                        navController.navigate("transaction?id=$transactionId")
+                    }
+                )
+            }
+            composable(
+                route = "editBankAccount?id={id}",
+                arguments = listOf(
+                    navArgument("id") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) {
+                EditBankAccountScreen(
+                    onBankAccountSaved = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable("archivedBankAccount") {
+                ArchivedBankAccountScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable("recurring") {
+                RecurringTransactionsScreen(
+                    onNavigateBack = {
                         navController.popBackStack()
                     }
                 )

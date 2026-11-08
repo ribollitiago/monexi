@@ -1,6 +1,6 @@
 package com.moduxi.monexi.domain.usecase
 
-import com.moduxi.monexi.domain.model.Transaction
+import com.moduxi.monexi.domain.model.transaction.Transaction
 
 class CalculateBalanceUseCase(
     private val calculateIncomeUseCase: CalculateIncomeUseCase = CalculateIncomeUseCase(),

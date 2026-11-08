@@ -1,6 +1,6 @@
 package com.moduxi.monexi.domain.repository
 
-import com.moduxi.monexi.domain.model.Category
+import com.moduxi.monexi.domain.model.category.Category
 import kotlinx.coroutines.flow.Flow
 
 interface CategoryRepository {

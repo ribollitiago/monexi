@@ -3,29 +3,60 @@ package com.moduxi.monexi
 import android.app.Application
 import com.moduxi.monexi.data.local.MonexiDatabase
 import com.moduxi.monexi.data.repository.FirebaseAuthRepository
+import com.moduxi.monexi.data.repository.RoomAccountRepository
 import com.moduxi.monexi.data.repository.RoomCategoryRepository
+import com.moduxi.monexi.data.repository.RoomCreditCardRepository
 import com.moduxi.monexi.data.repository.RoomPaymentMethodRepository
-import com.moduxi.monexi.domain.repository.PaymentMethodRepository
+import com.moduxi.monexi.data.repository.RoomRecurringTransactionRepository
 import com.moduxi.monexi.data.repository.RoomTransactionRepository
 import com.moduxi.monexi.data.repository.local.ThemeManager
+import com.moduxi.monexi.domain.repository.AccountRepository
 import com.moduxi.monexi.domain.repository.AuthRepository
+import com.moduxi.monexi.domain.repository.CategoryRepository
+import com.moduxi.monexi.domain.repository.CreditCardRepository
+import com.moduxi.monexi.domain.repository.PaymentMethodRepository
+import com.moduxi.monexi.domain.repository.RecurringTransactionRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
+import com.moduxi.monexi.domain.usecase.GenerateRecurringTransactionsUseCase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MonexiApplication : Application() {
     val themeManager by lazy { ThemeManager(this) }
     val database: MonexiDatabase by lazy { MonexiDatabase.getInstance(this) }
-    val categoryRepository: RoomCategoryRepository by lazy {
+
+    val authRepository: AuthRepository by lazy { FirebaseAuthRepository() }
+
+    val categoryRepository: CategoryRepository by lazy {
         RoomCategoryRepository(
             categoryDao = database.categoryDao(),
             authRepository = authRepository
         )
     }
+
     val paymentMethodRepository: PaymentMethodRepository by lazy {
         RoomPaymentMethodRepository(
             paymentMethodDao = database.paymentMethodDao(),
             authRepository = authRepository
         )
     }
+
+    val accountRepository: AccountRepository by lazy {
+        RoomAccountRepository(
+            accountDao = database.accountDao(),
+            authRepository = authRepository
+        )
+    }
+
+    val creditCardRepository: CreditCardRepository by lazy {
+        RoomCreditCardRepository(
+            creditCardDao = database.creditCardDao(),
+            transactionDao = database.transactionDao(),
+            authRepository = authRepository
+        )
+    }
+
     val transactionRepository: TransactionRepository by lazy {
         RoomTransactionRepository(
             transactionDao = database.transactionDao(),
@@ -35,5 +66,27 @@ class MonexiApplication : Application() {
         )
     }
 
-    val authRepository: AuthRepository by lazy { FirebaseAuthRepository() }
+    val recurringTransactionRepository: RecurringTransactionRepository by lazy {
+        RoomRecurringTransactionRepository(
+            recurringTransactionDao = database.recurringTransactionDao(),
+            transactionDao = database.transactionDao(),
+            authRepository = authRepository
+        )
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        val userId = authRepository.currentUser?.uid
+        if (!userId.isNullOrEmpty()) {
+            CoroutineScope(Dispatchers.IO).launch {
+                val generateUseCase = GenerateRecurringTransactionsUseCase(
+                    recurringTransactionRepository = recurringTransactionRepository,
+                    transactionRepository = transactionRepository,
+                    categoryRepository = categoryRepository,
+                    paymentMethodRepository = paymentMethodRepository
+                )
+                generateUseCase(userId)
+            }
+        }
+    }
 }

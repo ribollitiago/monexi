@@ -1,8 +1,8 @@
 package com.moduxi.monexi.data.local.mapper
 
 import com.moduxi.monexi.data.local.entity.CategoryEntity
-import com.moduxi.monexi.domain.model.Category
-import com.moduxi.monexi.domain.model.TransactionType
+import com.moduxi.monexi.domain.model.category.Category
+import com.moduxi.monexi.domain.model.transaction.TransactionType
 
 fun CategoryEntity.toDomain(): Category {
     return Category(

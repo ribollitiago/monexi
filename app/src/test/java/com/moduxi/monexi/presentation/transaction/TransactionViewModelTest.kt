@@ -6,10 +6,10 @@ import com.moduxi.monexi.data.repository.FakeAuthRepository
 import com.moduxi.monexi.data.repository.FakeCategoryRepository
 import com.moduxi.monexi.data.repository.FakePaymentMethodRepository
 import com.moduxi.monexi.data.repository.FakeTransactionRepository
-import com.moduxi.monexi.domain.model.Category
-import com.moduxi.monexi.domain.model.PaymentMethod
-import com.moduxi.monexi.domain.model.Transaction
-import com.moduxi.monexi.domain.model.TransactionType
+import com.moduxi.monexi.domain.model.category.Category
+import com.moduxi.monexi.domain.model.payment.PaymentMethod
+import com.moduxi.monexi.domain.model.transaction.Transaction
+import com.moduxi.monexi.domain.model.transaction.TransactionType
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher

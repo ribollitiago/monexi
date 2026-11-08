@@ -1,6 +1,6 @@
 package com.moduxi.monexi.domain.repository
 
-import com.moduxi.monexi.domain.model.PaymentMethod
+import com.moduxi.monexi.domain.model.payment.PaymentMethod
 import kotlinx.coroutines.flow.Flow
 
 interface PaymentMethodRepository {

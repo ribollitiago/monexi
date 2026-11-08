@@ -9,18 +9,22 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
+import com.moduxi.monexi.domain.repository.AccountRepository
 import com.moduxi.monexi.domain.repository.AuthRepository
-import com.moduxi.monexi.domain.repository.TransactionRepository
+import com.moduxi.monexi.domain.repository.CreditCardRepository
 import kotlinx.coroutines.launch
 
 import com.moduxi.monexi.domain.repository.CategoryRepository
 import com.moduxi.monexi.domain.repository.PaymentMethodRepository
+import com.moduxi.monexi.domain.repository.TransactionRepository
 
 class LoginViewModel(
     private val authRepository: AuthRepository,
     private val transactionRepository: TransactionRepository,
     private val categoryRepository: CategoryRepository,
-    private val paymentMethodRepository: PaymentMethodRepository
+    private val paymentMethodRepository: PaymentMethodRepository,
+    private val accountRepository: AccountRepository,
+    private val creditCardRepository: CreditCardRepository
 ) : ViewModel() {
 
     var uiState by mutableStateOf(LoginUiState())
@@ -48,6 +52,8 @@ class LoginViewModel(
             result.onSuccess {
                 categoryRepository.syncFromRemote()
                 paymentMethodRepository.syncFromRemote()
+                accountRepository.syncFromRemote()
+                creditCardRepository.syncFromRemote()
                 transactionRepository.syncFromRemote()
 
                 uiState = uiState.copy(
@@ -75,7 +81,9 @@ class LoginViewModel(
                     authRepository = application.authRepository,
                     transactionRepository = application.transactionRepository,
                     categoryRepository = application.categoryRepository,
-                    paymentMethodRepository = application.paymentMethodRepository
+                    paymentMethodRepository = application.paymentMethodRepository,
+                    accountRepository = application.accountRepository,
+                    creditCardRepository = application.creditCardRepository
                 )
             }
         }

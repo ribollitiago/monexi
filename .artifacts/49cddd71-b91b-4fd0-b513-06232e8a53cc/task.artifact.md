@@ -1,0 +1,8 @@
+- [ ] Criar modelo de domínio `CreditCardBill`
+- [ ] Criar UseCase `CalculateCreditCardBillsUseCase` para faturamento mensal
+- [ ] Criar UseCase `PayCreditCardBillUseCase` para quitação da fatura com débito em conta
+- [ ] Atualizar `CreditCardRepository` e implementação no Room/Firestore
+- [ ] Criar `CreditCardBillsScreen` e ViewModel de Faturas
+- [ ] Criar `CreditCardBillDetailScreen` com botão de pagamento
+- [ ] Registrar rotas em `AppNavigation.kt`
+- [ ] Verificar build e testes unitários

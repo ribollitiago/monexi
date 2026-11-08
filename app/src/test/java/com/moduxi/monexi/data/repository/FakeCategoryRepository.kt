@@ -1,6 +1,6 @@
 package com.moduxi.monexi.data.repository
 
-import com.moduxi.monexi.domain.model.Category
+import com.moduxi.monexi.domain.model.category.Category
 import com.moduxi.monexi.domain.repository.CategoryRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

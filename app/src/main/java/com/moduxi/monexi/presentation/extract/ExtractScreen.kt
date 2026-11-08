@@ -38,10 +38,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.moduxi.monexi.domain.model.Category
-import com.moduxi.monexi.domain.model.PaymentMethod
-import com.moduxi.monexi.domain.model.Transaction
-import com.moduxi.monexi.domain.model.TransactionType
+import com.moduxi.monexi.domain.model.category.Category
+import com.moduxi.monexi.domain.model.payment.PaymentMethod
+import com.moduxi.monexi.domain.model.transaction.Transaction
+import com.moduxi.monexi.domain.model.transaction.TransactionType
 import com.moduxi.monexi.ui.theme.MonexiTheme
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
