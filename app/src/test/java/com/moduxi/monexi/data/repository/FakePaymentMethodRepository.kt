@@ -4,7 +4,6 @@ import com.moduxi.monexi.domain.model.payment.PaymentMethod
 import com.moduxi.monexi.domain.repository.PaymentMethodRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-
 import kotlinx.coroutines.flow.map
 
 class FakePaymentMethodRepository(
@@ -34,6 +33,10 @@ class FakePaymentMethodRepository(
         paymentMethodsState.value = paymentMethodsState.value.filterNot {
             it.id == paymentMethod.id
         }
+    }
+
+    override suspend fun getPaymentMethodById(id: String): PaymentMethod? {
+        return paymentMethodsState.value.firstOrNull { it.id == id }
     }
 
     override suspend fun syncFromRemote(): Result<Unit> {
