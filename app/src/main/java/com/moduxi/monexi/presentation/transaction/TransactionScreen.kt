@@ -277,30 +277,56 @@ private fun TransactionContent(
             if (uiState.isTransfer) {
                 // Form de Transferência entre contas
                 item {
-                    DropdownField(
-                        label = "Conta de Origem (Sairá de)",
-                        options = uiState.accounts,
-                        selectedOption = uiState.selectedAccount,
-                        onOptionSelected = onAccountChange,
-                        optionLabel = { it.name },
-                        optionIcon = { it.iconName.toCategoryIcon() },
-                        optionColor = { it.colorHex.toComposeColor() }
-                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        DropdownField(
+                            label = "Conta de Origem (Sairá de)",
+                            options = uiState.accounts,
+                            selectedOption = uiState.selectedAccount,
+                            onOptionSelected = onAccountChange,
+                            optionLabel = { it.name },
+                            optionIcon = { it.iconName.toCategoryIcon() },
+                            optionColor = { it.colorHex.toComposeColor() }
+                        )
+                        uiState.sourceAccountBalance?.let { balance ->
+                            val formattedBalance = remember(balance) {
+                                NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR")).format(balance)
+                            }
+                            Text(
+                                text = "Saldo disponível: $formattedBalance",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (balance >= 0) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(start = 4.dp)
+                            )
+                        }
+                    }
                 }
 
                 item {
                     val availableDestinations = remember(uiState.accounts, uiState.selectedAccount) {
                         uiState.accounts.filter { it.id != uiState.selectedAccount?.id }
                     }
-                    DropdownField(
-                        label = "Conta de Destino (Irá para)",
-                        options = availableDestinations,
-                        selectedOption = uiState.selectedDestinationAccount,
-                        onOptionSelected = onDestinationAccountChange,
-                        optionLabel = { it.name },
-                        optionIcon = { it.iconName.toCategoryIcon() },
-                        optionColor = { it.colorHex.toComposeColor() }
-                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        DropdownField(
+                            label = "Conta de Destino (Irá para)",
+                            options = availableDestinations,
+                            selectedOption = uiState.selectedDestinationAccount,
+                            onOptionSelected = onDestinationAccountChange,
+                            optionLabel = { it.name },
+                            optionIcon = { it.iconName.toCategoryIcon() },
+                            optionColor = { it.colorHex.toComposeColor() }
+                        )
+                        uiState.destinationAccountBalance?.let { balance ->
+                            val formattedBalance = remember(balance) {
+                                NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR")).format(balance)
+                            }
+                            Text(
+                                text = "Saldo atual: $formattedBalance",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 4.dp)
+                            )
+                        }
+                    }
                 }
 
                 item {

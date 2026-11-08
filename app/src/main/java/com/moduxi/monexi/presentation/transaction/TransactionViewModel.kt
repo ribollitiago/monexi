@@ -50,8 +50,21 @@ class TransactionViewModel(
         paymentMethodRepository.paymentMethods,
         accountRepository.accounts,
         creditCardRepository.creditCards,
+        transactionRepository.transactions,
         formState
-    ) { categories, paymentMethods, accounts, creditCards, form ->
+    ) { flows: Array<Any> ->
+        @Suppress("UNCHECKED_CAST")
+        val categories = flows[0] as List<Category>
+        @Suppress("UNCHECKED_CAST")
+        val paymentMethods = flows[1] as List<PaymentMethod>
+        @Suppress("UNCHECKED_CAST")
+        val accounts = flows[2] as List<Account>
+        @Suppress("UNCHECKED_CAST")
+        val creditCards = flows[3] as List<CreditCard>
+        @Suppress("UNCHECKED_CAST")
+        val transactions = flows[4] as List<Transaction>
+        val form = flows[5] as TransactionUiState
+
         val filteredCategories = categories.filter { category ->
             category.type == form.type && !category.isArchived
         }
@@ -67,6 +80,13 @@ class TransactionViewModel(
 
         val selectedAcc = form.selectedAccount ?: accounts.firstOrNull()
         val destAccounts = accounts.filter { it.id != selectedAcc?.id }
+        val selectedDestAcc = form.selectedDestinationAccount
+            ?.takeIf { it.id != selectedAcc?.id }
+            ?: destAccounts.firstOrNull()
+
+        val calculateBalance = CalculateAccountBalanceUseCase()
+        val sourceBalance = selectedAcc?.let { calculateBalance(it, transactions) }
+        val destBalance = selectedDestAcc?.let { calculateBalance(it, transactions) }
 
         form.copy(
             categories = filteredCategories,
@@ -80,9 +100,9 @@ class TransactionViewModel(
                 ?.takeIf { filteredPaymentMethods.contains(it) }
                 ?: filteredPaymentMethods.firstOrNull(),
             selectedAccount = selectedAcc,
-            selectedDestinationAccount = form.selectedDestinationAccount
-                ?.takeIf { it.id != selectedAcc?.id }
-                ?: destAccounts.firstOrNull(),
+            selectedDestinationAccount = selectedDestAcc,
+            sourceAccountBalance = sourceBalance,
+            destinationAccountBalance = destBalance,
             selectedCreditCard = form.selectedCreditCard ?: creditCards.firstOrNull()
         )
     }.stateIn(

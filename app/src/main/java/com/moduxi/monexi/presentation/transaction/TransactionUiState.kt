@@ -18,6 +18,8 @@ data class TransactionUiState(
     val selectedPaymentMethod: PaymentMethod? = null,
     val selectedAccount: Account? = null,
     val selectedDestinationAccount: Account? = null,
+    val sourceAccountBalance: Double? = null,
+    val destinationAccountBalance: Double? = null,
     val selectedCreditCard: CreditCard? = null,
     val editingTransaction: Transaction? = null,
     val categories: List<Category> = emptyList(),
