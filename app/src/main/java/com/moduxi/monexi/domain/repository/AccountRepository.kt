@@ -14,5 +14,6 @@ interface AccountRepository {
     suspend fun updateAccount(account: Account)
     suspend fun deleteAccount(account: Account)
     suspend fun getAccountById(id: String): Account?
+    suspend fun ensureDefaultAccount()
     suspend fun syncFromRemote(): Result<Unit>
 }
