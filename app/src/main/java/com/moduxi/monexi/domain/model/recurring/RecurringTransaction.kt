@@ -9,11 +9,12 @@ data class RecurringTransaction(
     val amount: Double,
     val type: TransactionType,       // INCOME ou EXPENSE
     val categoryId: String,
-    val accountId: String?,          // Conta destino (ex: Nubank para salário)
-    val creditCardId: String?,       // Ou cartão (ex: Netflix no cartão)
+    val paymentMethodId: String? = null,
+    val accountId: String? = null,    // Conta destino (ex: Nubank para salário)
+    val creditCardId: String? = null, // Ou cartão (ex: Netflix no cartão)
     val dayOfMonth: Int,             // Dia que acontece (5, 10, 28...)
-    val frequency: Frequency,
-    val startDate: Long,             // Quando começou
-    val endDate: Long?,              // null = sem data de fim
-    val isActive: Boolean,
+    val frequency: Frequency = Frequency.MONTHLY,
+    val startDate: Long = System.currentTimeMillis(), // Quando começou
+    val endDate: Long? = null,       // null = sem data de fim
+    val isActive: Boolean = true
 )

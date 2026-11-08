@@ -12,6 +12,8 @@ import com.moduxi.monexi.domain.model.account.Account
 import com.moduxi.monexi.domain.model.category.Category
 import com.moduxi.monexi.domain.model.creditcard.CreditCard
 import com.moduxi.monexi.domain.model.payment.PaymentMethod
+import com.moduxi.monexi.domain.model.recurring.Frequency
+import com.moduxi.monexi.domain.model.recurring.RecurringTransaction
 import com.moduxi.monexi.domain.model.transaction.SyncStatus
 import com.moduxi.monexi.domain.model.transaction.Transaction
 import com.moduxi.monexi.domain.model.transaction.TransactionType
@@ -20,8 +22,10 @@ import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.CategoryRepository
 import com.moduxi.monexi.domain.repository.CreditCardRepository
 import com.moduxi.monexi.domain.repository.PaymentMethodRepository
+import com.moduxi.monexi.domain.repository.RecurringTransactionRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
 import com.moduxi.monexi.domain.usecase.CalculateAccountBalanceUseCase
+import com.moduxi.monexi.domain.usecase.GenerateRecurringTransactionsUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -39,6 +43,7 @@ class TransactionViewModel(
     private val paymentMethodRepository: PaymentMethodRepository,
     private val accountRepository: AccountRepository,
     private val creditCardRepository: CreditCardRepository,
+    private val recurringTransactionRepository: RecurringTransactionRepository,
     private val authRepository: AuthRepository,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -134,6 +139,34 @@ class TransactionViewModel(
         )
     }
 
+    fun onIsRecurringChange(isRecurring: Boolean) {
+        formState.value = formState.value.copy(
+            isRecurring = isRecurring,
+            error = null
+        )
+    }
+
+    fun onRecurringDayOfMonthChange(day: Int) {
+        formState.value = formState.value.copy(
+            recurringDayOfMonth = day,
+            error = null
+        )
+    }
+
+    fun onIsRecurringInfiniteChange(isInfinite: Boolean) {
+        formState.value = formState.value.copy(
+            isRecurringInfinite = isInfinite,
+            error = null
+        )
+    }
+
+    fun onRecurringEndDateChange(endDateMillis: Long?) {
+        formState.value = formState.value.copy(
+            recurringEndDateMillis = endDateMillis,
+            error = null
+        )
+    }
+
     fun onDescriptionChange(description: String) {
         formState.value = formState.value.copy(
             description = description,
@@ -151,8 +184,12 @@ class TransactionViewModel(
     }
 
     fun onDateChange(dateMillis: Long) {
+        val cal = Calendar.getInstance().apply { timeInMillis = dateMillis }
+        val day = cal.get(Calendar.DAY_OF_MONTH)
+
         formState.value = formState.value.copy(
             dateMillis = dateMillis,
+            recurringDayOfMonth = day,
             error = null
         )
     }
@@ -211,6 +248,7 @@ class TransactionViewModel(
                 amountDigits = (transaction.amount * 100).toLong().toString(),
                 type = transaction.type,
                 isTransfer = false,
+                isRecurring = transaction.recurringTransactionId != null,
                 selectedCategory = transaction.category,
                 selectedPaymentMethod = transaction.paymentMethod,
                 selectedAccount = transaction.accountId?.let { id -> accountsList.firstOrNull { it.id == id } },
@@ -410,6 +448,38 @@ class TransactionViewModel(
                 }
             }
 
+            // Se o usuário marcou para tornar RECORRENTE:
+            if (state.isRecurring && editingTransaction == null) {
+                val recurring = RecurringTransaction(
+                    id = UUID.randomUUID().toString(),
+                    userId = currentUserId,
+                    title = state.description,
+                    amount = amount,
+                    type = state.type,
+                    categoryId = category.id,
+                    paymentMethodId = paymentMethod.id,
+                    accountId = if (!isCreditCardPayment) state.selectedAccount?.id else null,
+                    creditCardId = if (isCreditCardPayment) state.selectedCreditCard?.id else null,
+                    dayOfMonth = state.recurringDayOfMonth,
+                    frequency = Frequency.MONTHLY,
+                    startDate = state.dateMillis,
+                    endDate = if (state.isRecurringInfinite) null else state.recurringEndDateMillis,
+                    isActive = true
+                )
+                recurringTransactionRepository.addRecurringTransaction(recurring)
+
+                // Gera o lançamento do mês atual
+                val generateUseCase = GenerateRecurringTransactionsUseCase(
+                    recurringTransactionRepository = recurringTransactionRepository,
+                    transactionRepository = transactionRepository,
+                    categoryRepository = categoryRepository,
+                    paymentMethodRepository = paymentMethodRepository
+                )
+                generateUseCase(currentUserId)
+                onSaved()
+                return@launch
+            }
+
             if (installmentsCount > 1 && isCreditCardPayment) {
                 val installmentAmount = amount / installmentsCount
                 val groupId = UUID.randomUUID().toString()
@@ -486,6 +556,7 @@ class TransactionViewModel(
                     paymentMethodRepository = application.paymentMethodRepository,
                     accountRepository = application.accountRepository,
                     creditCardRepository = application.creditCardRepository,
+                    recurringTransactionRepository = application.recurringTransactionRepository,
                     authRepository = application.authRepository,
                     savedStateHandle = savedStateHandle
                 )

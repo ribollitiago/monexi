@@ -27,6 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -76,6 +77,10 @@ fun TransactionScreen(
         uiState = uiState,
         onTypeChange = viewModel::onTypeChange,
         onIsTransferChange = viewModel::onIsTransferChange,
+        onIsRecurringChange = viewModel::onIsRecurringChange,
+        onRecurringDayOfMonthChange = viewModel::onRecurringDayOfMonthChange,
+        onIsRecurringInfiniteChange = viewModel::onIsRecurringInfiniteChange,
+        onRecurringEndDateChange = viewModel::onRecurringEndDateChange,
         onDescriptionChange = viewModel::onDescriptionChange,
         onAmountChange = viewModel::onAmountChange,
         onDateChange = viewModel::onDateChange,
@@ -107,6 +112,10 @@ private fun TransactionContent(
     uiState: TransactionUiState,
     onTypeChange: (TransactionType) -> Unit,
     onIsTransferChange: (Boolean) -> Unit,
+    onIsRecurringChange: (Boolean) -> Unit,
+    onRecurringDayOfMonthChange: (Int) -> Unit,
+    onIsRecurringInfiniteChange: (Boolean) -> Unit,
+    onRecurringEndDateChange: (Long?) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onAmountChange: (String) -> Unit,
     onDateChange: (Long) -> Unit,
@@ -122,11 +131,16 @@ private fun TransactionContent(
     modifier: Modifier = Modifier
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
+    var showEndDatePicker by remember { mutableStateOf(false) }
 
     val focusManager = LocalFocusManager.current
 
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = uiState.dateMillis
+    )
+
+    val endDatePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = uiState.recurringEndDateMillis ?: (System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000)
     )
 
     val availablePaymentMethods = remember(uiState.paymentMethods, uiState.type) {
@@ -506,6 +520,106 @@ private fun TransactionContent(
                 }
             }
 
+            // Opções de Recorrência
+            if (uiState.editingTransaction == null) {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(text = "Lançamento Recorrente", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                            Text(text = "Repetir mensalmente este lançamento", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Switch(
+                            checked = uiState.isRecurring,
+                            onCheckedChange = onIsRecurringChange
+                        )
+                    }
+                }
+
+                if (uiState.isRecurring) {
+                    item {
+                        DropdownField(
+                            label = "Dia do Vencimento/Repetição",
+                            options = (1..31).toList(),
+                            selectedOption = uiState.recurringDayOfMonth,
+                            onOptionSelected = onRecurringDayOfMonthChange,
+                            optionLabel = { "Todo dia $it do mês" }
+                        )
+                    }
+
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(
+                                        if (uiState.isRecurringInfinite) MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.surfaceVariant
+                                    )
+                                    .clickable { onIsRecurringInfiniteChange(true) }
+                                    .padding(vertical = 10.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "Infinito",
+                                    color = if (uiState.isRecurringInfinite) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 12.sp,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(
+                                        if (!uiState.isRecurringInfinite) MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.surfaceVariant
+                                    )
+                                    .clickable { onIsRecurringInfiniteChange(false) }
+                                    .padding(vertical = 10.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "Até data final",
+                                    color = if (!uiState.isRecurringInfinite) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 12.sp,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+
+                    if (!uiState.isRecurringInfinite) {
+                        item {
+                            OutlinedTextField(
+                                value = (uiState.recurringEndDateMillis ?: (System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000)).toBrazilianDateFormat(),
+                                onValueChange = {},
+                                label = { Text("Data Limite de Término") },
+                                readOnly = true,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .onFocusEvent {
+                                        if (it.isFocused) {
+                                            showEndDatePicker = true
+                                            focusManager.clearFocus(force = true)
+                                        }
+                                    }
+                            )
+                        }
+                    }
+                }
+            }
+
             uiState.error?.let { error ->
                 item {
                     Text(
@@ -553,6 +667,33 @@ private fun TransactionContent(
             DatePicker(state = datePickerState)
         }
     }
+
+    if (showEndDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showEndDatePicker = false },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        endDatePickerState.selectedDateMillis?.let { millis ->
+                            onRecurringEndDateChange(millis)
+                        }
+                        showEndDatePicker = false
+                    }
+                ) {
+                    Text(text = "Escolher data")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showEndDatePicker = false }
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        ) {
+            DatePicker(state = endDatePickerState)
+        }
+    }
 }
 
 @Preview(showBackground = true)
@@ -563,6 +704,10 @@ private fun TransactionScreenPreview() {
             uiState = TransactionUiState(),
             onTypeChange = {},
             onIsTransferChange = {},
+            onIsRecurringChange = {},
+            onRecurringDayOfMonthChange = {},
+            onIsRecurringInfiniteChange = {},
+            onRecurringEndDateChange = {},
             onDescriptionChange = {},
             onAmountChange = {},
             onDateChange = {},

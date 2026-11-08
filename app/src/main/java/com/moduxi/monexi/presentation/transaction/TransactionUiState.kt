@@ -10,6 +10,10 @@ import com.moduxi.monexi.domain.model.transaction.TransactionType
 data class TransactionUiState(
     val type: TransactionType = TransactionType.EXPENSE,
     val isTransfer: Boolean = false,
+    val isRecurring: Boolean = false,
+    val recurringDayOfMonth: Int = 5,
+    val isRecurringInfinite: Boolean = true,
+    val recurringEndDateMillis: Long? = null,
     val description: String = "",
     val amountDigits: String = "",
     val dateMillis: Long = System.currentTimeMillis(),

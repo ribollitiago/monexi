@@ -7,6 +7,7 @@ import com.moduxi.monexi.data.repository.RoomAccountRepository
 import com.moduxi.monexi.data.repository.RoomCategoryRepository
 import com.moduxi.monexi.data.repository.RoomCreditCardRepository
 import com.moduxi.monexi.data.repository.RoomPaymentMethodRepository
+import com.moduxi.monexi.data.repository.RoomRecurringTransactionRepository
 import com.moduxi.monexi.data.repository.RoomTransactionRepository
 import com.moduxi.monexi.data.repository.local.ThemeManager
 import com.moduxi.monexi.domain.repository.AccountRepository
@@ -14,7 +15,12 @@ import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.CategoryRepository
 import com.moduxi.monexi.domain.repository.CreditCardRepository
 import com.moduxi.monexi.domain.repository.PaymentMethodRepository
+import com.moduxi.monexi.domain.repository.RecurringTransactionRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
+import com.moduxi.monexi.domain.usecase.GenerateRecurringTransactionsUseCase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MonexiApplication : Application() {
     val themeManager by lazy { ThemeManager(this) }
@@ -58,5 +64,29 @@ class MonexiApplication : Application() {
             paymentMethodRepository = paymentMethodRepository,
             authRepository = authRepository
         )
+    }
+
+    val recurringTransactionRepository: RecurringTransactionRepository by lazy {
+        RoomRecurringTransactionRepository(
+            recurringTransactionDao = database.recurringTransactionDao(),
+            transactionDao = database.transactionDao(),
+            authRepository = authRepository
+        )
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        val userId = authRepository.currentUser?.uid
+        if (!userId.isNullOrEmpty()) {
+            CoroutineScope(Dispatchers.IO).launch {
+                val generateUseCase = GenerateRecurringTransactionsUseCase(
+                    recurringTransactionRepository = recurringTransactionRepository,
+                    transactionRepository = transactionRepository,
+                    categoryRepository = categoryRepository,
+                    paymentMethodRepository = paymentMethodRepository
+                )
+                generateUseCase(userId)
+            }
+        }
     }
 }

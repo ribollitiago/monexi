@@ -42,6 +42,7 @@ import com.moduxi.monexi.presentation.settings.credit.archived.ArchivedCreditCar
 import com.moduxi.monexi.presentation.settings.credit.bills.CreditCardBillDetailScreen
 import com.moduxi.monexi.presentation.settings.credit.bills.CreditCardBillsScreen
 import com.moduxi.monexi.presentation.settings.credit.edit.EditCreditCardScreen
+import com.moduxi.monexi.presentation.settings.recurring.RecurringTransactionsScreen
 
 sealed class BottomNavItem(val route: String, val label: String, val icon: ImageVector) {
     object Home : BottomNavItem("home", "Resumo", Icons.Default.Home)
@@ -77,7 +78,8 @@ fun AppNavigation(themeManager: ThemeManager) {
         "bankAccounts",
         "archivedBankAccount",
         "editBankAccount",
-        "bankAccountStatement?accountId={accountId}"
+        "bankAccountStatement?accountId={accountId}",
+        "recurring"
     )
 
     Scaffold(
@@ -93,7 +95,7 @@ fun AppNavigation(themeManager: ThemeManager) {
                     items.forEach { item ->
                         NavigationBarItem(
                             selected = when (item.route) {
-                                "settings" -> currentRoute == "settings" || currentRoute == "categories" || currentRoute == "bankAccounts" || currentRoute?.startsWith("bankAccountStatement") == true
+                                "settings" -> currentRoute == "settings" || currentRoute == "categories" || currentRoute == "bankAccounts" || currentRoute == "recurring" || currentRoute?.startsWith("bankAccountStatement") == true
                                 "transaction" -> currentRoute?.startsWith("transaction") == true
                                 else -> currentRoute == item.route
                             },
@@ -180,6 +182,9 @@ fun AppNavigation(themeManager: ThemeManager) {
                     },
                     onNavigateToCreditCard = {
                         navController.navigate("creditCards")
+                    },
+                    onNavigateToRecurring = {
+                        navController.navigate("recurring")
                     },
                     onLogout = {
                         navController.navigate("login") {
@@ -354,6 +359,13 @@ fun AppNavigation(themeManager: ThemeManager) {
             }
             composable("archivedBankAccount") {
                 ArchivedBankAccountScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            composable("recurring") {
+                RecurringTransactionsScreen(
                     onNavigateBack = {
                         navController.popBackStack()
                     }

@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -31,6 +32,7 @@ fun SettingsScreen (
     onNavigateToCategories: () -> Unit,
     onNavigateToBankAccount: () -> Unit,
     onNavigateToCreditCard: () -> Unit,
+    onNavigateToRecurring: () -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ){
@@ -64,6 +66,14 @@ fun SettingsScreen (
                 subtitle = "Gerencie suas categorias de gastos",
                 icon = Icons.Default.Category,
                 onClick = onNavigateToCategories
+            )
+        }
+        item {
+            SettingsItem(
+                title = "Lançamentos Recorrentes",
+                subtitle = "Assinaturas e contas fixas mensais",
+                icon = Icons.Default.Repeat,
+                onClick = onNavigateToRecurring
             )
         }
         item { HorizontalDivider() }
@@ -141,6 +151,7 @@ fun SettingsScreenPreview() {
             onNavigateToCategories = {},
             onNavigateToCreditCard = {},
             onNavigateToBankAccount = {},
+            onNavigateToRecurring = {},
             onLogout = {}
         )
     }
