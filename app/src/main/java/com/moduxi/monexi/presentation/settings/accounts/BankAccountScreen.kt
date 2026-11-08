@@ -188,7 +188,7 @@ private fun BankAccountItem(
                 )
 
                 Text(
-                    text = "Saldo $formattedBalance",
+                    text = "${item.account.type.label} • Saldo $formattedBalance",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

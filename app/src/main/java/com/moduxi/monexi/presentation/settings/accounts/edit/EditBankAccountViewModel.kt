@@ -9,6 +9,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
 import com.moduxi.monexi.domain.model.account.Account
+import com.moduxi.monexi.domain.model.account.AccountType
 import com.moduxi.monexi.domain.repository.AccountRepository
 import com.moduxi.monexi.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,6 +61,13 @@ class EditBankAccountViewModel(
         )
     }
 
+    fun onTypeChange(type: AccountType) {
+        _uiState.value = _uiState.value.copy(
+            selectedType = type,
+            error = null
+        )
+    }
+
     fun loadAccount(id: String) {
         viewModelScope.launch {
             val account = accountRepository.getAccountById(id)
@@ -69,7 +77,8 @@ class EditBankAccountViewModel(
                     accountName = it.name,
                     balanceDigits = (it.initialBalance * 100).toLong().toString(),
                     selectedColorHex = it.colorHex,
-                    selectedIconName = it.iconName
+                    selectedIconName = it.iconName,
+                    selectedType = it.type
                 )
             }
         }
@@ -98,6 +107,7 @@ class EditBankAccountViewModel(
                         initialBalance = initialBalance,
                         colorHex = state.selectedColorHex,
                         iconName = state.selectedIconName,
+                        type = state.selectedType,
                         isArchived = false
                     )
                 )
@@ -107,7 +117,8 @@ class EditBankAccountViewModel(
                         name = name,
                         initialBalance = initialBalance,
                         colorHex = state.selectedColorHex,
-                        iconName = state.selectedIconName
+                        iconName = state.selectedIconName,
+                        type = state.selectedType
                     )
                 )
             }

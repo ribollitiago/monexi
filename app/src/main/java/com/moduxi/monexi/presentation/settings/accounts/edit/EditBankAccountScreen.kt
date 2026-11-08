@@ -40,6 +40,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.moduxi.monexi.domain.model.account.AccountType
+import com.moduxi.monexi.ui.components.DropdownField
 import com.moduxi.monexi.ui.theme.CurrencyVisualTransformation
 import com.moduxi.monexi.ui.theme.MonexiTheme
 import com.moduxi.monexi.ui.theme.toCategoryIcon
@@ -59,6 +61,7 @@ fun EditBankAccountScreen(
         onInitialBalanceChange = viewModel::onInitialBalanceChange,
         onColorChange = viewModel::onColorChange,
         onIconChange = viewModel::onIconChange,
+        onTypeChange = viewModel::onTypeChange,
         modifier = modifier,
         onSaveClick = {
             viewModel.saveAccount(
@@ -81,6 +84,7 @@ fun EditBankAccountContent(
     onInitialBalanceChange: (String) -> Unit,
     onColorChange: (String) -> Unit,
     onIconChange: (String) -> Unit,
+    onTypeChange: (AccountType) -> Unit,
     modifier: Modifier = Modifier,
     onSaveClick: () -> Unit,
     onDeleteClick: () -> Unit,
@@ -154,9 +158,19 @@ fun EditBankAccountContent(
                 OutlinedTextField(
                     value = uiState.accountName,
                     onValueChange = onNameChange,
-                    label = { Text("Nome da Conta (ex: Nubank, Itaú, Carteira)") },
+                    label = { Text("Nome da Conta (ex: Nubank, Itaú, Carteira, Caju)") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            item {
+                DropdownField(
+                    label = "Tipo de Conta",
+                    options = AccountType.entries,
+                    selectedOption = uiState.selectedType,
+                    onOptionSelected = onTypeChange,
+                    optionLabel = { it.label }
                 )
             }
 
@@ -286,7 +300,8 @@ fun EditBankAccountPreview() {
             onNameChange = {},
             onInitialBalanceChange = {},
             onColorChange = {},
-            onIconChange = {}
+            onIconChange = {},
+            onTypeChange = {}
         )
     }
 }
