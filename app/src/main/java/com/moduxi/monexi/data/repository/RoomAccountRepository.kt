@@ -12,6 +12,7 @@ import com.moduxi.monexi.domain.repository.AccountRepository
 import com.moduxi.monexi.domain.repository.AuthRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -45,6 +46,23 @@ class RoomAccountRepository(
                 list.map { it.toDomain() }
             }
         }
+
+    override suspend fun ensureDefaultAccount() {
+        val currentUserId = authRepository.currentUser?.uid ?: return
+        if (currentUserId.isEmpty()) return
+        val list = accountDao.observeAllAccountsByUser(currentUserId).first()
+        if (list.isEmpty()) {
+            val defaultAccount = AccountEntity(
+                userId = currentUserId,
+                name = "Carteira",
+                initialBalance = 0.0,
+                colorHex = "#43A047",
+                iconName = "AttachMoney",
+                type = AccountType.CASH
+            )
+            accountDao.insertAccount(defaultAccount)
+        }
+    }
 
     override suspend fun addAccount(account: Account) {
         val currentUserId = authRepository.currentUser?.uid ?: ""
@@ -202,6 +220,9 @@ class RoomAccountRepository(
             remoteAccounts.forEach { entity ->
                 accountDao.insertAccount(entity)
             }
+
+            // Garante que se ainda não houver nenhuma conta, cria a "Carteira"
+            ensureDefaultAccount()
 
             Result.success(Unit)
         } catch (e: Exception) {

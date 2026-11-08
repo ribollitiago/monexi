@@ -9,14 +9,15 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
+import com.moduxi.monexi.domain.repository.AccountRepository
 import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
-import com.moduxi.monexi.presentation.auth.login.LoginUiState
 import kotlinx.coroutines.launch
 
 class RegisterViewModel(
     private val authRepository: AuthRepository,
-    private val transactionRepository: TransactionRepository
+    private val transactionRepository: TransactionRepository,
+    private val accountRepository: AccountRepository
 ) : ViewModel() {
 
     var uiState by mutableStateOf(RegisterUiState())
@@ -59,6 +60,7 @@ class RegisterViewModel(
             val result = authRepository.signUp(uiState.email, uiState.password)
 
             result.onSuccess {
+                accountRepository.ensureDefaultAccount()
                 transactionRepository.syncFromRemote()
 
                 uiState = uiState.copy(
@@ -84,7 +86,9 @@ class RegisterViewModel(
                 val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MonexiApplication
                 RegisterViewModel(
                     authRepository = application.authRepository,
-                    transactionRepository = application.transactionRepository)
+                    transactionRepository = application.transactionRepository,
+                    accountRepository = application.accountRepository
+                )
             }
         }
     }

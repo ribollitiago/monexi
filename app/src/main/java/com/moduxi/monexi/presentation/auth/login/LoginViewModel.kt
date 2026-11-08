@@ -11,12 +11,11 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
 import com.moduxi.monexi.domain.repository.AccountRepository
 import com.moduxi.monexi.domain.repository.AuthRepository
-import com.moduxi.monexi.domain.repository.CreditCardRepository
-import kotlinx.coroutines.launch
-
 import com.moduxi.monexi.domain.repository.CategoryRepository
+import com.moduxi.monexi.domain.repository.CreditCardRepository
 import com.moduxi.monexi.domain.repository.PaymentMethodRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
+import kotlinx.coroutines.launch
 
 class LoginViewModel(
     private val authRepository: AuthRepository,
@@ -53,6 +52,7 @@ class LoginViewModel(
                 categoryRepository.syncFromRemote()
                 paymentMethodRepository.syncFromRemote()
                 accountRepository.syncFromRemote()
+                accountRepository.ensureDefaultAccount()
                 creditCardRepository.syncFromRemote()
                 transactionRepository.syncFromRemote()
 
