@@ -1,6 +1,6 @@
 # Monexi 💰
 
-O **Monexi** é um aplicativo Android de controle financeiro pessoal moderno, desenvolvido com Kotlin e Jetpack Compose. O projeto permite registrar receitas e despesas, organizar lançamentos por categorias personalizadas e métodos de pagamento, acompanhar o saldo acumulado e visualizar a distribuição dos gastos por meio de gráficos interativos e seletores mensais.
+O **Monexi** é um aplicativo Android de controle financeiro pessoal moderno, desenvolvido com Kotlin e Jetpack Compose. O projeto permite registrar receitas, despesas e transferências, gerenciar múltiplas contas bancárias e cartões de crédito, organizar lançamentos por categorias personalizadas, acompanhar saldos acumulados e automatizar pagamentos recorrentes e faturas.
 
 Além de uma ferramenta prática de gestão financeira, o Monexi serve como estudo de caso de **arquitetura Android moderna**, aplicando MVVM, Room Database, Firebase Auth, Firestore, Kotlin Coroutines, Flow/StateFlow, repositories e testes unitários.
 
@@ -28,17 +28,30 @@ Projeto em constante evolução. **Recursos já implementados:**
   - **Gráfico de Rosca por Categoria:** Gráfico dinâmico com proporções, percentuais (`%`) e lista detalhada por categoria com ícones e cores.
 - 📜 **Tela de Extrato / Lançamentos (`ExtractScreen`):**
   - Lista completa de lançamentos com **Seletor de Mês**.
-  - **Busca em tempo real** por descrição, categoria ou valor formatado (`R$`).
+  - **Busca em tempo real** por descrição, categoria, valor formatado (`R$`) ou número.
   - **Filtros rápidos:** *Todos*, *Entrada* (Receita) e *Saída* (Despesa).
-  - Destaque visual automático para lançamentos futuros com a tag **"Agendado"**.
   - Formatação de data em português (`dd/MM/yyyy`).
-- 💳 **Lançamentos (`TransactionScreen`):**
-  - Criação e edição de receitas ou despesas com seleção inteligente de categoria e forma de pagamento.
+- 💳 **Lançamentos & Transferências (`TransactionScreen`):**
+  - Criação e edição de receitas, despesas e **Transferências entre Contas** com validação em tempo real de saldo disponível na conta de origem.
+  - **Validação de Saldo e Limite:** Travas automáticas para impedir despesas acima do saldo da conta bancária ou acima do limite disponível no cartão de crédito.
+  - Compras parceladas no Cartão de Crédito (de 1x até 12x com distribuição automática nas faturas).
+- 🏦 **Contas Bancárias e Múltiplas Carteiras (`BankAccountScreen`):**
+  - Gestão de contas por tipo (*Conta Corrente*, *Conta Poupança*, *Vale Alimentação/Refeição*, *Investimentos*, *Dinheiro/Carteira*).
+  - Conta padrão `"Carteira"` criada automaticamente na instalação.
+  - **Extrato Específico da Conta (`BankAccountStatementScreen`):** Histórico de transações exclusivo de cada conta com saldo atualizado e botão de edição rápido no header.
+- 💳 **Cartões de Crédito & Faturas (`CreditCardScreen`):**
+  - Cadastro de cartões com controle de limite, dia de fechamento e dia de vencimento.
+  - Visualização de Faturas mensais e listagem de lançamentos da fatura.
+  - **Pagamento de Fatura:** Diálogo de confirmação para quitar a fatura debitando o saldo de uma conta bancária e registrando na categoria fixa `"Fatura de Cartão"`.
+- 🔄 **Lançamentos Recorrentes & Assinaturas (`RecurringTransactionsScreen`):**
+  - Cadastro de despesas, receitas ou transferências recorrentes mensais (ex: Aluguel, Netflix, Salário).
+  - Configuração de dia de repetição e duração (Infinito ou até data final).
+  - Geração automática dos lançamentos no extrato e opção avançada de exclusão (*"Apenas as futuras"* vs *"Excluir tudo"*).
 - 🎨 **Categorias com Cores e Ícones Personalizados (`EditCategoriesScreen`):**
   - Tela dedicada para criar e editar categorias.
   - Seletor de cores em paleta de bolinhas e catálogo de ícones do Material Design.
 - 📂 **Arquivamento e Desarquivamento:**
-  - Telas de itens arquivados (`ArchivedCategoriesScreen` e `ArchivedPaymentMethodScreen`) para restaurar ou consultar categorias/métodos desativados sem apagar o histórico de lançamentos.
+  - Telas de itens arquivados (`ArchivedCategoriesScreen`, `ArchivedBankAccountScreen`, `ArchivedCreditCardScreen`) para restaurar ou consultar itens desativados sem apagar histórico.
 - ☁️ **Sincronização em Nuvem (Firebase Firestore):**
   - Sincronização em background entre o banco local (Room) e o banco na nuvem (Firestore) por usuário autenticado.
 - 🌙 **Tema Claro e Escuro:** Gerenciado com `ThemeManager` e persistido via **DataStore Preferences**.
@@ -66,15 +79,7 @@ O projeto segue uma arquitetura inspirada nos princípios do **Clean Architectur
 UI Compose -> ViewModel -> Repository Interface -> Room Repository / Firestore -> Room Database / Cloud Firestore
 ```
 
-### Principais Mapeamentos e Fluxos:
-
-```text
-HomeViewModel -> CalculateBalanceUseCase
-              -> CalculateIncomeUseCase
-              -> CalculateExpenseUseCase
-```
-
-- **Domain:** Isolar modelos do negócio (`Transaction`, `Category`, `PaymentMethod`) livres de anotações do banco de dados.
+- **Domain:** Isolar modelos do negócio (`Transaction`, `Category`, `Account`, `CreditCard`, `RecurringTransaction`) livres de anotações do banco de dados.
 - **Data:** Mappers convertem bidirecionalmente entre `Entity` (Room), documentos do Firestore e modelos de `Domain`.
 - **Presentation:** ViewModels expõem um único `StateFlow<UiState>` imutável reativo para a UI Compose.
 
@@ -89,78 +94,25 @@ app/src/main/java/com/moduxi/monexi
 ├── data
 │   ├── local
 │   │   ├── MonexiDatabase.kt
-│   │   ├── dao
-│   │   │   ├── CategoryDao.kt
-│   │   │   ├── PaymentMethodDao.kt
-│   │   │   └── TransactionDao.kt
-│   │   ├── entity
-│   │   │   ├── CategoryEntity.kt
-│   │   │   ├── PaymentMethodEntity.kt
-│   │   │   └── TransactionEntity.kt
-│   │   └── mapper
-│   │       ├── CategoryMapper.kt
-│   │       ├── PaymentMethodMapper.kt
-│   │       └── TransactionMapper.kt
+│   │   └── dao / entity / mapper
 │   └── repository
-│       ├── RoomCategoryRepository.kt
-│       ├── RoomPaymentMethodRepository.kt
-│       ├── RoomTransactionRepository.kt
-│       └── local
-│           └── ThemeManager.kt
 ├── domain
 │   ├── model
-│   │   ├── Category.kt
-│   │   ├── PaymentMethod.kt
-│   │   ├── Transaction.kt
-│   │   └── TransactionType.kt
 │   ├── repository
-│   │   ├── CategoryRepository.kt
-│   │   ├── PaymentMethodRepository.kt
-│   │   └── TransactionRepository.kt
 │   └── usecase
-│       ├── CalculateBalanceUseCase.kt
-│       ├── CalculateExpenseUseCase.kt
-│       └── CalculateIncomeUseCase.kt
 ├── presentation
 │   ├── auth
-│   │   ├── login
-│   │   │   ├── LoginScreen.kt
-│   │   │   ├── LoginUiState.kt
-│   │   │   └── LoginViewModel.kt
-│   │   └── register
-│   │       ├── RegisterScreen.kt
-│   │       ├── RegisterUiState.kt
-│   │       └── RegisterViewModel.kt
 │   ├── extract
-│   │   ├── ExtractScreen.kt
-│   │   ├── ExtractUiState.kt
-│   │   └── ExtractViewModel.kt
 │   ├── home
-│   │   ├── HomeScreen.kt
-│   │   ├── HomeUiState.kt
-│   │   └── HomeViewModel.kt
 │   ├── navigation
-│   │   └── AppNavigation.kt
 │   ├── settings
-│   │   ├── SettingsScreen.kt
+│   │   ├── accounts
 │   │   ├── categories
-│   │   │   ├── CategoriesScreen.kt
-│   │   │   ├── archived/ArchivedCategoriesScreen.kt
-│   │   │   └── edit/EditCategoriesScreen.kt
-│   │   └── payment
-│   │       ├── PaymentMethodScreen.kt
-│   │       ├── archived/ArchivedPaymentMethodScreen.kt
-│   │       └── edit/EditPaymentMethodScreen.kt
+│   │   ├── credit
+│   │   └── recurring
 │   └── transaction
-│       ├── TransactionScreen.kt
-│       ├── TransactionUiState.kt
-│       └── TransactionViewModel.kt
 └── ui
     └── theme
-        ├── CategoryUiMapper.kt
-        ├── Color.kt
-        ├── Theme.kt
-        └── Type.kt
 ```
 
 ---
@@ -168,18 +120,26 @@ app/src/main/java/com/moduxi/monexi
 ## 🚦 Rotas de Navegação (`AppNavigation`)
 
 ```text
-login                       -> Tela de Login
-register                    -> Tela de Cadastro
-home                        -> Resumo financeiro e gráficos
-extract                     -> Histórico de lançamentos e extrato
-transaction?id={id}         -> Criar ou editar lançamento
-settings                    -> Configurações e tema
-categories                  -> Gerenciamento de categorias
-archivedCategories          -> Categorias arquivadas
-editCategory?id={id}        -> Criar/Editar categoria (cores e ícones)
-paymentMethods              -> Gerenciamento de métodos de pagamento
-archivedPaymentMethod       -> Métodos de pagamento arquivados
-editPaymentMethod?id={id}   -> Criar/Editar método de pagamento
+login                                   -> Tela de Login
+register                                -> Tela de Cadastro
+home                                    -> Resumo financeiro e gráficos
+extract                                 -> Histórico de lançamentos e extrato
+transaction?id={id}                     -> Criar ou editar lançamento / transferência
+settings                                -> Configurações gerais
+categories                              -> Gerenciamento de categorias
+archivedCategories                      -> Categorias arquivadas
+editCategory?id={id}                    -> Criar/Editar categoria (cores e ícones)
+bankAccounts                            -> Gerenciamento de contas bancárias
+bankAccountStatement?accountId={id}     -> Extrato específico da conta bancária
+archivedBankAccount                     -> Contas bancárias arquivadas
+editBankAccount?id={id}                 -> Criar/Editar conta bancária
+creditCards                             -> Gerenciamento de cartões de crédito
+creditCardBills?cardId={cardId}         -> Faturas do cartão de crédito
+creditCardBillDetail?cardId={id}&...    -> Detalhes e pagamento da fatura
+archivedCreditCard                      -> Cartões de crédito arquivados
+editCreditCard?id={id}                  -> Criar/Editar cartão de crédito
+archivedCreditCard                      -> Cartões arquivados
+recurring                               -> Lançamentos recorrentes e assinaturas
 ```
 
 ---
@@ -218,19 +178,18 @@ minSdk: 24 (Android 7.0+)
 targetSdk: 37
 compileSdk: 37
 versionCode: 1
-versionName: 1.0
+versionName: 0.1.0
 ```
 
 ---
 
 ## 🗺️ Roadmap de Próximos Passos
 
-- [ ] **Módulo de Contas Bancárias e Carteiras:** Suporte a múltiplas contas com saldos independentes (ex: Nubank, Itaú, Carteira).
-- [ ] **Módulo de Cartões de Crédito:** Gestão de limites, dia de fechamento e fatura mensal.
-- [ ] **Transferência entre Contas:** Mover saldo entre contas sem alterar receitas/despesas globais.
-- [ ] **Leitura de Notificações Bancárias:** Leitura inteligente de notificações de compras de aplicativos bancários (via `NotificationListenerService`), oferecendo ao usuário a opção de adicionar a transação automaticamente.
+- [ ] **Orçamento e Metas de Gastos por Categoria:** Teto de gastos mensal por categoria com alertas visuais.
+- [ ] **Ocultar Saldos (Ícone de Olho) & Biometria:** Proteção de privacidade e segurança ao abrir o app.
+- [ ] **Exportação de Relatórios:** Geração de extratos em PDF ou Excel/CSV.
+- [ ] **Leitura de Notificações Bancárias:** Leitura inteligente de notificações de compras (via `NotificationListenerService`).
 - [ ] **Substituição de `fallbackToDestructiveMigration`:** Migrations reais explícitas no Room.
-- [ ] **Notificações & Lembretes:** Alerta de contas a vencer/faturas.
 
 ---
 
