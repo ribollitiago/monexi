@@ -1,6 +1,7 @@
 package com.moduxi.monexi.data.repository
 
 import com.moduxi.monexi.domain.model.account.Account
+import com.moduxi.monexi.domain.model.account.AccountType
 import com.moduxi.monexi.domain.repository.AccountRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,6 +41,18 @@ class FakeAccountRepository(
 
     override suspend fun getAccountById(id: String): Account? {
         return accountsState.value.firstOrNull { it.id == id }
+    }
+
+    override suspend fun ensureDefaultAccount() {
+        if (accountsState.value.isEmpty()) {
+            accountsState.value += Account(
+                name = "Carteira",
+                initialBalance = 0.0,
+                colorHex = "#43A047",
+                iconName = "AttachMoney",
+                type = AccountType.CASH
+            )
+        }
     }
 
     override suspend fun syncFromRemote(): Result<Unit> {
