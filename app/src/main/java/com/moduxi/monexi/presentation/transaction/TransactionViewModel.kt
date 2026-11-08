@@ -21,13 +21,16 @@ import com.moduxi.monexi.domain.repository.CategoryRepository
 import com.moduxi.monexi.domain.repository.CreditCardRepository
 import com.moduxi.monexi.domain.repository.PaymentMethodRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
+import com.moduxi.monexi.domain.usecase.CalculateAccountBalanceUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.text.NumberFormat
 import java.util.Calendar
+import java.util.Locale
 import java.util.UUID
 
 class TransactionViewModel(
@@ -62,6 +65,9 @@ class TransactionViewModel(
             paymentMethods
         }
 
+        val selectedAcc = form.selectedAccount ?: accounts.firstOrNull()
+        val destAccounts = accounts.filter { it.id != selectedAcc?.id }
+
         form.copy(
             categories = filteredCategories,
             paymentMethods = filteredPaymentMethods,
@@ -73,7 +79,10 @@ class TransactionViewModel(
             selectedPaymentMethod = form.selectedPaymentMethod
                 ?.takeIf { filteredPaymentMethods.contains(it) }
                 ?: filteredPaymentMethods.firstOrNull(),
-            selectedAccount = form.selectedAccount ?: accounts.firstOrNull(),
+            selectedAccount = selectedAcc,
+            selectedDestinationAccount = form.selectedDestinationAccount
+                ?.takeIf { it.id != selectedAcc?.id }
+                ?: destAccounts.firstOrNull(),
             selectedCreditCard = form.selectedCreditCard ?: creditCards.firstOrNull()
         )
     }.stateIn(
@@ -92,14 +101,23 @@ class TransactionViewModel(
     fun onTypeChange(type: TransactionType) {
         formState.value = formState.value.copy(
             type = type,
+            isTransfer = false,
             selectedCategory = null,
+            error = null
+        )
+    }
+
+    fun onIsTransferChange(isTransfer: Boolean) {
+        formState.value = formState.value.copy(
+            isTransfer = isTransfer,
             error = null
         )
     }
 
     fun onDescriptionChange(description: String) {
         formState.value = formState.value.copy(
-            description = description
+            description = description,
+            error = null
         )
     }
 
@@ -107,43 +125,58 @@ class TransactionViewModel(
         formState.value = formState.value.copy(
             amountDigits = value
                 .filter { it.isDigit() }
-                .take(12)
+                .take(12),
+            error = null
         )
     }
 
     fun onDateChange(dateMillis: Long) {
         formState.value = formState.value.copy(
-            dateMillis = dateMillis
+            dateMillis = dateMillis,
+            error = null
         )
     }
 
     fun onInstallmentsChange(installments: Int) {
         formState.value = formState.value.copy(
-            totalInstallments = installments
+            totalInstallments = installments,
+            error = null
         )
     }
 
     fun onCategoryChange(category: Category) {
         formState.value = formState.value.copy(
-            selectedCategory = category
+            selectedCategory = category,
+            error = null
         )
     }
 
     fun onPaymentMethodChange(paymentMethod: PaymentMethod) {
         formState.value = formState.value.copy(
-            selectedPaymentMethod = paymentMethod
+            selectedPaymentMethod = paymentMethod,
+            error = null
         )
     }
 
     fun onAccountChange(account: Account) {
         formState.value = formState.value.copy(
-            selectedAccount = account
+            selectedAccount = account,
+            selectedDestinationAccount = if (formState.value.selectedDestinationAccount?.id == account.id) null else formState.value.selectedDestinationAccount,
+            error = null
+        )
+    }
+
+    fun onDestinationAccountChange(account: Account) {
+        formState.value = formState.value.copy(
+            selectedDestinationAccount = account,
+            error = null
         )
     }
 
     fun onCreditCardChange(creditCard: CreditCard) {
         formState.value = formState.value.copy(
-            selectedCreditCard = creditCard
+            selectedCreditCard = creditCard,
+            error = null
         )
     }
 
@@ -157,6 +190,7 @@ class TransactionViewModel(
                 description = transaction.title,
                 amountDigits = (transaction.amount * 100).toLong().toString(),
                 type = transaction.type,
+                isTransfer = false,
                 selectedCategory = transaction.category,
                 selectedPaymentMethod = transaction.paymentMethod,
                 selectedAccount = transaction.accountId?.let { id -> accountsList.firstOrNull { it.id == id } },
@@ -193,12 +227,98 @@ class TransactionViewModel(
 
     fun saveTransaction(onSaved: () -> Unit) {
         val state = uiState.value
-
-        val category = state.selectedCategory
-        val paymentMethod = state.selectedPaymentMethod
         val amount = (state.amountDigits.toLongOrNull() ?: 0L) / 100.0
         val editingTransaction = state.editingTransaction
         val currentUserId = authRepository.currentUser?.uid ?: ""
+
+        if (amount <= 0.0) {
+            formState.value = formState.value.copy(
+                error = "Informe um valor válido"
+            )
+            return
+        }
+
+        // Salvar Transferência Entre Contas
+        if (state.isTransfer) {
+            val fromAccount = state.selectedAccount
+            val toAccount = state.selectedDestinationAccount
+
+            if (fromAccount == null || toAccount == null) {
+                formState.value = formState.value.copy(error = "Selecione as contas de origem e destino")
+                return
+            }
+
+            if (fromAccount.id == toAccount.id) {
+                formState.value = formState.value.copy(error = "A conta de origem e destino não podem ser iguais")
+                return
+            }
+
+            viewModelScope.launch {
+                val allTransactions = transactionRepository.transactions.first()
+                val calculateBalance = CalculateAccountBalanceUseCase()
+                val availableBalance = calculateBalance(fromAccount, allTransactions)
+
+                if (amount > availableBalance) {
+                    val formattedBalance = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR")).format(availableBalance)
+                    formState.value = formState.value.copy(
+                        error = "Não é possível transferir por falta de saldo na conta ${fromAccount.name} ($formattedBalance disponível)"
+                    )
+                    return@launch
+                }
+
+                val category = state.categories.firstOrNull { it.name.contains("Transferência", ignoreCase = true) }
+                    ?: state.categories.firstOrNull()
+
+                val paymentMethod = state.paymentMethods.firstOrNull { it.name.contains("Transferência", ignoreCase = true) || it.name.contains("Pix", ignoreCase = true) }
+                    ?: state.paymentMethods.firstOrNull()
+
+                if (category == null || paymentMethod == null) {
+                    formState.value = formState.value.copy(error = "Categoria ou forma de pagamento indisponível")
+                    return@launch
+                }
+
+                val groupId = UUID.randomUUID().toString()
+                val extraDesc = if (state.description.isNotBlank()) " - ${state.description}" else ""
+
+                val sourceTx = Transaction(
+                    id = UUID.randomUUID().toString(),
+                    userId = currentUserId,
+                    title = "Transferência para ${toAccount.name}$extraDesc",
+                    amount = amount,
+                    type = TransactionType.EXPENSE,
+                    category = category,
+                    paymentMethod = paymentMethod,
+                    date = state.dateMillis,
+                    updatedAt = System.currentTimeMillis(),
+                    syncStatus = SyncStatus.PENDING_CREATE,
+                    accountId = fromAccount.id,
+                    installmentGroupId = groupId
+                )
+
+                val destTx = Transaction(
+                    id = UUID.randomUUID().toString(),
+                    userId = currentUserId,
+                    title = "Transferência de ${fromAccount.name}$extraDesc",
+                    amount = amount,
+                    type = TransactionType.INCOME,
+                    category = category,
+                    paymentMethod = paymentMethod,
+                    date = state.dateMillis,
+                    updatedAt = System.currentTimeMillis(),
+                    syncStatus = SyncStatus.PENDING_CREATE,
+                    accountId = toAccount.id,
+                    installmentGroupId = groupId
+                )
+
+                transactionRepository.addTransactions(listOf(sourceTx, destTx))
+                onSaved()
+            }
+            return
+        }
+
+        // Salvar Transação Comum (Despesa / Receita)
+        val category = state.selectedCategory
+        val paymentMethod = state.selectedPaymentMethod
 
         if (category == null) {
             formState.value = formState.value.copy(
@@ -217,13 +337,6 @@ class TransactionViewModel(
         if (state.description.isBlank()) {
             formState.value = formState.value.copy(
                 error = "Informe a descrição"
-            )
-            return
-        }
-
-        if (amount <= 0.0) {
-            formState.value = formState.value.copy(
-                error = "Informe um valor válido"
             )
             return
         }

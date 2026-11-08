@@ -37,7 +37,6 @@ interface TransactionDao {
         SELECT * FROM transactions
         WHERE userId = :userId
             AND accountId = :accountId
-            AND type = 'INCOME'
             AND deletedAt IS NULL
         ORDER BY date DESC
     """)

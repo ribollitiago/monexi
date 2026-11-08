@@ -75,6 +75,7 @@ fun TransactionScreen(
     TransactionContent(
         uiState = uiState,
         onTypeChange = viewModel::onTypeChange,
+        onIsTransferChange = viewModel::onIsTransferChange,
         onDescriptionChange = viewModel::onDescriptionChange,
         onAmountChange = viewModel::onAmountChange,
         onDateChange = viewModel::onDateChange,
@@ -82,6 +83,7 @@ fun TransactionScreen(
         onCategoryChange = viewModel::onCategoryChange,
         onPaymentMethodChange = viewModel::onPaymentMethodChange,
         onAccountChange = viewModel::onAccountChange,
+        onDestinationAccountChange = viewModel::onDestinationAccountChange,
         onCreditCardChange = viewModel::onCreditCardChange,
         onDeleteClick = {
             uiState.editingTransaction?.let { transaction ->
@@ -104,6 +106,7 @@ fun TransactionScreen(
 private fun TransactionContent(
     uiState: TransactionUiState,
     onTypeChange: (TransactionType) -> Unit,
+    onIsTransferChange: (Boolean) -> Unit,
     onDescriptionChange: (String) -> Unit,
     onAmountChange: (String) -> Unit,
     onDateChange: (Long) -> Unit,
@@ -111,6 +114,7 @@ private fun TransactionContent(
     onCategoryChange: (Category) -> Unit,
     onPaymentMethodChange: (PaymentMethod) -> Unit,
     onAccountChange: (Account) -> Unit,
+    onDestinationAccountChange: (Account) -> Unit,
     onCreditCardChange: (CreditCard) -> Unit,
     onDeleteClick: () -> Unit,
     onSaveClick: () -> Unit,
@@ -133,7 +137,8 @@ private fun TransactionContent(
         }
     }
 
-    val isCreditCardSelected = uiState.type == TransactionType.EXPENSE &&
+    val isCreditCardSelected = !uiState.isTransfer &&
+            uiState.type == TransactionType.EXPENSE &&
             uiState.selectedPaymentMethod?.name?.contains("Crédito", ignoreCase = true) == true
 
     Column(
@@ -169,7 +174,13 @@ private fun TransactionContent(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = if (uiState.editingTransaction == null) "Nova Transação" else "Editar Transação",
+                            text = if (uiState.isTransfer) {
+                                "Transferência entre Contas"
+                            } else if (uiState.editingTransaction == null) {
+                                "Nova Transação"
+                            } else {
+                                "Editar Transação"
+                            },
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -190,169 +201,84 @@ private fun TransactionContent(
             }
 
             item {
-                val transactionTypes = listOf(
-                    TransactionType.EXPENSE to "Despesa",
-                    TransactionType.INCOME to "Receita"
-                )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    transactionTypes.forEach { (type, label) ->
-                        val isSelected = uiState.type == type
+                    val modeExpenseSelected = !uiState.isTransfer && uiState.type == TransactionType.EXPENSE
+                    val modeIncomeSelected = !uiState.isTransfer && uiState.type == TransactionType.INCOME
+                    val modeTransferSelected = uiState.isTransfer
 
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(
-                                    if (isSelected) MaterialTheme.colorScheme.primary
-                                    else MaterialTheme.colorScheme.surfaceVariant
-                                )
-                                .clickable {
-                                    onTypeChange(type)
-                                }
-                                .padding(vertical = 12.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = label,
-                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary
-                                else MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 13.sp,
-                                textAlign = TextAlign.Center
+                    // Despesa
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(
+                                if (modeExpenseSelected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.surfaceVariant
                             )
-                        }
-                    }
-                }
-            }
-
-            item {
-                OutlinedTextField(
-                    value = uiState.description,
-                    onValueChange = onDescriptionChange,
-                    label = { Text("Descrição") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            item {
-                OutlinedTextField(
-                    value = uiState.amountDigits,
-                    onValueChange = onAmountChange,
-                    label = { Text("Valor") },
-                    placeholder = { Text("0,00") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    visualTransformation = CurrencyVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            item {
-                OutlinedTextField(
-                    value = uiState.dateMillis.toBrazilianDateFormat(),
-                    onValueChange = {},
-                    label = { Text("Data") },
-                    readOnly = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .onFocusEvent {
-                            if (it.isFocused) {
-                                showDatePicker = true
-                                focusManager.clearFocus(force = true)
-                            }
-                        }
-                )
-            }
-
-            item {
-                DropdownField(
-                    label = "Categoria",
-                    options = uiState.categories,
-                    selectedOption = uiState.selectedCategory,
-                    onOptionSelected = onCategoryChange,
-                    optionLabel = { it.name },
-                    optionIcon = { it.iconName.toCategoryIcon() },
-                    optionColor = { it.colorHex.toComposeColor() }
-                )
-            }
-
-            item {
-                DropdownField(
-                    label = "Forma de Pagamento",
-                    options = availablePaymentMethods,
-                    selectedOption = uiState.selectedPaymentMethod,
-                    onOptionSelected = onPaymentMethodChange,
-                    optionLabel = { it.name }
-                )
-            }
-
-            if (isCreditCardSelected && uiState.creditCards.isNotEmpty()) {
-                item {
-                    DropdownField(
-                        label = "Cartão de Crédito",
-                        options = uiState.creditCards,
-                        selectedOption = uiState.selectedCreditCard,
-                        onOptionSelected = onCreditCardChange,
-                        optionLabel = { it.name },
-                        optionIcon = { it.iconName.toCategoryIcon() },
-                        optionColor = { it.colorHex.toComposeColor() }
-                    )
-                }
-
-                item {
-                    DropdownField(
-                        label = "Parcelamento",
-                        options = (1..12).toList(),
-                        selectedOption = uiState.totalInstallments,
-                        onOptionSelected = onInstallmentsChange,
-                        optionLabel = { count -> if (count == 1) "À vista / 1x" else "${count}x" }
-                    )
-                }
-
-                item {
-                    val totalAmount = (uiState.amountDigits.toLongOrNull() ?: 0L) / 100.0
-                    val count = uiState.totalInstallments
-                    val installmentVal = if (count > 0) totalAmount / count else totalAmount
-                    val formattedInstallment = remember(installmentVal) {
-                        val formatter = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"))
-                        formatter.format(installmentVal)
-                    }
-                    val closingDay = uiState.selectedCreditCard?.closingDay ?: 5
-                    val invoiceMonth = remember(uiState.dateMillis, closingDay) {
-                        calculateInvoiceMonthName(uiState.dateMillis, closingDay)
-                    }
-
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            .clickable { onTypeChange(TransactionType.EXPENSE) }
+                            .padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = "Será lançado como",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                        Text(
+                            text = "Despesa",
+                            color = if (modeExpenseSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+
+                    // Receita
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(
+                                if (modeIncomeSelected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.surfaceVariant
                             )
-                            Text(
-                                text = "$count parcela${if (count > 1) "s" else ""} de $formattedInstallment",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                            .clickable { onTypeChange(TransactionType.INCOME) }
+                            .padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Receita",
+                            color = if (modeIncomeSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+
+                    // Transferência
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(
+                                if (modeTransferSelected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.surfaceVariant
                             )
-                            Text(
-                                text = "na fatura de $invoiceMonth",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                            .clickable { onIsTransferChange(true) }
+                            .padding(vertical = 12.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Transferência",
+                            color = if (modeTransferSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp,
+                            textAlign = TextAlign.Center
+                        )
                     }
                 }
-            } else if (!isCreditCardSelected && uiState.accounts.isNotEmpty()) {
+            }
+
+            if (uiState.isTransfer) {
+                // Form de Transferência entre contas
                 item {
                     DropdownField(
-                        label = "Conta / Carteira",
+                        label = "Conta de Origem (Sairá de)",
                         options = uiState.accounts,
                         selectedOption = uiState.selectedAccount,
                         onOptionSelected = onAccountChange,
@@ -360,6 +286,197 @@ private fun TransactionContent(
                         optionIcon = { it.iconName.toCategoryIcon() },
                         optionColor = { it.colorHex.toComposeColor() }
                     )
+                }
+
+                item {
+                    val availableDestinations = remember(uiState.accounts, uiState.selectedAccount) {
+                        uiState.accounts.filter { it.id != uiState.selectedAccount?.id }
+                    }
+                    DropdownField(
+                        label = "Conta de Destino (Irá para)",
+                        options = availableDestinations,
+                        selectedOption = uiState.selectedDestinationAccount,
+                        onOptionSelected = onDestinationAccountChange,
+                        optionLabel = { it.name },
+                        optionIcon = { it.iconName.toCategoryIcon() },
+                        optionColor = { it.colorHex.toComposeColor() }
+                    )
+                }
+
+                item {
+                    OutlinedTextField(
+                        value = uiState.amountDigits,
+                        onValueChange = onAmountChange,
+                        label = { Text("Valor a Transferir") },
+                        placeholder = { Text("0,00") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        visualTransformation = CurrencyVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                item {
+                    OutlinedTextField(
+                        value = uiState.dateMillis.toBrazilianDateFormat(),
+                        onValueChange = {},
+                        label = { Text("Data da Transferência") },
+                        readOnly = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onFocusEvent {
+                                if (it.isFocused) {
+                                    showDatePicker = true
+                                    focusManager.clearFocus(force = true)
+                                }
+                            }
+                    )
+                }
+
+                item {
+                    OutlinedTextField(
+                        value = uiState.description,
+                        onValueChange = onDescriptionChange,
+                        label = { Text("Descrição / Observação (Opcional)") },
+                        placeholder = { Text("ex: Reserva mensal") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            } else {
+                // Form de Despesa / Receita comum
+                item {
+                    OutlinedTextField(
+                        value = uiState.description,
+                        onValueChange = onDescriptionChange,
+                        label = { Text("Descrição") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                item {
+                    OutlinedTextField(
+                        value = uiState.amountDigits,
+                        onValueChange = onAmountChange,
+                        label = { Text("Valor") },
+                        placeholder = { Text("0,00") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        visualTransformation = CurrencyVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                item {
+                    OutlinedTextField(
+                        value = uiState.dateMillis.toBrazilianDateFormat(),
+                        onValueChange = {},
+                        label = { Text("Data") },
+                        readOnly = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onFocusEvent {
+                                if (it.isFocused) {
+                                    showDatePicker = true
+                                    focusManager.clearFocus(force = true)
+                                }
+                            }
+                    )
+                }
+
+                item {
+                    DropdownField(
+                        label = "Categoria",
+                        options = uiState.categories,
+                        selectedOption = uiState.selectedCategory,
+                        onOptionSelected = onCategoryChange,
+                        optionLabel = { it.name },
+                        optionIcon = { it.iconName.toCategoryIcon() },
+                        optionColor = { it.colorHex.toComposeColor() }
+                    )
+                }
+
+                item {
+                    DropdownField(
+                        label = "Forma de Pagamento",
+                        options = availablePaymentMethods,
+                        selectedOption = uiState.selectedPaymentMethod,
+                        onOptionSelected = onPaymentMethodChange,
+                        optionLabel = { it.name }
+                    )
+                }
+
+                if (isCreditCardSelected && uiState.creditCards.isNotEmpty()) {
+                    item {
+                        DropdownField(
+                            label = "Cartão de Crédito",
+                            options = uiState.creditCards,
+                            selectedOption = uiState.selectedCreditCard,
+                            onOptionSelected = onCreditCardChange,
+                            optionLabel = { it.name },
+                            optionIcon = { it.iconName.toCategoryIcon() },
+                            optionColor = { it.colorHex.toComposeColor() }
+                        )
+                    }
+
+                    item {
+                        DropdownField(
+                            label = "Parcelamento",
+                            options = (1..12).toList(),
+                            selectedOption = uiState.totalInstallments,
+                            onOptionSelected = onInstallmentsChange,
+                            optionLabel = { count -> if (count == 1) "À vista / 1x" else "${count}x" }
+                        )
+                    }
+
+                    item {
+                        val totalAmount = (uiState.amountDigits.toLongOrNull() ?: 0L) / 100.0
+                        val count = uiState.totalInstallments
+                        val installmentVal = if (count > 0) totalAmount / count else totalAmount
+                        val formattedInstallment = remember(installmentVal) {
+                            val formatter = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"))
+                            formatter.format(installmentVal)
+                        }
+                        val closingDay = uiState.selectedCreditCard?.closingDay ?: 5
+                        val invoiceMonth = remember(uiState.dateMillis, closingDay) {
+                            calculateInvoiceMonthName(uiState.dateMillis, closingDay)
+                        }
+
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = "Será lançado como",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "$count parcela${if (count > 1) "s" else ""} de $formattedInstallment",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "na fatura de $invoiceMonth",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+                } else if (!isCreditCardSelected && uiState.accounts.isNotEmpty()) {
+                    item {
+                        DropdownField(
+                            label = "Conta / Carteira",
+                            options = uiState.accounts,
+                            selectedOption = uiState.selectedAccount,
+                            onOptionSelected = onAccountChange,
+                            optionLabel = { it.name },
+                            optionIcon = { it.iconName.toCategoryIcon() },
+                            optionColor = { it.colorHex.toComposeColor() }
+                        )
+                    }
                 }
             }
 
@@ -380,7 +497,7 @@ private fun TransactionContent(
                 .fillMaxWidth()
                 .padding(top = 8.dp)
         ) {
-            Text(text = "Salvar")
+            Text(text = if (uiState.isTransfer) "Confirmar Transferência" else "Salvar")
         }
     }
 
@@ -419,6 +536,7 @@ private fun TransactionScreenPreview() {
         TransactionContent(
             uiState = TransactionUiState(),
             onTypeChange = {},
+            onIsTransferChange = {},
             onDescriptionChange = {},
             onAmountChange = {},
             onDateChange = {},
@@ -426,6 +544,7 @@ private fun TransactionScreenPreview() {
             onCategoryChange = {},
             onPaymentMethodChange = {},
             onAccountChange = {},
+            onDestinationAccountChange = {},
             onCreditCardChange = {},
             onDeleteClick = {},
             onSaveClick = {},

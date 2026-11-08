@@ -9,6 +9,7 @@ import com.moduxi.monexi.domain.model.transaction.TransactionType
 
 data class TransactionUiState(
     val type: TransactionType = TransactionType.EXPENSE,
+    val isTransfer: Boolean = false,
     val description: String = "",
     val amountDigits: String = "",
     val dateMillis: Long = System.currentTimeMillis(),
@@ -16,6 +17,7 @@ data class TransactionUiState(
     val selectedCategory: Category? = null,
     val selectedPaymentMethod: PaymentMethod? = null,
     val selectedAccount: Account? = null,
+    val selectedDestinationAccount: Account? = null,
     val selectedCreditCard: CreditCard? = null,
     val editingTransaction: Transaction? = null,
     val categories: List<Category> = emptyList(),
