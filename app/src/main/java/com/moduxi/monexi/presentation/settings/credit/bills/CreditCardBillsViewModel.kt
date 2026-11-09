@@ -64,13 +64,26 @@ class CreditCardBillsViewModel(
         initialValue = CreditCardBillsUiState()
     )
 
-    fun payBill(bill: CreditCardBill, accountId: String, paymentMethod: PaymentMethod, onPaid: () -> Unit) {
+    fun payBill(
+        bill: CreditCardBill,
+        accountId: String,
+        paymentMethod: PaymentMethod,
+        amountToPay: Double = bill.remainingBalance.takeIf { it > 0.0 } ?: bill.totalAmount,
+        onPaid: () -> Unit
+    ) {
         val card = uiState.value.creditCard ?: return
         val currentUserId = authRepository.currentUser?.uid ?: ""
 
         viewModelScope.launch {
             try {
-                payBillUseCase(bill, card, accountId, paymentMethod, currentUserId)
+                payBillUseCase(
+                    bill = bill,
+                    creditCard = card,
+                    accountId = accountId,
+                    paymentMethod = paymentMethod,
+                    userId = currentUserId,
+                    amountToPay = amountToPay
+                )
                 onPaid()
             } catch (e: Exception) {
                 _error.value = e.localizedMessage ?: "Erro ao pagar fatura"

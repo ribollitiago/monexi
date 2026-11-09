@@ -17,6 +17,7 @@ interface TransactionRepository {
     suspend fun addTransactions(transactions: List<Transaction>)
     suspend fun updateTransaction(transaction: Transaction)
     suspend fun deleteTransaction(transaction: Transaction)
+    suspend fun deleteInstallmentGroup(groupId: String)
     suspend fun getTransactionById(id: String): Transaction?
     suspend fun syncFromRemote(): Result<Unit>
     suspend fun clearLocalData()

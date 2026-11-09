@@ -25,10 +25,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.moduxi.monexi.domain.model.creditcard.BillStatus
 import com.moduxi.monexi.domain.model.creditcard.CreditCard
 import com.moduxi.monexi.domain.model.creditcard.CreditCardBill
 import com.moduxi.monexi.ui.theme.MonexiTheme
@@ -126,6 +128,15 @@ private fun CreditCardBillItem(
 ) {
     val formattedAmount = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR")).format(bill.totalAmount)
 
+    val (statusLabel, statusColor) = when (bill.status) {
+        BillStatus.PAID -> "Paga" to Color(0xFF1B8A5A)
+        BillStatus.PARTIALLY_PAID -> "Parcial" to Color(0xFF0288D1)
+        BillStatus.OVERDUE -> "Atrasada" to MaterialTheme.colorScheme.error
+        BillStatus.CLOSED -> "Fechada" to Color(0xFFF57C00)
+        BillStatus.OPEN -> "Aberta" to Color(0xFF1565C0)
+        BillStatus.FUTURE -> "Futura" to MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -139,11 +150,23 @@ private fun CreditCardBillItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = "Fatura ${bill.month}/${bill.year}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Fatura ${bill.month}/${bill.year}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = statusLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = statusColor
+                    )
+                }
+
                 Text(
                     text = "${bill.transactions.size} transação(ões)",
                     style = MaterialTheme.typography.bodySmall,
@@ -160,7 +183,7 @@ private fun CreditCardBillItem(
                         text = formattedAmount,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = if (bill.status == BillStatus.PAID) Color(0xFF1B8A5A) else MaterialTheme.colorScheme.primary
                     )
                 }
                 Icon(Icons.Default.ChevronRight, contentDescription = null)
@@ -185,7 +208,9 @@ private fun CreditCardBillsScreenPreview() {
                         closingDateMillis = System.currentTimeMillis(),
                         dueDateMillis = System.currentTimeMillis(),
                         totalAmount = 1450.50,
-                        transactions = emptyList()
+                        transactions = emptyList(),
+                        isPaid = true,
+                        status = BillStatus.PAID
                     )
                 )
             ),

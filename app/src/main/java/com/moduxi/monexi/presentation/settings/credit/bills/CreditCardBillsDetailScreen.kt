@@ -64,8 +64,8 @@ fun CreditCardBillDetailScreen(
         year = year,
         uiState = uiState,
         onNavigateBack = onNavigateBack,
-        onPayBill = { bill, accountId, paymentMethod ->
-            viewModel.payBill(bill, accountId, paymentMethod, onNavigateBack)
+        onPayBill = { bill, accountId, paymentMethod, amountToPay ->
+            viewModel.payBill(bill, accountId, paymentMethod, amountToPay, onNavigateBack)
         },
         modifier = modifier
     )
@@ -77,7 +77,7 @@ fun CreditCardBillDetailContent(
     year: Int,
     uiState: CreditCardBillsUiState,
     onNavigateBack: () -> Unit,
-    onPayBill: (CreditCardBill, String, PaymentMethod) -> Unit,
+    onPayBill: (CreditCardBill, String, PaymentMethod, Double) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val bill = uiState.bills.firstOrNull { it.month == month && it.year == year }
@@ -131,23 +131,66 @@ fun CreditCardBillDetailContent(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(text = "Total da Fatura", style = MaterialTheme.typography.bodyMedium)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = formattedAmount,
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                        Text(text = "Total de Lançamentos", style = MaterialTheme.typography.bodyMedium)
+                        Text(text = formattedAmount, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    }
+
+                    if (bill.paidAmount > 0.0) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = "Valor Pago", style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                text = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR")).format(bill.paidAmount),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = androidx.compose.ui.graphics.Color(0xFF1B8A5A)
+                            )
+                        }
+                    }
+
+                    if (bill.creditAmount > 0.0) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(text = "Crédito Excedente", style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                text = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR")).format(bill.creditAmount),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = androidx.compose.ui.graphics.Color(0xFF0288D1)
+                            )
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(text = "Saldo Restante", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                text = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR")).format(bill.remainingBalance),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (bill.remainingBalance > 0.0) MaterialTheme.colorScheme.primary else androidx.compose.ui.graphics.Color(0xFF1B8A5A)
+                            )
+                        }
 
                         Button(
                             onClick = { showPayDialog = true }
                         ) {
-                            Text("Pagar Fatura")
+                            Text(if (bill.status == com.moduxi.monexi.domain.model.creditcard.BillStatus.OPEN) "Antecipar Pagamento" else "Pagar Fatura")
                         }
                     }
                 }
@@ -183,14 +226,14 @@ fun CreditCardBillDetailContent(
 
     if (showPayDialog && bill != null) {
         PayBillDialog(
-            billAmount = formattedAmount,
+            bill = bill,
             accounts = uiState.accounts,
             paymentMethods = uiState.paymentMethods,
             initialSelectedAccount = selectedAccount,
             initialSelectedPaymentMethod = selectedPaymentMethod,
             onDismiss = { showPayDialog = false },
-            onConfirm = { account, paymentMethod ->
-                onPayBill(bill, account.id, paymentMethod)
+            onConfirm = { account, paymentMethod, amountToPay ->
+                onPayBill(bill, account.id, paymentMethod, amountToPay)
                 showPayDialog = false
             }
         )
@@ -200,13 +243,13 @@ fun CreditCardBillDetailContent(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PayBillDialog(
-    billAmount: String,
+    bill: CreditCardBill,
     accounts: List<Account>,
     paymentMethods: List<PaymentMethod>,
     initialSelectedAccount: Account?,
     initialSelectedPaymentMethod: PaymentMethod?,
     onDismiss: () -> Unit,
-    onConfirm: (Account, PaymentMethod) -> Unit
+    onConfirm: (Account, PaymentMethod, Double) -> Unit
 ) {
     val validPaymentMethods = remember(paymentMethods) {
         paymentMethods.filter { !it.name.contains("Crédito", ignoreCase = true) }
@@ -222,20 +265,78 @@ private fun PayBillDialog(
         )
     }
 
+    val defaultPayAmount = remember(bill) {
+        if (bill.remainingBalance > 0.0) bill.remainingBalance else bill.totalAmount
+    }
+    var payAmountText by remember(defaultPayAmount) {
+        mutableStateOf(String.format(Locale.US, "%.2f", defaultPayAmount))
+    }
+
+    val parsedAmount = payAmountText.toDoubleOrNull() ?: 0.0
+    val newPendingBalance = (bill.remainingBalance - parsedAmount).coerceAtLeast(0.0)
+    val surplusCredit = (parsedAmount - bill.remainingBalance).coerceAtLeast(0.0)
+
     var accountExpanded by remember { mutableStateOf(false) }
     var methodExpanded by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Pagar Fatura", fontWeight = FontWeight.Bold) },
+        title = {
+            Text(
+                if (bill.status == com.moduxi.monexi.domain.model.creditcard.BillStatus.OPEN) "Antecipar Pagamento" else "Pagar Fatura",
+                fontWeight = FontWeight.Bold
+            )
+        },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                if (bill.status == com.moduxi.monexi.domain.model.creditcard.BillStatus.OPEN) {
+                    Text(
+                        text = "ℹ️ Esta fatura continuará recebendo lançamentos até a data de fechamento.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
                 Text(
-                    text = "Valor Total: $billAmount",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary
+                    text = "Fatura: ${bill.month}/${bill.year}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
                 )
+
+                OutlinedTextField(
+                    value = payAmountText,
+                    onValueChange = { payAmountText = it.filter { ch -> ch.isDigit() || ch == '.' } },
+                    label = { Text("Valor a Pagar (R$)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(text = "Saldo restante previsto:", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR")).format(newPendingBalance),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                if (surplusCredit > 0.0) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(text = "Crédito excedente:", style = MaterialTheme.typography.bodySmall, color = androidx.compose.ui.graphics.Color(0xFF0288D1))
+                        Text(
+                            text = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR")).format(surplusCredit),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold,
+                            color = androidx.compose.ui.graphics.Color(0xFF0288D1)
+                        )
+                    }
+                }
 
                 if (accounts.isNotEmpty() && selectedAccount != null) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -310,12 +411,12 @@ private fun PayBillDialog(
         },
         confirmButton = {
             Button(
-                enabled = selectedAccount != null && selectedPaymentMethod != null,
+                enabled = selectedAccount != null && selectedPaymentMethod != null && parsedAmount > 0.0,
                 onClick = {
                     val acc = selectedAccount
                     val method = selectedPaymentMethod
-                    if (acc != null && method != null) {
-                        onConfirm(acc, method)
+                    if (acc != null && method != null && parsedAmount > 0.0) {
+                        onConfirm(acc, method, parsedAmount)
                     }
                 }
             ) {
@@ -378,7 +479,7 @@ private fun CreditCardBillDetailPreview() {
                 )
             ),
             onNavigateBack = {},
-            onPayBill = { _, _, _ -> }
+            onPayBill = { _, _, _, _ -> }
         )
     }
 }

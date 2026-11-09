@@ -102,6 +102,19 @@ interface TransactionDao {
     """)
     suspend fun getInstallmentsByGroup(userId: String, groupId: String): List<TransactionEntity>
 
+    //Excluir todas as parcelas de um grupo
+    @Query("""
+        UPDATE transactions
+        SET deletedAt = :deletedAt, syncStatus = :syncStatus
+        WHERE userId = :userId AND installmentGroupId = :groupId
+    """)
+    suspend fun softDeleteTransactionsByGroup(
+        userId: String,
+        groupId: String,
+        deletedAt: Long,
+        syncStatus: String
+    )
+
     //inserir varias parcelas de uma vez só
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransactions(transactions: List<TransactionEntity>)

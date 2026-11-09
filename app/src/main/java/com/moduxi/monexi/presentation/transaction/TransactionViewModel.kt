@@ -276,6 +276,12 @@ class TransactionViewModel(
         }
     }
 
+    fun deleteInstallmentGroup(groupId: String) {
+        viewModelScope.launch {
+            transactionRepository.deleteInstallmentGroup(groupId)
+        }
+    }
+
     fun loadTransaction(id: String) {
         viewModelScope.launch {
             val transaction = transactionRepository.getTransactionById(id)
@@ -411,9 +417,13 @@ class TransactionViewModel(
                     val card = state.selectedCreditCard
                     if (card != null) {
                         val totalSpent = allTransactions
-                            .filter { it.creditCardId == card.id && it.deletedAt == null && it.type == TransactionType.EXPENSE }
+                            .filter { it.creditCardId == card.id && it.deletedAt == null && it.type == TransactionType.EXPENSE && it.creditCardBillId == null }
                             .sumOf { it.amount }
-                        val availableLimit = card.limitAmount - totalSpent
+                        val totalPaid = allTransactions
+                            .filter { it.creditCardId == card.id && it.deletedAt == null && it.creditCardBillId != null }
+                            .sumOf { it.amount }
+                        val outstandingDebt = (totalSpent - totalPaid).coerceAtLeast(0.0)
+                        val availableLimit = card.limitAmount - outstandingDebt
 
                         if (amount > availableLimit) {
                             val formattedLimit = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"))
@@ -481,10 +491,17 @@ class TransactionViewModel(
             }
 
             if (installmentsCount > 1 && isCreditCardPayment) {
-                val installmentAmount = amount / installmentsCount
+                val totalCents = Math.round(amount * 100)
+                val baseInstallmentCents = totalCents / installmentsCount
+                val remainderCents = totalCents % installmentsCount
                 val groupId = UUID.randomUUID().toString()
 
                 val installmentsList = (1..installmentsCount).map { i ->
+                    val installmentAmount = if (i == 1) {
+                        (baseInstallmentCents + remainderCents) / 100.0
+                    } else {
+                        baseInstallmentCents / 100.0
+                    }
                     val installmentDate = addMonthsToDate(state.dateMillis, i - 1)
                     Transaction(
                         id = if (i == 1 && editingTransaction != null) editingTransaction.id else UUID.randomUUID().toString(),

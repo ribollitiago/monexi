@@ -216,6 +216,34 @@ class RoomTransactionRepository(
         }
     }
 
+    override suspend fun deleteInstallmentGroup(groupId: String) {
+        val currentUserId = authRepository.currentUser?.uid ?: return
+        val now = System.currentTimeMillis()
+        val syncStatus = SyncStatus.PENDING_DELETE.name
+
+        val groupEntities = transactionDao.getInstallmentsByGroup(currentUserId, groupId)
+
+        transactionDao.softDeleteTransactionsByGroup(currentUserId, groupId, now, syncStatus)
+
+        groupEntities.forEach { entity ->
+            val updatedData = hashMapOf<String, Any?>(
+                "deletedAt" to now,
+                "syncStatus" to syncStatus
+            )
+            try {
+                FirebaseFirestore.getInstance()
+                    .collection("users")
+                    .document(currentUserId)
+                    .collection("transactions")
+                    .document(entity.id)
+                    .update(updatedData)
+                    .await()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
     override suspend fun getTransactionById(id: String): Transaction? {
         val entity = transactionDao.getTransactionById(id) ?: return null
 
@@ -255,8 +283,7 @@ class RoomTransactionRepository(
                 val paymentMethodId = doc.getString("paymentMethodId") ?: ""
                 val date = (doc.get("date") as? Number)?.toLong() ?: System.currentTimeMillis()
                 val transactionId = doc.getString("id") ?: doc.id
-                val updatedAt =
-                    (doc.get("updatedAt") as? Number)?.toLong() ?: System.currentTimeMillis()
+                val updatedAt = (doc.get("updatedAt") as? Number)?.toLong() ?: System.currentTimeMillis()
                 val deletedAt = (doc.get("deletedAt") as? Number)?.toLong()
                 val syncStatus = doc.getString("syncStatus") ?: SyncStatus.SYNCED.name
                 val remoteId = doc.getString("remoteId")

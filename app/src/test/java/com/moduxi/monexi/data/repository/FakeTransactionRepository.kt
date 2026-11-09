@@ -69,6 +69,12 @@ class FakeTransactionRepository(
         }
     }
 
+    override suspend fun deleteInstallmentGroup(groupId: String) {
+        transactionsState.value = transactionsState.value.filterNot {
+            it.installmentGroupId == groupId
+        }
+    }
+
     override suspend fun getTransactionById(id: String): Transaction? {
         return transactionsState.value.firstOrNull { it.id == id }
     }

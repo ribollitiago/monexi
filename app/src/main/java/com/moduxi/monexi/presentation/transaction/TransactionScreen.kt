@@ -72,6 +72,7 @@ fun TransactionScreen(
     viewModel: TransactionViewModel = viewModel(factory = TransactionViewModel.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var showDeleteInstallmentsDialog by remember { mutableStateOf(false) }
 
     TransactionContent(
         uiState = uiState,
@@ -91,9 +92,14 @@ fun TransactionScreen(
         onDestinationAccountChange = viewModel::onDestinationAccountChange,
         onCreditCardChange = viewModel::onCreditCardChange,
         onDeleteClick = {
-            uiState.editingTransaction?.let { transaction ->
-                viewModel.deleteTransaction(transaction)
-                onTransactionSaved()
+            val editingTx = uiState.editingTransaction
+            if (editingTx != null) {
+                if (!editingTx.installmentGroupId.isNullOrEmpty()) {
+                    showDeleteInstallmentsDialog = true
+                } else {
+                    viewModel.deleteTransaction(editingTx)
+                    onTransactionSaved()
+                }
             }
         },
         onSaveClick = {
@@ -104,6 +110,39 @@ fun TransactionScreen(
         onBackClick = onTransactionSaved,
         modifier = modifier
     )
+
+    if (showDeleteInstallmentsDialog && uiState.editingTransaction != null) {
+        val editingTx = uiState.editingTransaction!!
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showDeleteInstallmentsDialog = false },
+            title = { Text("Excluir Lançamento Parcelado", fontWeight = FontWeight.Bold) },
+            text = { Text("Esta transação faz parte de uma compra parcelada (${editingTx.installmentNumber}/${editingTx.totalInstallments}). Como você deseja prosseguir?") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        editingTx.installmentGroupId?.let { groupId ->
+                            viewModel.deleteInstallmentGroup(groupId)
+                        }
+                        showDeleteInstallmentsDialog = false
+                        onTransactionSaved()
+                    }
+                ) {
+                    Text("Excluir Todas as Parcelas", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        viewModel.deleteTransaction(editingTx)
+                        showDeleteInstallmentsDialog = false
+                        onTransactionSaved()
+                    }
+                ) {
+                    Text("Excluir Apenas Esta Parcela")
+                }
+            }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

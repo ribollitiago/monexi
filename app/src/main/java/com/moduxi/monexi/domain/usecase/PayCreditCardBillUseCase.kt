@@ -22,8 +22,10 @@ class PayCreditCardBillUseCase(
         creditCard: CreditCard,
         accountId: String,
         paymentMethod: PaymentMethod,
-        userId: String
-    ) {
+        userId: String,
+        amountToPay: Double = bill.remainingBalance.takeIf { it > 0.0 } ?: bill.totalAmount,
+        paymentDateMillis: Long = System.currentTimeMillis()
+    ): Transaction {
         val categories = categoryRepository.categories.firstOrNull() ?: emptyList()
         val category = categories.firstOrNull { it.name.contains("Fatura", ignoreCase = true) }
             ?: categories.firstOrNull { it.type == TransactionType.EXPENSE }
@@ -38,11 +40,11 @@ class PayCreditCardBillUseCase(
             id = UUID.randomUUID().toString(),
             userId = userId,
             title = "Pagamento Fatura - ${creditCard.name} (${bill.month}/${bill.year})",
-            amount = bill.totalAmount,
+            amount = amountToPay,
             type = TransactionType.EXPENSE,
             category = category,
             paymentMethod = paymentMethod,
-            date = bill.dueDateMillis,
+            date = paymentDateMillis,
             updatedAt = System.currentTimeMillis(),
             syncStatus = SyncStatus.PENDING_CREATE,
             accountId = accountId,
@@ -51,5 +53,6 @@ class PayCreditCardBillUseCase(
         )
 
         transactionRepository.addTransaction(paymentTransaction)
+        return paymentTransaction
     }
 }
