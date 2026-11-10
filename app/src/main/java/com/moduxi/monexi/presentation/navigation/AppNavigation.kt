@@ -26,6 +26,7 @@ import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.moduxi.monexi.MonexiApplication
 import com.moduxi.monexi.data.repository.local.ThemeManager
+import com.moduxi.monexi.presentation.auth.forgotpassword.ForgotPasswordScreen
 import com.moduxi.monexi.presentation.auth.login.LoginScreen
 import com.moduxi.monexi.presentation.auth.register.RegisterScreen
 import com.moduxi.monexi.presentation.extract.ExtractScreen
@@ -128,6 +129,16 @@ fun AppNavigation(themeManager: ThemeManager) {
                     },
                     onNavigateToRegister = {
                         navController.navigate("register")
+                    },
+                    onNavigateToForgotPassword = {
+                        navController.navigate("forgotPassword")
+                    }
+                )
+            }
+            composable("forgotPassword") {
+                ForgotPasswordScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
                     }
                 )
             }

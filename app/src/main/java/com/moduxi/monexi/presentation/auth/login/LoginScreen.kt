@@ -1,7 +1,5 @@
 package com.moduxi.monexi.presentation.auth.login
 
-import android.util.Log
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,12 +17,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextDecoration
@@ -32,13 +26,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.moduxi.monexi.R
 import com.moduxi.monexi.ui.theme.MonexiTheme
 
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onNavigateToRegister: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LoginViewModel = viewModel(factory = LoginViewModel.Factory)
 ) {
@@ -56,6 +50,7 @@ fun LoginScreen(
         onPasswordChange = viewModel::onPasswordChange,
         onLoginClick = viewModel::onLoginClick,
         onNavigateToRegister = onNavigateToRegister,
+        onNavigateToForgotPassword = onNavigateToForgotPassword,
         modifier = modifier
     )
 }
@@ -67,6 +62,7 @@ fun LoginContent(
     onPasswordChange: (String) -> Unit,
     onLoginClick: () -> Unit,
     onNavigateToRegister: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -76,13 +72,6 @@ fun LoginContent(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        /*
-        Image(
-            painter = painterResource(id = R.drawable.moduxi_horizontal),
-            contentDescription = "Logo",
-            modifier = Modifier.size(150.dp)
-        )
-        */
         Text("Bem vindo!", fontSize = 28.sp, fontWeight = FontWeight.Bold)
 
         Spacer(modifier = Modifier.height(4.dp))
@@ -110,7 +99,6 @@ fun LoginContent(
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Exibe mensagem de erro caso exista
         uiState.errorMessage?.let { error ->
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -126,7 +114,7 @@ fun LoginContent(
             text = "Esqueceu a senha?",
             modifier = Modifier
                 .align(Alignment.End)
-                .clickable { onNavigateToRegister() },
+                .clickable { onNavigateToForgotPassword() },
             fontWeight = FontWeight.Medium,
             fontSize = 14.sp,
             textDecoration = TextDecoration.Underline,
@@ -169,9 +157,7 @@ fun LoginContent(
                 color = MaterialTheme.colorScheme.primary
             )
         }
-
     }
-
 }
 
 @Preview(showBackground = true)
@@ -184,6 +170,7 @@ fun LoginScreenPreview() {
             onPasswordChange = {},
             onLoginClick = {},
             onNavigateToRegister = {},
-            )
+            onNavigateToForgotPassword = {}
+        )
     }
 }
