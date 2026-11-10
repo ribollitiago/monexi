@@ -6,7 +6,9 @@ import com.moduxi.monexi.domain.model.transaction.TransactionType
 class CalculateExpenseUseCase {
     operator fun invoke(transactions: List<Transaction>): Double {
         return transactions
-            .filter { it.type == TransactionType.EXPENSE && it.creditCardBillId == null }
+            .filter { transaction ->
+                transaction.type == TransactionType.EXPENSE && (transaction.creditCardId == null || transaction.creditCardBillId != null)
+            }
             .sumOf { it.amount }
     }
 }

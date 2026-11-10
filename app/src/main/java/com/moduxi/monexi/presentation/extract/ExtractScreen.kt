@@ -2,6 +2,7 @@ package com.moduxi.monexi.presentation.extract
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,9 +10,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -34,11 +35,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.moduxi.monexi.domain.model.account.Account
 import com.moduxi.monexi.domain.model.category.Category
+import com.moduxi.monexi.domain.model.creditcard.CreditCard
 import com.moduxi.monexi.domain.model.payment.PaymentMethod
 import com.moduxi.monexi.domain.model.transaction.Transaction
 import com.moduxi.monexi.domain.model.transaction.TransactionType
@@ -78,15 +82,19 @@ fun ExtractContent(
     modifier: Modifier = Modifier
 ) {
     var selectedFilter by remember { mutableStateOf("Todos") }
-    val filters = listOf("Todos", "Entrada", "Saida")
+    val filters = listOf("Todos", "Entradas", "Contas", "Cartões", "Faturas Pagas")
 
     val filteredByType = when (selectedFilter) {
-        "Entrada" -> uiState.transactions.filter { it.type == TransactionType.INCOME }
-        "Saida" -> uiState.transactions.filter { it.type == TransactionType.EXPENSE }
+        "Entradas" -> uiState.transactions.filter { it.type == TransactionType.INCOME }
+        "Contas" -> uiState.transactions.filter { it.accountId != null && it.creditCardBillId == null }
+        "Cartões" -> uiState.transactions.filter { it.creditCardId != null && it.creditCardBillId == null }
+        "Faturas Pagas" -> uiState.transactions.filter { it.creditCardBillId != null }
         else -> uiState.transactions
     }
 
-    val currencyFormatter = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"))
+    val currencyFormatter = remember {
+        NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"))
+    }
 
     val filteredTransactions = if (uiState.search.isBlank()) {
         filteredByType
@@ -95,9 +103,9 @@ fun ExtractContent(
             val formattedAmount = currencyFormatter.format(transaction.amount)
 
             transaction.title.contains(uiState.search, ignoreCase = true) ||
-            transaction.category.name.contains(uiState.search, ignoreCase = true) ||
-            formattedAmount.contains(uiState.search, ignoreCase = true) ||
-            transaction.amount.toString().contains(uiState.search)
+                    transaction.category.name.contains(uiState.search, ignoreCase = true) ||
+                    formattedAmount.contains(uiState.search, ignoreCase = true) ||
+                    transaction.amount.toString().contains(uiState.search)
         }
     }
 
@@ -160,6 +168,9 @@ fun ExtractContent(
 
         item {
             Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 filters.forEach { filter ->
@@ -189,9 +200,14 @@ fun ExtractContent(
                 }
             }
         } else {
-            items(filteredTransactions) { transaction ->
+            items(filteredTransactions, key = { it.id }) { transaction ->
+                val originAccount = uiState.accounts.firstOrNull { it.id == transaction.accountId }
+                val originCard = uiState.creditCards.firstOrNull { it.id == transaction.creditCardId }
+
                 TransactionItem(
                     transaction = transaction,
+                    originAccount = originAccount,
+                    originCard = originCard,
                     onClick = { onTransactionClick(transaction.id) }
                 )
             }
@@ -202,10 +218,18 @@ fun ExtractContent(
 @Composable
 private fun TransactionItem(
     transaction: Transaction,
+    originAccount: Account?,
+    originCard: CreditCard?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val isScheduled = transaction.date > System.currentTimeMillis()
+    val isBillPayment = transaction.creditCardBillId != null
+
+    // Paleta centralizada
+    val incomeGreen = Color(0xFF1B8A5A)     // entrada
+    val billPaymentRed = Color(0xFFC62828)  // pagamento de fatura
+    val cardEntryBlue = Color(0xFF1565C0)   // lançamento na fatura
 
     Card(
         modifier = modifier
@@ -223,6 +247,7 @@ private fun TransactionItem(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
+                // Título: weight garante que os chips tenham SEMPRE a largura natural deles
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -230,8 +255,28 @@ private fun TransactionItem(
                     Text(
                         text = transaction.title,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
+
+                    if (isBillPayment) {
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(Color(0xFFFDECEA)) // fundo vermelho claro
+                                .padding(horizontal = 6.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "Pagamento Fatura",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = billPaymentRed,      // vermelho
+                                maxLines = 1
+                            )
+                        }
+                    }
 
                     if (isScheduled) {
                         Box(
@@ -244,28 +289,62 @@ private fun TransactionItem(
                                 text = "Agendado",
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                maxLines = 1
                             )
                         }
                     }
                 }
 
-                Row {
+                // Subtítulo: categoria com weight para nunca espremer origem e data
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     Text(
                         text = transaction.category.name,
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
                     )
-                    Text(" - ")
+
+                    val originText = when {
+                        isBillPayment && originAccount != null -> "• 🏦 ${originAccount.name}"
+                        originCard != null -> "• 💳 ${originCard.name}"
+                        originAccount != null -> "• 🏦 ${originAccount.name}"
+                        else -> ""
+                    }
+
+                    if (originText.isNotEmpty()) {
+                        Text(
+                            text = originText,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1
+                        )
+                    }
+
                     Text(
-                        text = transaction.date.toFormattedDate(),
-                        style = MaterialTheme.typography.bodyMedium
+                        text = "• ${transaction.date.toFormattedDate()}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
                     )
                 }
             }
 
+            val amountColor = when {
+                transaction.type == TransactionType.INCOME -> incomeGreen
+                isBillPayment -> billPaymentRed   // vermelho: pagamento de fatura
+                else -> cardEntryBlue             // azul: lançamento na fatura
+            }
+
             Text(
                 text = transaction.signedAmount(),
-                color = if (transaction.type == TransactionType.INCOME) Color(0xFF1B8A5A) else Color(0xFFC62828),
+                color = amountColor,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -298,28 +377,43 @@ fun ExtractPreview() {
     MonexiTheme {
         ExtractContent(
             uiState = ExtractUiState(
-                search = "",
-                selectedMonthName = "Outubro de 2026",
                 transactions = listOf(
                     Transaction(
                         id = "1",
-                        userId = "1",
                         title = "Salário",
-                        amount = 3200.0,
+                        amount = 5000.0,
                         type = TransactionType.INCOME,
-                        category = Category(
-                            id = "1",
-                            userId = "1",
-                            name = "Alimentação",
-                            type = TransactionType.INCOME
-                        ),
-                        paymentMethod = PaymentMethod(
-                            id = "1",
-                            userId = "1",
-                            name = "Pix"
-                        ),
+                        category = Category(id = "1", name = "Trabalho", type = TransactionType.INCOME),
+                        paymentMethod = PaymentMethod(id = "1", name = "Pix"),
+                        date = System.currentTimeMillis()
+                    ),
+                    Transaction(
+                        id = "2",
+                        title = "Supermercado",
+                        amount = 350.0,
+                        type = TransactionType.EXPENSE,
+                        category = Category(id = "2", name = "Alimentação", type = TransactionType.EXPENSE),
+                        paymentMethod = PaymentMethod(id = "2", name = "Cartão de Crédito"),
+                        creditCardId = "c1",
+                        date = System.currentTimeMillis()
+                    ),
+                    Transaction(
+                        id = "3",
+                        title = "Pagamento Fatura - Nubank (11/2026)",
+                        amount = 350.0,
+                        type = TransactionType.EXPENSE,
+                        category = Category(id = "3", name = "Fatura de Cartão", type = TransactionType.EXPENSE),
+                        paymentMethod = PaymentMethod(id = "1", name = "Pix"),
+                        accountId = "a1",
+                        creditCardBillId = "c1_2026_11",
                         date = System.currentTimeMillis()
                     )
+                ),
+                accounts = listOf(
+                    Account(id = "a1", name = "Conta Nubank")
+                ),
+                creditCards = listOf(
+                    CreditCard(id = "c1", name = "Nubank Gold")
                 )
             ),
             onSearchChange = {},

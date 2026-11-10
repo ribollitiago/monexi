@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
+import com.moduxi.monexi.domain.repository.AccountRepository
+import com.moduxi.monexi.domain.repository.CreditCardRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,7 +19,9 @@ import java.util.Date
 import java.util.Locale
 
 class ExtractViewModel(
-    private val transactionRepository: TransactionRepository
+    private val transactionRepository: TransactionRepository,
+    private val accountRepository: AccountRepository,
+    private val creditCardRepository: CreditCardRepository
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -25,9 +29,11 @@ class ExtractViewModel(
 
     val uiState = combine(
         transactionRepository.transactions,
+        accountRepository.allAccounts,
+        creditCardRepository.allCreditCards,
         _searchQuery,
         _selectedCalendar
-    ) { transactions, query, calendar ->
+    ) { transactions, accounts, creditCards, query, calendar ->
         val selectedYear = calendar.get(Calendar.YEAR)
         val selectedMonth = calendar.get(Calendar.MONTH)
 
@@ -39,7 +45,9 @@ class ExtractViewModel(
         ExtractUiState(
             search = query,
             selectedMonthName = formatMonthYear(calendar.time),
-            transactions = monthFilteredTransactions
+            transactions = monthFilteredTransactions,
+            accounts = accounts,
+            creditCards = creditCards
         )
     }.stateIn(
         scope = viewModelScope,
@@ -75,7 +83,11 @@ class ExtractViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MonexiApplication
-                ExtractViewModel(application.transactionRepository)
+                ExtractViewModel(
+                    transactionRepository = application.transactionRepository,
+                    accountRepository = application.accountRepository,
+                    creditCardRepository = application.creditCardRepository
+                )
             }
         }
     }
