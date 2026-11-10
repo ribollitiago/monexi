@@ -8,11 +8,26 @@ Além de uma ferramenta prática de gestão financeira, o Monexi serve como estu
 
 ## 📱 Demonstração em Vídeo
 
-Confira a demonstração prática das funcionalidades do Monexi v1.0.0:
+Confira a demonstração prática das funcionalidades do Monexi v1.0.1:
 
 [![Demonstração do Monexi no YouTube Shorts](https://img.youtube.com/vi/7M0kxMYyMic/hqdefault.jpg)](https://youtube.com/shorts/7M0kxMYyMic?is=9g5Ray-7U07idqet)
 
 > 💡 *Clique na imagem acima para assistir ao vídeo de teste do aplicativo no YouTube Shorts.*
+
+---
+
+## 🚀 Novidades da Versão v1.0.1
+
+- 🔑 **Recuperação de Senha com Firebase Auth:** Tela de solicitação de e-mail de redefinição de senha (`ForgotPasswordScreen`) conectada ao link *"Esqueceu a senha?"* da tela de Login.
+- 💳 **Gestão Avançada de Faturas e Status de Cartão:**
+  - Status de faturas com badges coloridas: **Aberta** (azul), **Fechada** (laranja), **Parcialmente Paga** (azul claro), **Paga** (verde) e **Futura** (cinza).
+  - Cálculo de ciclo de corte por dia de fechamento (`closingDay`) e vencimento (`dueDay`).
+  - Opções para pagamento de fatura fechada e antecipação de saldo aberto.
+  - Acesso direto à edição do cartão pelo ícone no cabeçalho das faturas.
+- 🗑️ **Exclusão de Compras Parceladas:** Diálogo de confirmação para escolher entre *"Excluir apenas esta parcela"* ou *"Excluir todas as parcelas"* da compra.
+- 📊 **Ajuste Fino nos Gráficos e Extrato:**
+  - Remoção de duplicidade na categoria do gráfico da Home ao quitar faturas.
+  - Correção do tamanho e altura dos cards de lançamentos no extrato (`ExtractScreen`).
 
 ---
 
@@ -121,6 +136,7 @@ app/src/main/java/com/moduxi/monexi
 
 ```text
 login                                   -> Tela de Login
+forgotPassword                          -> Tela de Recuperação de Senha
 register                                -> Tela de Cadastro
 home                                    -> Resumo financeiro e gráficos
 extract                                 -> Histórico de lançamentos e extrato
@@ -177,8 +193,8 @@ applicationId: com.moduxi.monexi
 minSdk: 24 (Android 7.0+)
 targetSdk: 37
 compileSdk: 37
-versionCode: 1
-versionName: 0.1.0
+versionCode: 2
+versionName: 1.0.1
 ```
 
 ---
