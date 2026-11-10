@@ -9,6 +9,7 @@ import com.moduxi.monexi.data.repository.RoomCreditCardRepository
 import com.moduxi.monexi.data.repository.RoomPaymentMethodRepository
 import com.moduxi.monexi.data.repository.RoomRecurringTransactionRepository
 import com.moduxi.monexi.data.repository.RoomTransactionRepository
+import com.moduxi.monexi.data.repository.local.OnboardingPrefs
 import com.moduxi.monexi.data.repository.local.ThemeManager
 import com.moduxi.monexi.domain.repository.AccountRepository
 import com.moduxi.monexi.domain.repository.AuthRepository
@@ -24,6 +25,7 @@ import kotlinx.coroutines.launch
 
 class MonexiApplication : Application() {
     val themeManager by lazy { ThemeManager(this) }
+    val onboardingPrefs by lazy { OnboardingPrefs(this) }
     val database: MonexiDatabase by lazy { MonexiDatabase.getInstance(this) }
 
     val authRepository: AuthRepository by lazy { FirebaseAuthRepository() }

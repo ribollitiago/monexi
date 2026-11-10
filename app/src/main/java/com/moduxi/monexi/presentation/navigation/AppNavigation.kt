@@ -1,12 +1,17 @@
 package com.moduxi.monexi.presentation.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.compose.NavHost
@@ -30,6 +35,7 @@ import com.moduxi.monexi.presentation.auth.forgotpassword.ForgotPasswordScreen
 import com.moduxi.monexi.presentation.auth.login.LoginScreen
 import com.moduxi.monexi.presentation.auth.register.RegisterScreen
 import com.moduxi.monexi.presentation.extract.ExtractScreen
+import com.moduxi.monexi.presentation.onboarding.OnboardingScreen
 import com.moduxi.monexi.presentation.settings.SettingsScreen
 import com.moduxi.monexi.presentation.settings.accounts.BankAccountScreen
 import com.moduxi.monexi.presentation.settings.accounts.archived.ArchivedBankAccountScreen
@@ -44,6 +50,7 @@ import com.moduxi.monexi.presentation.settings.credit.bills.CreditCardBillDetail
 import com.moduxi.monexi.presentation.settings.credit.bills.CreditCardBillsScreen
 import com.moduxi.monexi.presentation.settings.credit.edit.EditCreditCardScreen
 import com.moduxi.monexi.presentation.settings.recurring.RecurringTransactionsScreen
+import kotlinx.coroutines.flow.first
 
 sealed class BottomNavItem(val route: String, val label: String, val icon: ImageVector) {
     object Home : BottomNavItem("home", "Resumo", Icons.Default.Home)
@@ -62,7 +69,7 @@ fun AppNavigation(themeManager: ThemeManager) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val startDestination = if (authRepository.currentUser != null) "home" else "login"
+    val startDestination = "splash"
 
     val showBottomBar = currentRoute in listOf(
         "home",
@@ -120,6 +127,34 @@ fun AppNavigation(themeManager: ThemeManager) {
             startDestination = startDestination,
             modifier = Modifier.padding(innerPadding)
         ) {
+            composable("splash") {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+
+                LaunchedEffect(Unit) {
+                    val user = app.authRepository.currentUser
+                    if (user == null) {
+                        navController.navigate("login") {
+                            popUpTo("splash") { inclusive = true }
+                        }
+                    } else {
+                        val pending = app.onboardingPrefs.isPending(user.uid).first()
+                        if (pending) {
+                            navController.navigate("onboarding") {
+                                popUpTo("splash") { inclusive = true }
+                            }
+                        } else {
+                            navController.navigate("home") {
+                                popUpTo("splash") { inclusive = true}
+                            }
+                        }
+                    }
+                }
+            }
             composable("login") {
                 LoginScreen(
                     onLoginSuccess = {
@@ -145,12 +180,21 @@ fun AppNavigation(themeManager: ThemeManager) {
             composable("register") {
                 RegisterScreen(
                     onRegisterSuccess = {
-                        navController.navigate("login") {
-                            popUpTo("login") { inclusive = true }
+                        navController.navigate("onboarding") {
+                            popUpTo("register") { inclusive = true }
                         }
                     },
                     onNavigateToLogin = {
                         navController.popBackStack()
+                    }
+                )
+            }
+            composable("onboarding") {
+                OnboardingScreen(
+                    onFinished = {
+                        navController.navigate("home") {
+                            popUpTo("onboarding") { inclusive = true }
+                        }
                     }
                 )
             }

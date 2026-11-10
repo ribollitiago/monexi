@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
+import com.moduxi.monexi.data.repository.local.OnboardingPrefs
 import com.moduxi.monexi.domain.repository.AccountRepository
 import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
@@ -17,7 +18,8 @@ import kotlinx.coroutines.launch
 class RegisterViewModel(
     private val authRepository: AuthRepository,
     private val transactionRepository: TransactionRepository,
-    private val accountRepository: AccountRepository
+    private val accountRepository: AccountRepository,
+    private val onboardingPrefs: OnboardingPrefs
 ) : ViewModel() {
 
     var uiState by mutableStateOf(RegisterUiState())
@@ -60,6 +62,10 @@ class RegisterViewModel(
             val result = authRepository.signUp(uiState.email, uiState.password)
 
             result.onSuccess {
+                val currentUserId = authRepository.currentUser?.uid
+                if (!currentUserId.isNullOrEmpty()) {
+                    onboardingPrefs.setPending(currentUserId, true)
+                }
                 accountRepository.ensureDefaultAccount()
                 transactionRepository.syncFromRemote()
 
@@ -87,7 +93,8 @@ class RegisterViewModel(
                 RegisterViewModel(
                     authRepository = application.authRepository,
                     transactionRepository = application.transactionRepository,
-                    accountRepository = application.accountRepository
+                    accountRepository = application.accountRepository,
+                    onboardingPrefs = application.onboardingPrefs
                 )
             }
         }
