@@ -8,5 +8,6 @@ class FakeAuthRepository(
 ) : AuthRepository {
     override suspend fun login(email: String, password: String): Result<Unit> = Result.success(Unit)
     override suspend fun signUp(email: String, password: String): Result<Unit> = Result.success(Unit)
+    override suspend fun sendPasswordResetEmail(email: String): Result<Unit> = Result.success(Unit)
     override fun signOut() {}
 }
