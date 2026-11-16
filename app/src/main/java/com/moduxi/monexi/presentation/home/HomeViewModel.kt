@@ -10,7 +10,6 @@ import com.moduxi.monexi.domain.repository.AccountRepository
 import com.moduxi.monexi.domain.repository.CreditCardRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
 import com.moduxi.monexi.domain.usecase.CalculateAccountBalanceUseCase
-import com.moduxi.monexi.domain.usecase.CalculateBalanceUseCase
 import com.moduxi.monexi.domain.usecase.CalculateExpenseUseCase
 import com.moduxi.monexi.domain.usecase.CalculateIncomeUseCase
 import com.moduxi.monexi.presentation.settings.accounts.AccountWithBalance
@@ -43,8 +42,9 @@ class HomeViewModel(
     val uiState = combine(
         transactionRepository.transactions,
         accountRepository.accounts,
+        creditCardRepository.creditCards,
         _selectedCalendar
-    ) { allTransactions, allAccounts, calendar ->
+    ) { allTransactions, allAccounts, allCreditCards, calendar ->
         val selectedYear = calendar.get(Calendar.YEAR)
         val selectedMonth = calendar.get(Calendar.MONTH)
 
@@ -72,6 +72,7 @@ class HomeViewModel(
             netWorth = netWorth,
             benefitsTotal = benefitsTotal,
             accounts = accountsWithBalance,
+            creditCards = allCreditCards.filter { !it.isArchived },
             totalIncome = calculateIncomeUseCase(monthTransactions),
             totalExpense = calculateExpenseUseCase(monthTransactions),
             selectedMonthName = formatMonthYear(calendar.time),

@@ -56,6 +56,8 @@ import java.util.Locale
 
 @Composable
 fun HomeScreen(
+    onNavigateToBankAccountStatement: (String) -> Unit = {},
+    onNavigateToCreditCardBills: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory)
 ) {
@@ -65,6 +67,8 @@ fun HomeScreen(
         uiState = uiState,
         onPreviousMonthClick = viewModel::previousMonth,
         onNextMonthClick = viewModel::nextMonth,
+        onNavigateToBankAccountStatement = onNavigateToBankAccountStatement,
+        onNavigateToCreditCardBills = onNavigateToCreditCardBills,
         modifier = modifier
     )
 }
@@ -74,6 +78,8 @@ private fun HomeContent(
     uiState: HomeUiState,
     onPreviousMonthClick: () -> Unit,
     onNextMonthClick: () -> Unit,
+    onNavigateToBankAccountStatement: (String) -> Unit = {},
+    onNavigateToCreditCardBills: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -184,7 +190,9 @@ private fun HomeContent(
                     ) {
                         items(uiState.accounts) { item ->
                             Card(
-                                modifier = Modifier.width(150.dp)
+                                modifier = Modifier
+                                    .width(150.dp)
+                                    .clickable { onNavigateToBankAccountStatement(item.account.id) }
                             ) {
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -205,6 +213,54 @@ private fun HomeContent(
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
                                         text = item.currentBalance.toCurrency(),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (uiState.creditCards.isNotEmpty()) {
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Meus Cartões",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(uiState.creditCards) { card ->
+                            Card(
+                                modifier = Modifier
+                                    .width(160.dp)
+                                    .clickable { onNavigateToCreditCardBills(card.id) }
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(10.dp)
+                                                .clip(CircleShape)
+                                                .background(card.colorHex.toComposeColor())
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = card.name,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold,
+                                            maxLines = 1
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "Limite: ${card.limitAmount.toCurrency()}",
                                         style = MaterialTheme.typography.bodySmall,
                                         fontWeight = FontWeight.Bold
                                     )

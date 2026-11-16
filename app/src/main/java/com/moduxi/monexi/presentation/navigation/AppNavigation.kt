@@ -199,7 +199,14 @@ fun AppNavigation(themeManager: ThemeManager) {
                 )
             }
             composable("home") {
-                HomeScreen()
+                HomeScreen(
+                    onNavigateToBankAccountStatement = { accountId ->
+                        navController.navigate("bankAccountStatement?accountId=$accountId")
+                    },
+                    onNavigateToCreditCardBills = { cardId ->
+                        navController.navigate("creditCardBills?cardId=$cardId")
+                    }
+                )
             }
             composable("extract") {
                 ExtractScreen(
