@@ -16,7 +16,7 @@ Confira a demonstração prática das funcionalidades do Monexi v1.0.1:
 
 ---
 
-## 🚀 Novidades da Versão v1.1.0
+## 🚀 Novidades da Versão v1.1.1
 
 - 👋 **Onboarding Pós-Cadastro:** Tela inicial de configuração exibida logo após o registro.
 - 📅 **Lançamentos Agendados no Extrato:**
