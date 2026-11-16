@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.moduxi.monexi.domain.model.account.Account
+import com.moduxi.monexi.domain.model.account.AccountType
 import com.moduxi.monexi.domain.model.category.Category
 import com.moduxi.monexi.domain.model.creditcard.CreditCard
 import com.moduxi.monexi.domain.model.payment.PaymentMethod
@@ -70,6 +71,7 @@ import java.util.TimeZone
 fun TransactionScreen(
     onTransactionSaved: () -> Unit,
     onNavigateToCreditCards: () -> Unit = {},
+    onNavigateToBankAccounts: () -> Unit = {},
     onCancel: () -> Unit = onTransactionSaved,
     modifier: Modifier = Modifier,
     viewModel: TransactionViewModel = viewModel(factory = TransactionViewModel.Factory)
@@ -77,11 +79,20 @@ fun TransactionScreen(
     val uiState by viewModel.uiState.collectAsState()
     var showDeleteInstallmentsDialog by remember { mutableStateOf(false) }
     var showNoCreditCardsDialog by remember { mutableStateOf(false) }
+    var showNoAccountsDialog by remember { mutableStateOf(false) }
+    var showNoBankAccountsDialog by remember { mutableStateOf(false) }
+    var showInsufficientAccountsForTransferDialog by remember { mutableStateOf(false) }
 
     TransactionContent(
         uiState = uiState,
         onTypeChange = viewModel::onTypeChange,
-        onIsTransferChange = viewModel::onIsTransferChange,
+        onIsTransferChange = { isTransfer ->
+            if (isTransfer && uiState.accounts.size < 2) {
+                showInsufficientAccountsForTransferDialog = true
+            } else {
+                viewModel.onIsTransferChange(isTransfer)
+            }
+        },
         onIsRecurringChange = viewModel::onIsRecurringChange,
         onRecurringDayOfMonthChange = viewModel::onRecurringDayOfMonthChange,
         onIsRecurringInfiniteChange = viewModel::onIsRecurringInfiniteChange,
@@ -92,8 +103,20 @@ fun TransactionScreen(
         onInstallmentsChange = viewModel::onInstallmentsChange,
         onCategoryChange = viewModel::onCategoryChange,
         onPaymentMethodChange = { pm ->
-            if (pm.name.contains("Crédito", ignoreCase = true) && uiState.creditCards.isEmpty()) {
+            val isCredit = pm.name.contains("Crédito", ignoreCase = true)
+            val isBankPayment = pm.name.contains("Débito", ignoreCase = true) ||
+                    pm.name.contains("Pix", ignoreCase = true) ||
+                    pm.name.contains("Transferência", ignoreCase = true)
+            val hasCreditCard = uiState.creditCards.isNotEmpty()
+            val hasBankAccount = uiState.accounts.any { it.type != AccountType.CASH }
+            val hasAnyAccount = uiState.accounts.isNotEmpty()
+
+            if (isCredit && !hasCreditCard) {
                 showNoCreditCardsDialog = true
+            } else if (isBankPayment && !hasBankAccount) {
+                showNoBankAccountsDialog = true
+            } else if (!hasAnyAccount) {
+                showNoAccountsDialog = true
             } else {
                 viewModel.onPaymentMethodChange(pm)
             }
@@ -101,6 +124,9 @@ fun TransactionScreen(
         onAccountChange = viewModel::onAccountChange,
         onDestinationAccountChange = viewModel::onDestinationAccountChange,
         onCreditCardChange = viewModel::onCreditCardChange,
+        onRequestShowNoAccountsDialog = {
+            showNoAccountsDialog = true
+        },
         onDeleteClick = {
             val editingTx = uiState.editingTransaction
             if (editingTx != null) {
@@ -132,7 +158,7 @@ fun TransactionScreen(
             },
             text = {
                 Text(
-                    text = "Para usar cartão de crédito como forma de pagamento, é necessário ter ao menos um cartão cadastrado. O que você deseja fazer?"
+                    text = "Para usar cartão de crédito como forma de pagamento, é necessário ter ao menos um cartão cadastrado. Deseja cadastrar um novo cartão ou cancelar o lançamento?"
                 )
             },
             confirmButton = {
@@ -149,6 +175,117 @@ fun TransactionScreen(
                 androidx.compose.material3.TextButton(
                     onClick = {
                         showNoCreditCardsDialog = false
+                        onCancel()
+                    }
+                ) {
+                    Text("Cancelar Lançamento")
+                }
+            }
+        )
+    }
+
+    if (showNoAccountsDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showNoAccountsDialog = false },
+            title = {
+                Text(
+                    text = "Nenhuma carteira cadastrada",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "Para usar esta forma de pagamento (Débito, Pix ou Carteira), é necessário ter ao menos uma conta bancária ou carteira cadastrada. Deseja cadastrar uma nova conta ou cancelar o lançamento?"
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.Button(
+                    onClick = {
+                        showNoAccountsDialog = false
+                        onNavigateToBankAccounts()
+                    }
+                ) {
+                    Text("Cadastrar Conta")
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        showNoAccountsDialog = false
+                        onCancel()
+                    }
+                ) {
+                    Text("Cancelar Lançamento")
+                }
+            }
+        )
+    }
+
+    if (showNoBankAccountsDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showNoBankAccountsDialog = false },
+            title = {
+                Text(
+                    text = "Conta bancária necessária",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "Para usar Cartão de Débito, Pix ou Transferência, é necessário ter ao menos uma conta bancária cadastrada (sua conta atual é apenas Dinheiro / Carteira). Deseja cadastrar uma conta bancária ou cancelar o lançamento?"
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.Button(
+                    onClick = {
+                        showNoBankAccountsDialog = false
+                        onNavigateToBankAccounts()
+                    }
+                ) {
+                    Text("Cadastrar Conta")
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        showNoBankAccountsDialog = false
+                        onCancel()
+                    }
+                ) {
+                    Text("Cancelar Lançamento")
+                }
+            }
+        )
+    }
+
+    if (showInsufficientAccountsForTransferDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showInsufficientAccountsForTransferDialog = false },
+            title = {
+                Text(
+                    text = "Contas insuficientes",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "Para realizar uma transferência bancária, é necessário ter pelo menos duas contas cadastradas. Deseja cadastrar uma nova conta ou cancelar o lançamento?"
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.Button(
+                    onClick = {
+                        showInsufficientAccountsForTransferDialog = false
+                        onNavigateToBankAccounts()
+                    }
+                ) {
+                    Text("Cadastrar Conta")
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        showInsufficientAccountsForTransferDialog = false
                         onCancel()
                     }
                 ) {
@@ -211,6 +348,7 @@ private fun TransactionContent(
     onAccountChange: (Account) -> Unit,
     onDestinationAccountChange: (Account) -> Unit,
     onCreditCardChange: (CreditCard) -> Unit,
+    onRequestShowNoAccountsDialog: () -> Unit,
     onDeleteClick: () -> Unit,
     onSaveClick: () -> Unit,
     onBackClick: () -> Unit,
@@ -590,17 +728,35 @@ private fun TransactionContent(
                             }
                         }
                     }
-                } else if (!isCreditCardSelected && uiState.accounts.isNotEmpty()) {
+                } else if (!isCreditCardSelected) {
                     item {
-                        DropdownField(
-                            label = "Conta / Carteira",
-                            options = uiState.accounts,
-                            selectedOption = uiState.selectedAccount,
-                            onOptionSelected = onAccountChange,
-                            optionLabel = { it.name },
-                            optionIcon = { it.iconName.toCategoryIcon() },
-                            optionColor = { it.colorHex.toComposeColor() }
-                        )
+                        if (uiState.accounts.isNotEmpty()) {
+                            DropdownField(
+                                label = "Conta / Carteira",
+                                options = uiState.accounts,
+                                selectedOption = uiState.selectedAccount,
+                                onOptionSelected = onAccountChange,
+                                optionLabel = { it.name },
+                                optionIcon = { it.iconName.toCategoryIcon() },
+                                optionColor = { it.colorHex.toComposeColor() }
+                            )
+                        } else {
+                            OutlinedTextField(
+                                value = "",
+                                onValueChange = {},
+                                label = { Text("Conta / Carteira") },
+                                placeholder = { Text("Nenhuma conta cadastrada (toque para cadastrar)") },
+                                readOnly = true,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .onFocusEvent {
+                                        if (it.isFocused) {
+                                            onRequestShowNoAccountsDialog()
+                                            focusManager.clearFocus(force = true)
+                                        }
+                                    }
+                            )
+                        }
                     }
                 }
             }
@@ -802,6 +958,7 @@ private fun TransactionScreenPreview() {
             onAccountChange = {},
             onDestinationAccountChange = {},
             onCreditCardChange = {},
+            onRequestShowNoAccountsDialog = {},
             onDeleteClick = {},
             onSaveClick = {},
             onBackClick = {}

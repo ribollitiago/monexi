@@ -93,6 +93,20 @@ class TransactionViewModel(
         val sourceBalance = selectedAcc?.let { calculateBalance(it, transactions) }
         val destBalance = selectedDestAcc?.let { calculateBalance(it, transactions) }
 
+        val hasCreditCard = creditCards.isNotEmpty()
+        val hasBankAccount = accounts.any { it.type != com.moduxi.monexi.domain.model.account.AccountType.CASH }
+        val hasAnyAccount = accounts.isNotEmpty()
+
+        val isEligiblePm: (PaymentMethod) -> Boolean = { pm ->
+            when {
+                pm.name.contains("Crédito", ignoreCase = true) -> hasCreditCard
+                pm.name.contains("Débito", ignoreCase = true) ||
+                        pm.name.contains("Pix", ignoreCase = true) ||
+                        pm.name.contains("Transferência", ignoreCase = true) -> hasBankAccount
+                else -> hasAnyAccount
+            }
+        }
+
         form.copy(
             categories = filteredCategories,
             paymentMethods = filteredPaymentMethods,
@@ -102,8 +116,8 @@ class TransactionViewModel(
                 ?.takeIf { it.type == form.type }
                 ?: filteredCategories.firstOrNull(),
             selectedPaymentMethod = form.selectedPaymentMethod
-                ?.takeIf { filteredPaymentMethods.contains(it) && (!it.name.contains("Crédito", ignoreCase = true) || creditCards.isNotEmpty()) }
-                ?: filteredPaymentMethods.firstOrNull { !it.name.contains("Crédito", ignoreCase = true) }
+                ?.takeIf { filteredPaymentMethods.contains(it) && isEligiblePm(it) }
+                ?: filteredPaymentMethods.firstOrNull { isEligiblePm(it) }
                 ?: filteredPaymentMethods.firstOrNull(),
             selectedAccount = selectedAcc,
             selectedDestinationAccount = selectedDestAcc,

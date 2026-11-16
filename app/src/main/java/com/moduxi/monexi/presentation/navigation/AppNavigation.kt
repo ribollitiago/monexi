@@ -229,7 +229,10 @@ fun AppNavigation(themeManager: ThemeManager) {
                         navController.popBackStack()
                     },
                     onNavigateToCreditCards = {
-                        navController.navigate("creditCard")
+                        navController.navigate("editCreditCard")
+                    },
+                    onNavigateToBankAccounts = {
+                        navController.navigate("bankAccounts")
                     },
                     onCancel = {
                         navController.popBackStack()
