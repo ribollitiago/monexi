@@ -1,5 +1,6 @@
 package com.moduxi.monexi.presentation.settings.credit.bills
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -54,6 +56,7 @@ fun CreditCardBillDetailScreen(
     month: Int,
     year: Int,
     onNavigateBack: () -> Unit,
+    onNavigateToEditTransaction: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: CreditCardBillsViewModel = viewModel(factory = CreditCardBillsViewModel.Factory)
 ) {
@@ -64,6 +67,7 @@ fun CreditCardBillDetailScreen(
         year = year,
         uiState = uiState,
         onNavigateBack = onNavigateBack,
+        onNavigateToEditTransaction = onNavigateToEditTransaction,
         onPayBill = { bill, accountId, paymentMethod, amountToPay ->
             viewModel.payBill(bill, accountId, paymentMethod, amountToPay, onNavigateBack)
         },
@@ -77,6 +81,7 @@ fun CreditCardBillDetailContent(
     year: Int,
     uiState: CreditCardBillsUiState,
     onNavigateBack: () -> Unit,
+    onNavigateToEditTransaction: (String) -> Unit = {},
     onPayBill: (CreditCardBill, String, PaymentMethod, Double) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -204,7 +209,11 @@ fun CreditCardBillDetailContent(
             ) {
                 items(bill.transactions, key = { it.id }) { tx ->
                     val txAmount = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR")).format(tx.amount)
-                    Card(modifier = Modifier.fillMaxWidth()) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onNavigateToEditTransaction(tx.id) }
+                    ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -212,11 +221,20 @@ fun CreditCardBillDetailContent(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Column {
+                            Column(modifier = Modifier.weight(1f)) {
                                 Text(text = tx.title, fontWeight = FontWeight.SemiBold)
                                 Text(text = tx.category.name, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            Text(text = txAmount, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(text = txAmount, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                                IconButton(onClick = { onNavigateToEditTransaction(tx.id) }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = "Editar Lançamento",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
                         }
                     }
                 }

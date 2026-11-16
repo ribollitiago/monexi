@@ -241,11 +241,41 @@ class TransactionViewModel(
         viewModelScope.launch {
             val accountsList = accountRepository.allAccounts.first()
             val creditCardsList = creditCardRepository.allCreditCards.first()
+            val allTxs = transactionRepository.transactions.first()
+
+            val isGroup = !transaction.installmentGroupId.isNullOrEmpty()
+            val groupTxs = if (isGroup) {
+                allTxs.filter { it.installmentGroupId == transaction.installmentGroupId && it.deletedAt == null }
+            } else emptyList()
+
+            val cleanDescription = if (isGroup) {
+                transaction.title.replace(Regex("""\s*\(\d+/\d+\)$"""), "")
+            } else {
+                transaction.title
+            }
+
+            val totalGroupAmount = if (groupTxs.isNotEmpty()) {
+                groupTxs.sumOf { it.amount }
+            } else {
+                transaction.amount
+            }
+
+            val totalInstallmentsCount = if (groupTxs.isNotEmpty()) {
+                groupTxs.maxOfOrNull { it.totalInstallments ?: 1 } ?: (transaction.totalInstallments ?: 1)
+            } else {
+                transaction.totalInstallments ?: 1
+            }
+
+            val baseDate = if (groupTxs.isNotEmpty()) {
+                groupTxs.minByOrNull { it.installmentNumber ?: 1 }?.date ?: transaction.date
+            } else {
+                transaction.date
+            }
 
             formState.value = formState.value.copy(
                 editingTransaction = transaction,
-                description = transaction.title,
-                amountDigits = (transaction.amount * 100).toLong().toString(),
+                description = cleanDescription,
+                amountDigits = Math.round(totalGroupAmount * 100).toString(),
                 type = transaction.type,
                 isTransfer = false,
                 isRecurring = transaction.recurringTransactionId != null,
@@ -253,8 +283,8 @@ class TransactionViewModel(
                 selectedPaymentMethod = transaction.paymentMethod,
                 selectedAccount = transaction.accountId?.let { id -> accountsList.firstOrNull { it.id == id } },
                 selectedCreditCard = transaction.creditCardId?.let { id -> creditCardsList.firstOrNull { it.id == id } },
-                totalInstallments = transaction.totalInstallments ?: 1,
-                dateMillis = transaction.date,
+                totalInstallments = totalInstallmentsCount,
+                dateMillis = baseDate,
                 error = null
             )
         }
@@ -494,7 +524,22 @@ class TransactionViewModel(
                 val totalCents = Math.round(amount * 100)
                 val baseInstallmentCents = totalCents / installmentsCount
                 val remainderCents = totalCents % installmentsCount
-                val groupId = UUID.randomUUID().toString()
+
+                // Se estiver editando um parcelamento existente, remove o grupo antigo antes de inserir o novo
+                val oldGroupId = editingTransaction?.installmentGroupId
+                if (!oldGroupId.isNullOrEmpty()) {
+                    transactionRepository.deleteInstallmentGroup(oldGroupId)
+                }
+
+                val groupId = oldGroupId ?: UUID.randomUUID().toString()
+
+                val card = state.selectedCreditCard
+                val cal = Calendar.getInstance().apply { timeInMillis = state.dateMillis }
+                val dayOfMonth = cal.get(Calendar.DAY_OF_MONTH)
+                val isAfterClosing = editingTransaction == null && card != null && dayOfMonth > card.closingDay
+
+                // Se a fatura já fechou no dia do lançamento, a primeira parcela vai para o mês seguinte
+                val firstInstallmentDate = if (isAfterClosing) addMonthsToDate(state.dateMillis, 1) else state.dateMillis
 
                 val installmentsList = (1..installmentsCount).map { i ->
                     val installmentAmount = if (i == 1) {
@@ -502,9 +547,9 @@ class TransactionViewModel(
                     } else {
                         baseInstallmentCents / 100.0
                     }
-                    val installmentDate = addMonthsToDate(state.dateMillis, i - 1)
+                    val installmentDate = addMonthsToDate(firstInstallmentDate, i - 1)
                     Transaction(
-                        id = if (i == 1 && editingTransaction != null) editingTransaction.id else UUID.randomUUID().toString(),
+                        id = UUID.randomUUID().toString(),
                         userId = currentUserId,
                         title = "${state.description} ($i/$installmentsCount)",
                         amount = installmentAmount,
@@ -513,7 +558,6 @@ class TransactionViewModel(
                         paymentMethod = paymentMethod,
                         date = installmentDate,
                         updatedAt = System.currentTimeMillis(),
-                        deletedAt = editingTransaction?.deletedAt,
                         syncStatus = SyncStatus.PENDING_CREATE,
                         creditCardId = state.selectedCreditCard?.id,
                         installmentNumber = i,
@@ -524,6 +568,18 @@ class TransactionViewModel(
 
                 transactionRepository.addTransactions(installmentsList)
             } else {
+                // Se era um parcelamento antes e virou 1x (à vista), deleta o grupo antigo
+                val oldGroupId = editingTransaction?.installmentGroupId
+                if (!oldGroupId.isNullOrEmpty()) {
+                    transactionRepository.deleteInstallmentGroup(oldGroupId)
+                }
+
+                val card = state.selectedCreditCard
+                val cal = Calendar.getInstance().apply { timeInMillis = state.dateMillis }
+                val dayOfMonth = cal.get(Calendar.DAY_OF_MONTH)
+                val isAfterClosing = editingTransaction == null && isCreditCardPayment && card != null && dayOfMonth > card.closingDay
+                val transactionDate = if (isAfterClosing) addMonthsToDate(state.dateMillis, 1) else state.dateMillis
+
                 val transaction = Transaction(
                     id = editingTransaction?.id ?: UUID.randomUUID().toString(),
                     userId = currentUserId,
@@ -532,7 +588,7 @@ class TransactionViewModel(
                     type = state.type,
                     category = category,
                     paymentMethod = paymentMethod,
-                    date = state.dateMillis,
+                    date = transactionDate,
                     updatedAt = System.currentTimeMillis(),
                     deletedAt = editingTransaction?.deletedAt,
                     syncStatus = if (editingTransaction == null) SyncStatus.PENDING_CREATE else SyncStatus.PENDING_UPDATE,
@@ -543,7 +599,7 @@ class TransactionViewModel(
                     totalInstallments = if (isCreditCardPayment) 1 else null
                 )
 
-                if (editingTransaction == null) {
+                if (editingTransaction == null || !oldGroupId.isNullOrEmpty()) {
                     transactionRepository.addTransaction(transaction)
                 } else {
                     transactionRepository.updateTransaction(transaction)

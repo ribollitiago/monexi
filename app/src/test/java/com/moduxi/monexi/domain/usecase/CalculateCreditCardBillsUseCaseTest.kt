@@ -111,6 +111,49 @@ class CalculateCreditCardBillsUseCaseTest {
         assertEquals(90.0, billDec?.totalAmount ?: 0.0, 0.001)
     }
 
+    @Test
+    fun testPurchaseNov16WithClosingDay5AndDueDay12RollsToDecemberBill() {
+        val card = CreditCard(
+            id = "card_nubank",
+            name = "Nubank",
+            closingDay = 5,
+            dueDay = 12
+        )
+        // 16 de Novembro de 2026
+        val purchaseCal = Calendar.getInstance().apply {
+            set(2026, Calendar.NOVEMBER, 16, 10, 0, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        val tx = Transaction(
+            id = "tx_nov16",
+            title = "Compra parcelada",
+            amount = 100.0,
+            type = TransactionType.EXPENSE,
+            category = dummyCategory,
+            paymentMethod = dummyPaymentMethod,
+            date = purchaseCal.timeInMillis,
+            creditCardId = card.id,
+            installmentNumber = 1,
+            totalInstallments = 3
+        )
+
+        val bills = useCase(card, listOf(tx), referenceDateMillis = purchaseCal.timeInMillis)
+
+        // Deve cair na fatura de Dezembro/2026 (mês 12), e NÃO de Novembro/2026 (mês 11)
+        val billNov = bills.firstOrNull { it.year == 2026 && it.month == 11 }
+        val billDec = bills.firstOrNull { it.year == 2026 && it.month == 12 }
+
+        println("Bills generated: ${bills.map { "${it.month}/${it.year} (total=${it.totalAmount}, txCount=${it.transactions.size})" }}")
+
+        // Na fatura de Novembro não deve ter essa transação
+        assertTrue(billNov?.transactions?.none { it.id == "tx_nov16" } ?: true)
+
+        // Deve estar na fatura de Dezembro
+        assertNotNull("Fatura de Dezembro/2026 deve existir", billDec)
+        assertEquals(1, billDec?.transactions?.size)
+        assertEquals("tx_nov16", billDec?.transactions?.first()?.id)
+    }
+
     // 4. Pagar integralmente fatura fechada antes do vencimento não altera o ciclo das compras
     @Test
     fun testFullPaymentOfClosedBillLeavesCyclesIntact() {

@@ -209,6 +209,9 @@ fun AppNavigation(themeManager: ThemeManager) {
                         } else {
                             navController.navigate("transaction")
                         }
+                    },
+                    onNavigateToBillDetail = { cardId, month, year ->
+                        navController.navigate("creditCardBillDetail?cardId=$cardId&month=$month&year=$year")
                     }
                 )
             }
@@ -334,6 +337,9 @@ fun AppNavigation(themeManager: ThemeManager) {
                     year = it.arguments?.getInt("year") ?: 2026,
                     onNavigateBack = {
                         navController.popBackStack()
+                    },
+                    onNavigateToEditTransaction = { transactionId ->
+                        navController.navigate("transaction?id=$transactionId")
                     }
                 )
             }

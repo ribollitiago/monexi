@@ -46,6 +46,7 @@ import com.moduxi.monexi.domain.model.creditcard.CreditCard
 import com.moduxi.monexi.domain.model.payment.PaymentMethod
 import com.moduxi.monexi.domain.model.transaction.Transaction
 import com.moduxi.monexi.domain.model.transaction.TransactionType
+import com.moduxi.monexi.domain.usecase.CalculateCreditCardBillsUseCase
 import com.moduxi.monexi.ui.theme.MonexiTheme
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
@@ -54,9 +55,10 @@ import java.util.Locale
 
 @Composable
 fun ExtractScreen(
+    onNavigateToTransaction: (String?) -> Unit,
+    onNavigateToBillDetail: (String, Int, Int) -> Unit = { _, _, _ -> },
     modifier: Modifier = Modifier,
-    viewModel: ExtractViewModel = viewModel(factory = ExtractViewModel.Factory),
-    onNavigateToTransaction: (String?) -> Unit
+    viewModel: ExtractViewModel = viewModel(factory = ExtractViewModel.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -65,8 +67,28 @@ fun ExtractScreen(
         onSearchChange = viewModel::onSearchChange,
         onPreviousMonthClick = viewModel::previousMonth,
         onNextMonthClick = viewModel::nextMonth,
-        onTransactionClick = { id ->
-            onNavigateToTransaction(id)
+        onTransactionClick = { transaction ->
+            if (transaction.creditCardId != null && transaction.creditCardBillId == null) {
+                val originCard = uiState.creditCards.firstOrNull { it.id == transaction.creditCardId }
+                if (originCard != null) {
+                    val cycle = CalculateCreditCardBillsUseCase().getCycleForTimestamp(originCard, transaction.date)
+                    onNavigateToBillDetail(originCard.id, cycle.month, cycle.year)
+                } else {
+                    onNavigateToTransaction(transaction.id)
+                }
+            } else if (transaction.creditCardBillId != null) {
+                val parts = transaction.creditCardBillId.split("_")
+                if (parts.size >= 3) {
+                    val cardId = parts.subList(0, parts.size - 2).joinToString("_")
+                    val year = parts[parts.size - 2].toIntOrNull() ?: 2026
+                    val month = parts[parts.size - 1].toIntOrNull() ?: 1
+                    onNavigateToBillDetail(cardId, month, year)
+                } else {
+                    onNavigateToTransaction(transaction.id)
+                }
+            } else {
+                onNavigateToTransaction(transaction.id)
+            }
         },
         modifier = modifier
     )
@@ -78,7 +100,7 @@ fun ExtractContent(
     onSearchChange: (String) -> Unit,
     onPreviousMonthClick: () -> Unit,
     onNextMonthClick: () -> Unit,
-    onTransactionClick: (String) -> Unit,
+    onTransactionClick: (Transaction) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var selectedFilter by remember { mutableStateOf("Todos") }
@@ -113,7 +135,7 @@ fun ExtractContent(
         modifier = modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item {
             Box(
@@ -208,7 +230,7 @@ fun ExtractContent(
                     transaction = transaction,
                     originAccount = originAccount,
                     originCard = originCard,
-                    onClick = { onTransactionClick(transaction.id) }
+                    onClick = { onTransactionClick(transaction) }
                 )
             }
         }
@@ -239,7 +261,7 @@ private fun TransactionItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {

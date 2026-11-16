@@ -367,7 +367,7 @@ private fun CategoryChartCard(
     var selectedType by remember { mutableStateOf(TransactionType.EXPENSE) }
 
     val filteredTransactions = transactions.filter { transaction ->
-        transaction.type == selectedType && (transaction.creditCardId == null || transaction.creditCardBillId != null)
+        transaction.type == selectedType && transaction.creditCardBillId == null
     }
 
     // Agrupa transações por categoria e calcula o total

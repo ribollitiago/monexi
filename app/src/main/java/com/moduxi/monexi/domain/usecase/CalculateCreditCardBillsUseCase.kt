@@ -111,6 +111,7 @@ class CalculateCreditCardBillsUseCase {
             }
 
             // Status da fatura
+            val isCurrentCycle = cycle.year == currentCycle.year && cycle.month == currentCycle.month
             val isClosed = referenceDateMillis > cycle.closingMillis
             val isOverdue = referenceDateMillis > cycle.dueMillis && remainingBalance > 0.0
 
@@ -119,7 +120,8 @@ class CalculateCreditCardBillsUseCase {
                 isPartiallyPaid -> BillStatus.PARTIALLY_PAID
                 isOverdue -> BillStatus.OVERDUE
                 isClosed -> BillStatus.CLOSED
-                cycle.year > refYear || (cycle.year == refYear && cycle.month > refMonth) -> BillStatus.FUTURE
+                isCurrentCycle -> BillStatus.OPEN
+                cycle.year > currentCycle.year || (cycle.year == currentCycle.year && cycle.month > currentCycle.month) -> BillStatus.FUTURE
                 else -> BillStatus.OPEN
             }
 
@@ -145,21 +147,19 @@ class CalculateCreditCardBillsUseCase {
     private fun billIdKey(year: Int, month: Int) = "${year}_$month"
 
     /**
-     * Calcula o ciclo completo para um determinado ano e mês de fatura (vencimento no mês).
-     *
-     * Regra de fechamento consistente:
-     * - O fechamento ocorre às 23:59:59.999 do dia de fechamento do mês anterior ao vencimento.
-     *   (Ex: fatura com vencimento em Nov/2026 e closingDay 25 fecha em 25/Out/2026 23:59:59.999)
-     * - O ciclo anterior inicia imediatamente após o fechamento anterior (00:00:00.000).
+     * Calcula o ciclo completo para um determinado ano e mês de fatura.
+     * - Se dueDay > closingDay (ex: fecha dia 5, vence dia 12), fechamento e vencimento ocorrem no mesmo mês.
+     * - Se dueDay <= closingDay (ex: fecha dia 25, vence dia 10), fechamento ocorre no mês anterior ao vencimento.
      */
     fun calculateCycleForYearMonth(creditCard: CreditCard, billYear: Int, billMonth: Int): BillCycle {
         val closingDay = creditCard.closingDay
         val dueDay = creditCard.dueDay
 
-        // Mês e ano do fechamento (mês anterior ao da fatura/vencimento)
+        val closingMonthOffset = if (dueDay > closingDay) 1 else 2
+
         val closingCal = Calendar.getInstance().apply {
             set(Calendar.YEAR, billYear)
-            set(Calendar.MONTH, billMonth - 2) // Calendar.MONTH é 0-based
+            set(Calendar.MONTH, billMonth - closingMonthOffset) // Calendar.MONTH é 0-based
             val maxDay = getActualMaximum(Calendar.DAY_OF_MONTH)
             set(Calendar.DAY_OF_MONTH, closingDay.coerceAtMost(maxDay))
             set(Calendar.HOUR_OF_DAY, 23)
@@ -168,16 +168,19 @@ class CalculateCreditCardBillsUseCase {
             set(Calendar.MILLISECOND, 999)
         }
 
-        // Mês e ano do início do ciclo (imediatamente após o fechamento do mês anterior)
-        val startCal = Calendar.getInstance().apply {
+        val prevClosingCal = Calendar.getInstance().apply {
             timeInMillis = closingCal.timeInMillis
             add(Calendar.MONTH, -1)
-            val prevMaxDay = getActualMaximum(Calendar.DAY_OF_MONTH)
-            set(Calendar.DAY_OF_MONTH, closingDay.coerceAtMost(prevMaxDay))
-            add(Calendar.MILLISECOND, 1) // 00:00:00.000 do dia seguinte ao fechamento anterior
+            val maxDay = getActualMaximum(Calendar.DAY_OF_MONTH)
+            set(Calendar.DAY_OF_MONTH, closingDay.coerceAtMost(maxDay))
+            set(Calendar.HOUR_OF_DAY, 23)
+            set(Calendar.MINUTE, 59)
+            set(Calendar.SECOND, 59)
+            set(Calendar.MILLISECOND, 999)
         }
 
-        // Vencimento da fatura
+        val startMillis = prevClosingCal.timeInMillis + 1L
+
         val dueCal = Calendar.getInstance().apply {
             set(Calendar.YEAR, billYear)
             set(Calendar.MONTH, billMonth - 1)
@@ -192,35 +195,34 @@ class CalculateCreditCardBillsUseCase {
         return BillCycle(
             year = billYear,
             month = billMonth,
-            startMillis = startCal.timeInMillis,
+            startMillis = startMillis,
             closingMillis = closingCal.timeInMillis,
             dueMillis = dueCal.timeInMillis
         )
     }
 
     /**
-     * Atribui uma compra a um ciclo específico usando a data/hora completa:
-     * - Se timestamp <= fechamento do ciclo, pertence à fatura daquele ciclo.
-     * - Se timestamp > fechamento do ciclo, pertence à próxima fatura.
+     * Atribui uma compra a um ciclo usando a data completa:
+     * - Se a compra ocorreu até o fechamento da fatura do mês atual, pertence à fatura deste mês.
+     * - Se a data de fechamento do mês atual já passou, a compra rola para a fatura do próximo mês.
      */
     fun getCycleForTimestamp(creditCard: CreditCard, timestamp: Long): BillCycle {
         val txCal = Calendar.getInstance().apply { timeInMillis = timestamp }
         val txYear = txCal.get(Calendar.YEAR)
         val txMonth = txCal.get(Calendar.MONTH) + 1 // 1..12
 
-        // A fatura natural do mês corrente tem vencimento no mês seguinte (txMonth + 1)
-        var candidateMonth = txMonth + 1
+        val candidateMonth = if (creditCard.dueDay > creditCard.closingDay) txMonth else txMonth + 1
         var candidateYear = txYear
-        if (candidateMonth > 12) {
-            candidateMonth = 1
+        var cMonth = candidateMonth
+        if (cMonth > 12) {
+            cMonth = 1
             candidateYear += 1
         }
 
-        var candidateCycle = calculateCycleForYearMonth(creditCard, candidateYear, candidateMonth)
+        val candidateCycle = calculateCycleForYearMonth(creditCard, candidateYear, cMonth)
 
-        // Se a transação foi antes do início desse ciclo candidato, ela pertence ao ciclo anterior
         if (timestamp < candidateCycle.startMillis) {
-            var prevMonth = candidateMonth - 1
+            var prevMonth = cMonth - 1
             var prevYear = candidateYear
             if (prevMonth < 1) {
                 prevMonth = 12
@@ -229,9 +231,8 @@ class CalculateCreditCardBillsUseCase {
             return calculateCycleForYearMonth(creditCard, prevYear, prevMonth)
         }
 
-        // Se a transação foi após o fechamento desse ciclo candidato, ela cai no próximo ciclo
         if (timestamp > candidateCycle.closingMillis) {
-            var nextMonth = candidateMonth + 1
+            var nextMonth = cMonth + 1
             var nextYear = candidateYear
             if (nextMonth > 12) {
                 nextMonth = 1

@@ -54,6 +54,7 @@ import com.moduxi.monexi.domain.model.category.Category
 import com.moduxi.monexi.domain.model.creditcard.CreditCard
 import com.moduxi.monexi.domain.model.payment.PaymentMethod
 import com.moduxi.monexi.domain.model.transaction.TransactionType
+import com.moduxi.monexi.domain.usecase.CalculateCreditCardBillsUseCase
 import com.moduxi.monexi.ui.components.DropdownField
 import com.moduxi.monexi.ui.theme.CurrencyVisualTransformation
 import com.moduxi.monexi.ui.theme.toCategoryIcon
@@ -513,9 +514,8 @@ private fun TransactionContent(
                             val formatter = NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"))
                             formatter.format(installmentVal)
                         }
-                        val closingDay = uiState.selectedCreditCard?.closingDay ?: 5
-                        val invoiceMonth = remember(uiState.dateMillis, closingDay) {
-                            calculateInvoiceMonthName(uiState.dateMillis, closingDay)
+                        val invoiceMonth = remember(uiState.dateMillis, uiState.selectedCreditCard) {
+                            calculateInvoiceMonthName(uiState.dateMillis, uiState.selectedCreditCard)
                         }
 
                         Card(
@@ -775,14 +775,15 @@ private fun Long.toBrazilianDateFormat(
     return formatter.format(date)
 }
 
-private fun calculateInvoiceMonthName(transactionDateMillis: Long, closingDay: Int): String {
+private fun calculateInvoiceMonthName(transactionDateMillis: Long, creditCard: CreditCard?): String {
+    if (creditCard == null) return ""
+    val cycle = CalculateCreditCardBillsUseCase().getCycleForTimestamp(creditCard, transactionDateMillis)
     val calendar = Calendar.getInstance().apply {
-        timeInMillis = transactionDateMillis
+        set(Calendar.YEAR, cycle.year)
+        set(Calendar.MONTH, cycle.month - 1)
+        set(Calendar.DAY_OF_MONTH, 1)
     }
-    val day = calendar.get(Calendar.DAY_OF_MONTH)
-    if (day > closingDay) {
-        calendar.add(Calendar.MONTH, 1)
-    }
-    val monthFormat = SimpleDateFormat("MMMM", Locale.forLanguageTag("pt-BR"))
-    return monthFormat.format(calendar.time)
+    val monthFormat = SimpleDateFormat("MMMM 'de' yyyy", Locale.forLanguageTag("pt-BR"))
+    val formatted = monthFormat.format(calendar.time)
+    return formatted.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.forLanguageTag("pt-BR")) else it.toString() }
 }
