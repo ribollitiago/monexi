@@ -7,6 +7,9 @@ import com.moduxi.monexi.domain.model.transaction.SyncStatus
 import com.moduxi.monexi.domain.model.transaction.Transaction
 import com.moduxi.monexi.domain.model.transaction.TransactionType
 
+const val MISSING_CATEGORY_NAME = "Sem categoria"
+const val MISSING_PAYMENT_METHOD_NAME = "Não informado"
+
 fun Transaction.toEntity(): TransactionEntity {
     return TransactionEntity(
         id = id,
@@ -35,18 +38,18 @@ fun TransactionEntity.toDomain(
     categories: List<Category>,
     paymentMethods: List<PaymentMethod>
 ): Transaction? {
-    val category = categories.firstOrNull { it.id == categoryId }
-    val paymentMethod = paymentMethods.firstOrNull { it.id == paymentMethodId }
-
-    if (category == null || paymentMethod == null) {
-        return null
-    }
-
     val transactionType = try {
         TransactionType.valueOf(type)
     } catch (e: Exception) {
         TransactionType.EXPENSE
     }
+
+    // Categoria ou forma de pagamento que não existe neste aparelho: o lançamento continua
+    // aparecendo (antes era descartado e o saldo ficava errado); o id original é preservado.
+    val category = categories.firstOrNull { it.id == categoryId }
+        ?: Category(id = categoryId, name = MISSING_CATEGORY_NAME, type = transactionType, colorHex = "#9E9E9E")
+    val paymentMethod = paymentMethods.firstOrNull { it.id == paymentMethodId }
+        ?: PaymentMethod(id = paymentMethodId, name = MISSING_PAYMENT_METHOD_NAME)
 
     val status = try {
         SyncStatus.valueOf(syncStatus)

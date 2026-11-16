@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
+import com.moduxi.monexi.data.sync.SyncManager
 import com.moduxi.monexi.domain.repository.AccountRepository
 import com.moduxi.monexi.domain.repository.CreditCardRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
@@ -26,7 +27,8 @@ import java.util.Locale
 class HomeViewModel(
     private val transactionRepository: TransactionRepository,
     private val accountRepository: AccountRepository,
-    private val creditCardRepository: CreditCardRepository
+    private val creditCardRepository: CreditCardRepository,
+    private val syncManager: SyncManager
 ) : ViewModel() {
 
     private val calculateIncomeUseCase = CalculateIncomeUseCase()
@@ -105,10 +107,9 @@ class HomeViewModel(
     }
 
     fun syncTransactions() {
-        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-            transactionRepository.syncFromRemote()
-            accountRepository.syncFromRemote()
-            creditCardRepository.syncFromRemote()
+        viewModelScope.launch {
+            // Sincronização completa e em ordem; também gera os recorrentes do mês
+            syncManager.syncAll()
         }
     }
 
@@ -119,7 +120,8 @@ class HomeViewModel(
                 HomeViewModel(
                     application.transactionRepository,
                     application.accountRepository,
-                    application.creditCardRepository
+                    application.creditCardRepository,
+                    application.syncManager
                 )
             }
         }

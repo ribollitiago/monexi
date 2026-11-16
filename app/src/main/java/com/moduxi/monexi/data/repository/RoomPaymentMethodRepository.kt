@@ -6,11 +6,13 @@ import com.moduxi.monexi.data.local.dao.PaymentMethodDao
 import com.moduxi.monexi.data.local.entity.PaymentMethodEntity
 import com.moduxi.monexi.data.local.mapper.toDomain
 import com.moduxi.monexi.data.local.mapper.toEntity
+import com.moduxi.monexi.data.sync.RemoteStore
 import com.moduxi.monexi.domain.model.payment.PaymentMethod
 import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.PaymentMethodRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -18,8 +20,29 @@ import java.util.UUID
 
 class RoomPaymentMethodRepository (
     private val paymentMethodDao: PaymentMethodDao,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val remoteStore: RemoteStore
 ) : PaymentMethodRepository {
+
+    /** Envia as formas de pagamento personalizadas do usuário (as padrão têm id fixo). */
+    suspend fun pushAllLocal() {
+        val currentUserId = authRepository.currentUser?.uid ?: return
+        paymentMethodDao.observeAllPaymentMethodsByUser(currentUserId).first()
+            .filter { !it.isDefault && it.userId == currentUserId }
+            .forEach { entity ->
+                remoteStore.set(
+                    "paymentMethods",
+                    entity.id,
+                    hashMapOf(
+                        "id" to entity.id,
+                        "userId" to currentUserId,
+                        "name" to entity.name,
+                        "isDefault" to false,
+                        "isArchived" to entity.isArchived
+                    )
+                )
+            }
+    }
 
     override val paymentMethods: Flow<List<PaymentMethod>>
         get() {
@@ -70,20 +93,8 @@ class RoomPaymentMethodRepository (
             "isArchived" to paymentMethod.isArchived
         )
 
-        try {
-            FirebaseFirestore.getInstance()
-                .collection("users")
-                .document(currentUserId)
-                .collection("paymentMethods")
-                .document(paymentMethodId)
-                .set(paymentMethodData)
-                .await()
-
-            Log.d("FirestoreSync", "Método de Pagamento $paymentMethodId salva no Firestore com sucesso!")
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e("FirestoreSync", "Erro ao salvar o Método de Pagamento no Firestore: ${e.message}", e)
-        }
+        // Envia sem esperar o servidor: já está salvo no Room e entra na fila de sincronização
+        remoteStore.set("paymentMethods", paymentMethodId, paymentMethodData)
     }
 
     override suspend fun updatePaymentMethod(paymentMethod: PaymentMethod) {
@@ -101,18 +112,8 @@ class RoomPaymentMethodRepository (
             "isArchived" to paymentMethod.isArchived
         )
 
-        try {
-            FirebaseFirestore.getInstance()
-                .collection("users")
-                .document(currentUserId)
-                .collection("paymentMethods")
-                .document(paymentMethod.id.toString())
-                .set(paymentMethodData)
-                .await()
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        // Envia sem esperar o servidor: já está salvo no Room e entra na fila de sincronização
+        remoteStore.set("paymentMethods", paymentMethod.id.toString(), paymentMethodData)
     }
 
     override suspend fun deletePaymentMethod(paymentMethod: PaymentMethod) {
@@ -132,18 +133,8 @@ class RoomPaymentMethodRepository (
             "isArchived" to archivedPaymentMethod.isArchived
         )
 
-        try {
-            FirebaseFirestore.getInstance()
-                .collection("users")
-                .document(currentUserId)
-                .collection("paymentMethods")
-                .document(archivedPaymentMethod.id)
-                .set(paymentMethodData)
-                .await()
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        // Envia sem esperar o servidor: já está salvo no Room e entra na fila de sincronização
+        remoteStore.set("paymentMethods", archivedPaymentMethod.id, paymentMethodData)
     }
 
     override suspend fun getPaymentMethodById(id: String): PaymentMethod? {
@@ -178,6 +169,8 @@ class RoomPaymentMethodRepository (
             }
 
             remotePaymentMethods.forEach { entity ->
+                // Alteração local ainda não enviada vence a versão da nuvem
+                if (remoteStore.isPending("paymentMethods", entity.id)) return@forEach
                 paymentMethodDao.insertPaymentMethod(entity)
             }
 

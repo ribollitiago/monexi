@@ -119,6 +119,17 @@ interface TransactionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransactions(transactions: List<TransactionEntity>)
 
+    //Todos os lançamentos do usuário, inclusive os excluídos (envio completo para a nuvem)
+    @Query("SELECT * FROM transactions WHERE userId = :userId")
+    suspend fun getAllTransactionsByUser(userId: String): List<TransactionEntity>
+
+    //Reparo: aponta os lançamentos para o id fixo da categoria/forma de pagamento padrão
+    @Query("UPDATE transactions SET categoryId = :newId, updatedAt = :now, syncStatus = 'PENDING_UPDATE' WHERE categoryId = :oldId")
+    suspend fun remapCategory(oldId: String, newId: String, now: Long)
+
+    @Query("UPDATE transactions SET paymentMethodId = :newId, updatedAt = :now, syncStatus = 'PENDING_UPDATE' WHERE paymentMethodId = :oldId")
+    suspend fun remapPaymentMethod(oldId: String, newId: String, now: Long)
+
     //Ocorrências de recorrência que o usuário excluiu (para não gerar/projetar de novo)
     @Query("""
         SELECT * FROM transactions

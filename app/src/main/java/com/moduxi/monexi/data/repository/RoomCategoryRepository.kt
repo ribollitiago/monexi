@@ -6,12 +6,14 @@ import com.moduxi.monexi.data.local.dao.CategoryDao
 import com.moduxi.monexi.data.local.entity.CategoryEntity
 import com.moduxi.monexi.data.local.mapper.toDomain
 import com.moduxi.monexi.data.local.mapper.toEntity
+import com.moduxi.monexi.data.sync.RemoteStore
 import com.moduxi.monexi.domain.model.category.Category
 import com.moduxi.monexi.domain.model.transaction.TransactionType
 import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.CategoryRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -19,8 +21,32 @@ import java.util.UUID
 
 class RoomCategoryRepository(
     private val categoryDao: CategoryDao,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val remoteStore: RemoteStore
 ) : CategoryRepository {
+
+    /** Envia as categorias personalizadas do usuário (as padrão têm id fixo e não vão para a nuvem). */
+    suspend fun pushAllLocal() {
+        val currentUserId = authRepository.currentUser?.uid ?: return
+        categoryDao.observeAllCategoriesByUser(currentUserId).first()
+            .filter { !it.isDefault && it.userId == currentUserId }
+            .forEach { entity ->
+                remoteStore.set(
+                    "categories",
+                    entity.id,
+                    hashMapOf(
+                        "id" to entity.id,
+                        "userId" to currentUserId,
+                        "name" to entity.name,
+                        "type" to entity.type,
+                        "isDefault" to false,
+                        "isArchived" to entity.isArchived,
+                        "colorHex" to entity.colorHex,
+                        "iconName" to entity.iconName
+                    )
+                )
+            }
+    }
 
     override val categories: Flow<List<Category>>
         get() {
@@ -74,20 +100,8 @@ class RoomCategoryRepository(
             "iconName" to category.iconName
         )
 
-        try {
-            FirebaseFirestore.getInstance()
-                .collection("users")
-                .document(currentUserId)
-                .collection("categories")
-                .document(categoryId)
-                .set(categoryData)
-                .await()
-
-            Log.d("FirestoreSync", "Categoria $categoryId salva no Firestore com sucesso!")
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e("FirestoreSync", "Erro ao salvar categoria no Firestore: ${e.message}", e)
-        }
+        // Envia sem esperar o servidor: já está salvo no Room e entra na fila de sincronização
+        remoteStore.set("categories", categoryId, categoryData)
     }
 
     override suspend fun updateCategory(category: Category){
@@ -108,18 +122,8 @@ class RoomCategoryRepository(
             "iconName" to category.iconName
         )
 
-        try {
-            FirebaseFirestore.getInstance()
-                .collection("users")
-                .document(currentUserId)
-                .collection("categories")
-                .document(category.id.toString())
-                .set(categoryData)
-                .await()
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        // Envia sem esperar o servidor: já está salvo no Room e entra na fila de sincronização
+        remoteStore.set("categories", category.id.toString(), categoryData)
     }
 
     override suspend fun deleteCategory(category: Category) {
@@ -135,27 +139,15 @@ class RoomCategoryRepository(
             "id" to archivedCategory.id,
             "userId" to archivedCategory.userId,
             "name" to archivedCategory.name,
-            "type" to archivedCategory.type,
+            "type" to archivedCategory.type.name,
             "isDefault" to archivedCategory.isDefault,
             "isArchived" to true,
             "colorHex" to archivedCategory.colorHex,
             "iconName" to archivedCategory.iconName
         )
 
-        try {
-            FirebaseFirestore.getInstance()
-                .collection("users")
-                .document(currentUserId)
-                .collection("categories")
-                .document(archivedCategory.id)
-                .set(categoryData)
-                .await()
-
-            Log.d("FirestoreSync", "Categoria ${archivedCategory.id} arquivada no Firestore com sucesso!")
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e("FirestoreSync", "Erro ao arquivar categoria no Firestore: ${e.message}", e)
-        }
+        // Envia sem esperar o servidor: já está salvo no Room e entra na fila de sincronização
+        remoteStore.set("categories", archivedCategory.id, categoryData)
     }
 
     override suspend fun getCategoryById(id: String): Category? {
@@ -201,6 +193,8 @@ class RoomCategoryRepository(
             }
 
             remoteCategories.forEach { entity ->
+                // Alteração local ainda não enviada vence a versão da nuvem
+                if (remoteStore.isPending("categories", entity.id)) return@forEach
                 categoryDao.insertCategory(entity)
             }
 

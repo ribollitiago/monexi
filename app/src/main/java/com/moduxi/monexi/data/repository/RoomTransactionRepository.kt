@@ -6,6 +6,7 @@ import com.moduxi.monexi.data.local.dao.TransactionDao
 import com.moduxi.monexi.data.local.entity.TransactionEntity
 import com.moduxi.monexi.data.local.mapper.toDomain
 import com.moduxi.monexi.data.local.mapper.toEntity
+import com.moduxi.monexi.data.sync.RemoteStore
 import com.moduxi.monexi.domain.model.transaction.SyncStatus
 import com.moduxi.monexi.domain.model.transaction.Transaction
 import com.moduxi.monexi.domain.repository.AuthRepository
@@ -21,12 +22,44 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
+/** Documento do lançamento no Firestore. */
+internal fun TransactionEntity.toRemoteMap(userId: String): HashMap<String, Any?> = hashMapOf(
+    "id" to id,
+    "userId" to userId,
+    "title" to title,
+    "amount" to amount,
+    "type" to type,
+    "categoryId" to categoryId,
+    "paymentMethodId" to paymentMethodId,
+    "date" to date,
+    "updatedAt" to updatedAt,
+    "deletedAt" to deletedAt,
+    "syncStatus" to syncStatus,
+    "remoteId" to remoteId,
+    "accountId" to accountId,
+    "creditCardId" to creditCardId,
+    "creditCardBillId" to creditCardBillId,
+    "installmentNumber" to installmentNumber,
+    "totalInstallments" to totalInstallments,
+    "installmentGroupId" to installmentGroupId,
+    "recurringTransactionId" to recurringTransactionId
+)
+
 class RoomTransactionRepository(
     private val transactionDao: TransactionDao,
     private val categoryRepository: CategoryRepository,
     private val paymentMethodRepository: PaymentMethodRepository,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val remoteStore: RemoteStore
 ) : TransactionRepository {
+
+    /** Envia todos os lançamentos locais do usuário, inclusive os excluídos (usado uma vez, para consertar dados antigos). */
+    suspend fun pushAllLocal() {
+        val currentUserId = authRepository.currentUser?.uid ?: return
+        transactionDao.getAllTransactionsByUser(currentUserId).forEach { entity ->
+            remoteStore.set("transactions", entity.id, entity.toRemoteMap(currentUserId))
+        }
+    }
 
     override val transactions: Flow<List<Transaction>> = combine(
         categoryRepository.allCategories,
@@ -123,20 +156,8 @@ class RoomTransactionRepository(
             "recurringTransactionId" to transaction.recurringTransactionId
         )
 
-        try {
-            FirebaseFirestore.getInstance()
-                .collection("users")
-                .document(currentUserId)
-                .collection("transactions")
-                .document(transaction.id)
-                .set(transactionData)
-                .await()
-
-            Log.d("FirestoreSync", "Transação ${transaction.id} salva no Firestore com sucesso!")
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e("FirestoreSync", "Erro ao salvar no Firestore: ${e.message}", e)
-        }
+        // Envia sem esperar o servidor: já está salvo no Room e entra na fila de sincronização
+        remoteStore.set("transactions", transaction.id, transactionData)
     }
 
     override suspend fun addTransactions(transactions: List<Transaction>) {
@@ -176,17 +197,8 @@ class RoomTransactionRepository(
             "recurringTransactionId" to transaction.recurringTransactionId
         )
 
-        try {
-            FirebaseFirestore.getInstance()
-                .collection("users")
-                .document(currentUserId)
-                .collection("transactions")
-                .document(transaction.id)
-                .set(transactionData)
-                .await()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        // Envia sem esperar o servidor: já está salvo no Room e entra na fila de sincronização
+        remoteStore.set("transactions", transaction.id, transactionData)
     }
 
     override suspend fun deleteTransaction(transaction: Transaction) {
@@ -215,17 +227,8 @@ class RoomTransactionRepository(
             "recurringTransactionId" to transaction.recurringTransactionId
         )
 
-        try {
-            FirebaseFirestore.getInstance()
-                .collection("users")
-                .document(currentUserId)
-                .collection("transactions")
-                .document(transaction.id)
-                .set(transactionData)
-                .await()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        // Envia sem esperar o servidor: já está salvo no Room e entra na fila de sincronização
+        remoteStore.set("transactions", transaction.id, transactionData)
     }
 
     override suspend fun deleteInstallmentGroup(groupId: String) {
@@ -238,21 +241,8 @@ class RoomTransactionRepository(
         transactionDao.softDeleteTransactionsByGroup(currentUserId, groupId, now, syncStatus)
 
         groupEntities.forEach { entity ->
-            val updatedData = hashMapOf<String, Any?>(
-                "deletedAt" to now,
-                "syncStatus" to syncStatus
-            )
-            try {
-                FirebaseFirestore.getInstance()
-                    .collection("users")
-                    .document(currentUserId)
-                    .collection("transactions")
-                    .document(entity.id)
-                    .update(updatedData)
-                    .await()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            val deleted = entity.copy(deletedAt = now, syncStatus = syncStatus)
+            remoteStore.set("transactions", deleted.id, deleted.toRemoteMap(currentUserId))
         }
     }
 
@@ -281,20 +271,35 @@ class RoomTransactionRepository(
 
             val localTransactions = transactionDao.observeTransactionsByUser(currentUserId).first()
 
-            localTransactions.forEach { localEntity ->
-                if (localEntity.id !in remoteIds && localEntity.syncStatus == SyncStatus.SYNCED.name) {
-                    transactionDao.deleteTransaction(localEntity)
+            // Só remove o que sumiu da nuvem quando a resposta veio do servidor (o cache offline
+            // pode estar incompleto) e não há envio pendente daquele lançamento
+            if (!snapshot.metadata.isFromCache) {
+                localTransactions.forEach { localEntity ->
+                    if (localEntity.id !in remoteIds &&
+                        localEntity.syncStatus == SyncStatus.SYNCED.name &&
+                        !remoteStore.isPending("transactions", localEntity.id)
+                    ) {
+                        transactionDao.deleteTransaction(localEntity)
+                    }
                 }
             }
+
+            val convertedIds = mutableSetOf<String>()
 
             val remoteEntities = snapshot.documents.mapNotNull { doc ->
                 val title = doc.getString("title") ?: return@mapNotNull null
                 val amount = (doc.get("amount") as? Number)?.toDouble() ?: 0.0
                 val type = doc.getString("type") ?: "EXPENSE"
-                val categoryId = doc.getString("categoryId") ?: ""
-                val paymentMethodId = doc.getString("paymentMethodId") ?: ""
+                // Ids antigos (aleatórios) das categorias/formas padrão viram os ids fixos
+                val remoteCategoryId = doc.getString("categoryId") ?: ""
+                val remotePaymentMethodId = doc.getString("paymentMethodId") ?: ""
+                val categoryId = remoteStore.resolveLegacyId(remoteCategoryId)
+                val paymentMethodId = remoteStore.resolveLegacyId(remotePaymentMethodId)
                 val date = (doc.get("date") as? Number)?.toLong() ?: System.currentTimeMillis()
                 val transactionId = doc.getString("id") ?: doc.id
+                if (categoryId != remoteCategoryId || paymentMethodId != remotePaymentMethodId) {
+                    convertedIds.add(transactionId)
+                }
                 val updatedAt = (doc.get("updatedAt") as? Number)?.toLong() ?: System.currentTimeMillis()
                 val deletedAt = (doc.get("deletedAt") as? Number)?.toLong()
                 val syncStatus = doc.getString("syncStatus") ?: SyncStatus.SYNCED.name
@@ -332,7 +337,19 @@ class RoomTransactionRepository(
             }
 
             remoteEntities.forEach { entity ->
+                // Alteração local ainda não enviada vence a versão da nuvem
+                if (remoteStore.isPending("transactions", entity.id)) return@forEach
+
+                // Conflito: fica a edição mais recente
+                val local = transactionDao.getTransactionById(entity.id)
+                if (local != null && local.updatedAt > entity.updatedAt) return@forEach
+
                 transactionDao.insertTransaction(entity)
+
+                // Devolve para a nuvem o documento já com os ids fixos
+                if (entity.id in convertedIds) {
+                    remoteStore.set("transactions", entity.id, entity.toRemoteMap(currentUserId))
+                }
             }
 
             Result.success(Unit)

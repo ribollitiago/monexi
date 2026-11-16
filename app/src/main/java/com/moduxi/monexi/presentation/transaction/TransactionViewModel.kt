@@ -29,6 +29,8 @@ import com.moduxi.monexi.domain.usecase.CalculateAccountBalanceUseCase
 import com.moduxi.monexi.domain.usecase.GenerateRecurringTransactionsUseCase
 import com.moduxi.monexi.domain.usecase.firstNonCredit
 import com.moduxi.monexi.domain.usecase.isCompatibleWith
+import com.moduxi.monexi.domain.usecase.occurrenceId
+import com.moduxi.monexi.data.local.mapper.MISSING_CATEGORY_NAME
 import com.moduxi.monexi.domain.usecase.isCredit
 import com.moduxi.monexi.domain.usecase.isValidFor
 import com.moduxi.monexi.domain.usecase.resolvePaymentMethod
@@ -407,7 +409,9 @@ class TransactionViewModel(
                 recurringDayOfMonth = linkedRecurring?.dayOfMonth ?: formState.value.recurringDayOfMonth,
                 isRecurringInfinite = linkedRecurring?.endDate == null,
                 recurringEndDateMillis = linkedRecurring?.endDate,
-                selectedCategory = transaction.category,
+                // "Sem categoria" (categoria que não existe neste aparelho) não é selecionável:
+                // o formulário cai na primeira categoria válida
+                selectedCategory = transaction.category.takeIf { it.name != MISSING_CATEGORY_NAME },
                 selectedPaymentMethod = paymentMethod,
                 selectedAccount = transaction.accountId?.let { id -> accountsList.firstOrNull { it.id == id } },
                 selectedCreditCard = transaction.creditCardId?.let { id -> creditCardsList.firstOrNull { it.id == id } },
@@ -522,9 +526,15 @@ class TransactionViewModel(
                 val paymentMethod = recurring.resolvePaymentMethod(paymentMethodRepository.allPaymentMethods.first())
 
                 if (category != null && paymentMethod != null) {
+                    val occurrenceCal = Calendar.getInstance().apply { timeInMillis = occurrenceDate }
                     transactionRepository.addTransaction(
                         Transaction(
-                            id = UUID.randomUUID().toString(),
+                            // mesmo id que o lançamento teria se fosse gerado
+                            id = occurrenceId(
+                                recurring.id,
+                                occurrenceCal.get(Calendar.YEAR),
+                                occurrenceCal.get(Calendar.MONTH)
+                            ),
                             userId = authRepository.currentUser?.uid ?: "",
                             title = recurring.title,
                             amount = recurring.amount,

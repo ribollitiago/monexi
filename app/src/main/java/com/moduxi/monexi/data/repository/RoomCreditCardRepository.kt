@@ -7,11 +7,13 @@ import com.moduxi.monexi.data.local.dao.TransactionDao
 import com.moduxi.monexi.data.local.entity.CreditCardEntity
 import com.moduxi.monexi.data.local.mapper.toDomain
 import com.moduxi.monexi.data.local.mapper.toEntity
+import com.moduxi.monexi.data.sync.RemoteStore
 import com.moduxi.monexi.domain.model.creditcard.CreditCard
 import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.CreditCardRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
@@ -20,8 +22,32 @@ import java.util.UUID
 class RoomCreditCardRepository(
     private val creditCardDao: CreditCardDao,
     private val transactionDao: TransactionDao,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val remoteStore: RemoteStore
 ) : CreditCardRepository {
+
+    /** Envia todos os cartões locais do usuário (usado uma vez, para consertar dados antigos). */
+    suspend fun pushAllLocal() {
+        val currentUserId = authRepository.currentUser?.uid ?: return
+        creditCardDao.observeAllCreditCardsByUser(currentUserId).first().forEach { entity ->
+            remoteStore.set(
+                "creditCards",
+                entity.id,
+                hashMapOf(
+                    "id" to entity.id,
+                    "userId" to currentUserId,
+                    "name" to entity.name,
+                    "limitAmount" to entity.limitAmount,
+                    "closingDay" to entity.closingDay,
+                    "dueDay" to entity.dueDay,
+                    "colorHex" to entity.colorHex,
+                    "iconName" to entity.iconName,
+                    "isArchived" to entity.isArchived,
+                    "linkedAccountId" to entity.linkedAccountId
+                )
+            )
+        }
+    }
 
     override val creditCards: Flow<List<CreditCard>>
         get() {
@@ -77,20 +103,8 @@ class RoomCreditCardRepository(
             "linkedAccountId" to creditCard.linkedAccountId
         )
 
-        try {
-            FirebaseFirestore.getInstance()
-                .collection("users")
-                .document(currentUserId)
-                .collection("creditCards")
-                .document(creditCardId)
-                .set(cardData)
-                .await()
-
-            Log.d("FirestoreSync", "Cartão $creditCardId salvo no Firestore com sucesso!")
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e("FirestoreSync", "Erro ao salvar cartão no Firestore: ${e.message}", e)
-        }
+        // Envia sem esperar o servidor: já está salvo no Room e entra na fila de sincronização
+        remoteStore.set("creditCards", creditCardId, cardData)
     }
 
     override suspend fun updateCreditCard(creditCard: CreditCard) {
@@ -111,20 +125,8 @@ class RoomCreditCardRepository(
             "linkedAccountId" to creditCard.linkedAccountId
         )
 
-        try {
-            FirebaseFirestore.getInstance()
-                .collection("users")
-                .document(currentUserId)
-                .collection("creditCards")
-                .document(creditCard.id)
-                .set(cardData)
-                .await()
-
-            Log.d("FirestoreSync", "Cartão ${creditCard.id} atualizado no Firestore com sucesso!")
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e("FirestoreSync", "Erro ao atualizar cartão no Firestore: ${e.message}", e)
-        }
+        // Envia sem esperar o servidor: já está salvo no Room e entra na fila de sincronização
+        remoteStore.set("creditCards", creditCard.id, cardData)
     }
 
     override suspend fun deleteCreditCard(creditCard: CreditCard) {
@@ -147,20 +149,8 @@ class RoomCreditCardRepository(
             "linkedAccountId" to archivedCard.linkedAccountId
         )
 
-        try {
-            FirebaseFirestore.getInstance()
-                .collection("users")
-                .document(currentUserId)
-                .collection("creditCards")
-                .document(archivedCard.id)
-                .set(cardData)
-                .await()
-
-            Log.d("FirestoreSync", "Cartão ${archivedCard.id} arquivado no Firestore com sucesso!")
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e("FirestoreSync", "Erro ao arquivar cartão no Firestore: ${e.message}", e)
-        }
+        // Envia sem esperar o servidor: já está salvo no Room e entra na fila de sincronização
+        remoteStore.set("creditCards", archivedCard.id, cardData)
     }
 
     override suspend fun getCreditCardById(id: String): CreditCard? {
@@ -205,6 +195,8 @@ class RoomCreditCardRepository(
             }
 
             remoteCards.forEach { entity ->
+                // Alteração local ainda não enviada vence a versão da nuvem
+                if (remoteStore.isPending("creditCards", entity.id)) return@forEach
                 creditCardDao.insertCreditCard(entity)
             }
 

@@ -112,7 +112,8 @@ fun TransactionScreen(
                     pm.name.contains("Transferência", ignoreCase = true)
             val hasCreditCard = uiState.creditCards.isNotEmpty()
             val hasBankAccount = uiState.accounts.any { pm.isCompatibleWith(it.type) }
-            val hasAnyAccount = uiState.accounts.any { pm.isCompatibleWith(it.type) }
+            // Crédito usa cartão, não conta: não entra na checagem de conta compatível
+            val hasAnyAccount = isCredit || uiState.accounts.any { pm.isCompatibleWith(it.type) }
 
             if (isCredit && !hasCreditCard) {
                 showNoCreditCardsDialog = true

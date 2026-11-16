@@ -31,7 +31,7 @@ import kotlinx.coroutines.launch
         CreditCardEntity::class,
         RecurringTransactionEntity::class
     ],
-    version = 12,
+    version = 13,
     exportSchema = false
 )
 abstract class MonexiDatabase : RoomDatabase() {
@@ -46,12 +46,6 @@ abstract class MonexiDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: MonexiDatabase? = null
 
-        // Id fixo: também é criado na abertura do app para instalações antigas (ver MonexiApplication)
-        val BENEFITS_VOUCHER_PAYMENT_METHOD = PaymentMethodEntity(
-            id = "default_benefits_voucher",
-            name = "Vale Refeição / Alimentação",
-            isDefault = true
-        )
 
         private val databaseCallback = object : RoomDatabase.Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
@@ -59,40 +53,10 @@ abstract class MonexiDatabase : RoomDatabase() {
 
                 CoroutineScope(Dispatchers.IO).launch {
                     INSTANCE?.let { database ->
-                        val categoryDao = database.categoryDao()
-                        categoryDao.insertCategories(
-                            listOf(
-                                CategoryEntity(name = "Alimentação", type = TransactionType.EXPENSE.name, isDefault = true, iconName = "Restaurant", colorHex = "#E53935"),
-                                CategoryEntity(name = "Transporte", type = TransactionType.EXPENSE.name, isDefault = true, iconName = "DirectionsCar", colorHex = "#1E88E5"),
-                                CategoryEntity(name = "Casa", type = TransactionType.EXPENSE.name, isDefault = true, iconName = "Home", colorHex = "#8E24AA"),
-                                CategoryEntity(name = "Saúde", type = TransactionType.EXPENSE.name, isDefault = true, iconName = "MedicalServices", colorHex = "#00ACC1"),
-                                CategoryEntity(name = "Fatura de Cartão", type = TransactionType.EXPENSE.name, isDefault = true, iconName = "AttachMoney", colorHex = "#FB8C00"),
-                                CategoryEntity(name = "Salário", type = TransactionType.INCOME.name, isDefault = true, iconName = "Work", colorHex = "#43A047"),
-                                CategoryEntity(name = "Freelance", type = TransactionType.INCOME.name, isDefault = true, iconName = "AttachMoney", colorHex = "#FB8C00"),
-                                CategoryEntity(name = "Investimentos", type = TransactionType.INCOME.name, isDefault = true, iconName = "AttachMoney", colorHex = "#3949AB")
-                            )
-                        )
-                        val paymentMethodDao = database.paymentMethodDao()
-                        paymentMethodDao.insertPaymentMethods(
-                            listOf(
-                                PaymentMethodEntity(name = "Pix", isDefault = true),
-                                PaymentMethodEntity(name = "Dinheiro", isDefault = true),
-                                PaymentMethodEntity(name = "Transferência Bancária", isDefault = true),
-                                PaymentMethodEntity(name = "Cartão de Débito", isDefault = true),
-                                PaymentMethodEntity(name = "Cartão de Crédito", isDefault = true),
-                                BENEFITS_VOUCHER_PAYMENT_METHOD
-                            )
-                        )
-                        val accountDao = database.accountDao()
-                        accountDao.insertAccount(
-                            AccountEntity(
-                                name = "Carteira",
-                                initialBalance = 0.0,
-                                colorHex = "#43A047",
-                                iconName = "AttachMoney",
-                                type = com.moduxi.monexi.domain.model.account.AccountType.CASH
-                            )
-                        )
+                        // Ids fixos (ver DefaultData): os mesmos em qualquer instalação
+                        database.categoryDao().insertCategories(DefaultData.categories)
+                        database.paymentMethodDao().insertPaymentMethods(DefaultData.paymentMethods)
+                        // A conta "Carteira" é criada por usuário em AccountRepository.ensureDefaultAccount()
                     }
                 }
             }

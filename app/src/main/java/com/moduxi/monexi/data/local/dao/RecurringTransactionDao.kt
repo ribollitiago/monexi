@@ -27,6 +27,13 @@ interface RecurringTransactionDao {
     @Delete
     suspend fun deleteRecurringTransaction(recurringTransaction: RecurringTransactionEntity)
 
+    //Reparo: aponta as recorrências para o id fixo da categoria/forma de pagamento padrão
+    @Query("UPDATE recurring_transactions SET categoryId = :newId WHERE categoryId = :oldId")
+    suspend fun remapCategory(oldId: String, newId: String)
+
+    @Query("UPDATE recurring_transactions SET paymentMethodId = :newId WHERE paymentMethodId = :oldId")
+    suspend fun remapPaymentMethod(oldId: String, newId: String)
+
     @Query("SELECT * FROM recurring_transactions WHERE id = :id")
     suspend fun getRecurringTransactionById(id: String): RecurringTransactionEntity?
 }

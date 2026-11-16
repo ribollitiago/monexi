@@ -11,4 +11,5 @@ interface RecurringTransactionRepository {
     suspend fun updateRecurringTransaction(recurringTransaction: RecurringTransaction)
     suspend fun deleteRecurringTransaction(recurringTransaction: RecurringTransaction, deletePastHistory: Boolean)
     suspend fun getRecurringTransactionById(id: String): RecurringTransaction?
+    suspend fun syncFromRemote(): Result<Unit>
 }

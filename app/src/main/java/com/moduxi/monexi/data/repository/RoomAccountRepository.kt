@@ -2,10 +2,12 @@ package com.moduxi.monexi.data.repository
 
 import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
+import com.moduxi.monexi.data.local.DefaultData
 import com.moduxi.monexi.data.local.dao.AccountDao
 import com.moduxi.monexi.data.local.entity.AccountEntity
 import com.moduxi.monexi.data.local.mapper.toDomain
 import com.moduxi.monexi.data.local.mapper.toEntity
+import com.moduxi.monexi.data.sync.RemoteStore
 import com.moduxi.monexi.domain.model.account.Account
 import com.moduxi.monexi.domain.model.account.AccountType
 import com.moduxi.monexi.domain.repository.AccountRepository
@@ -20,8 +22,29 @@ import java.util.UUID
 
 class RoomAccountRepository(
     private val accountDao: AccountDao,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val remoteStore: RemoteStore
 ) : AccountRepository {
+
+    private fun AccountEntity.toRemoteMap(userId: String): HashMap<String, Any?> = hashMapOf(
+        "id" to id,
+        "userId" to userId,
+        "name" to name,
+        "initialBalance" to initialBalance,
+        "colorHex" to colorHex,
+        "iconName" to iconName,
+        "isArchived" to isArchived,
+        "type" to type.name,
+        "excludeFromTotal" to excludeFromTotal
+    )
+
+    /** Envia todas as contas locais do usuário (usado uma vez, para consertar dados antigos). */
+    suspend fun pushAllLocal() {
+        val currentUserId = authRepository.currentUser?.uid ?: return
+        accountDao.observeAllAccountsByUser(currentUserId).first().forEach { entity ->
+            remoteStore.set("accounts", entity.id, entity.toRemoteMap(currentUserId))
+        }
+    }
 
     override val accounts: Flow<List<Account>>
         get() {
@@ -52,7 +75,9 @@ class RoomAccountRepository(
         if (currentUserId.isEmpty()) return
         val list = accountDao.observeAllAccountsByUser(currentUserId).first()
         if (list.isEmpty()) {
+            // Id fixo por usuário e enviada para a nuvem: antes era só local, com id novo a cada instalação
             val defaultAccount = AccountEntity(
+                id = DefaultData.walletAccountId(currentUserId),
                 userId = currentUserId,
                 name = "Carteira",
                 initialBalance = 0.0,
@@ -61,6 +86,7 @@ class RoomAccountRepository(
                 type = AccountType.CASH
             )
             accountDao.insertAccount(defaultAccount)
+            remoteStore.set("accounts", defaultAccount.id, defaultAccount.toRemoteMap(currentUserId))
         }
     }
 
@@ -89,23 +115,12 @@ class RoomAccountRepository(
             "colorHex" to account.colorHex,
             "iconName" to account.iconName,
             "isArchived" to account.isArchived,
-            "type" to account.type.name
+            "type" to account.type.name,
+            "excludeFromTotal" to account.excludeFromTotal
         )
 
-        try {
-            FirebaseFirestore.getInstance()
-                .collection("users")
-                .document(currentUserId)
-                .collection("accounts")
-                .document(accountId)
-                .set(accountData)
-                .await()
-
-            Log.d("FirestoreSync", "Conta $accountId salva no Firestore com sucesso!")
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e("FirestoreSync", "Erro ao salvar conta no Firestore: ${e.message}", e)
-        }
+        // Envia sem esperar o servidor: já está salvo no Room e entra na fila de sincronização
+        remoteStore.set("accounts", accountId, accountData)
     }
 
     override suspend fun updateAccount(account: Account) {
@@ -121,23 +136,12 @@ class RoomAccountRepository(
             "colorHex" to account.colorHex,
             "iconName" to account.iconName,
             "isArchived" to account.isArchived,
-            "type" to account.type.name
+            "type" to account.type.name,
+            "excludeFromTotal" to account.excludeFromTotal
         )
 
-        try {
-            FirebaseFirestore.getInstance()
-                .collection("users")
-                .document(currentUserId)
-                .collection("accounts")
-                .document(account.id)
-                .set(accountData)
-                .await()
-
-            Log.d("FirestoreSync", "Conta ${account.id} atualizada no Firestore com sucesso!")
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e("FirestoreSync", "Erro ao atualizar conta no Firestore: ${e.message}", e)
-        }
+        // Envia sem esperar o servidor: já está salvo no Room e entra na fila de sincronização
+        remoteStore.set("accounts", account.id, accountData)
     }
 
     override suspend fun deleteAccount(account: Account) {
@@ -155,23 +159,12 @@ class RoomAccountRepository(
             "colorHex" to archivedAccount.colorHex,
             "iconName" to archivedAccount.iconName,
             "isArchived" to true,
-            "type" to archivedAccount.type.name
+            "type" to archivedAccount.type.name,
+            "excludeFromTotal" to archivedAccount.excludeFromTotal
         )
 
-        try {
-            FirebaseFirestore.getInstance()
-                .collection("users")
-                .document(currentUserId)
-                .collection("accounts")
-                .document(archivedAccount.id)
-                .set(accountData)
-                .await()
-
-            Log.d("FirestoreSync", "Conta ${archivedAccount.id} arquivada no Firestore com sucesso!")
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Log.e("FirestoreSync", "Erro ao arquivar conta no Firestore: ${e.message}", e)
-        }
+        // Envia sem esperar o servidor: já está salvo no Room e entra na fila de sincronização
+        remoteStore.set("accounts", archivedAccount.id, accountData)
     }
 
     override suspend fun getAccountById(id: String): Account? {
@@ -205,6 +198,11 @@ class RoomAccountRepository(
                     AccountType.CHECKING
                 }
 
+                // Documentos antigos não têm este campo: nesse caso mantém o valor local
+                val excludeFromTotal = doc.getBoolean("excludeFromTotal")
+                    ?: accountDao.getAccountById(accountId)?.excludeFromTotal
+                    ?: false
+
                 AccountEntity(
                     id = accountId,
                     userId = currentUserId,
@@ -213,11 +211,14 @@ class RoomAccountRepository(
                     colorHex = colorHex,
                     iconName = iconName,
                     isArchived = isArchived,
-                    type = type
+                    type = type,
+                    excludeFromTotal = excludeFromTotal
                 )
             }
 
             remoteAccounts.forEach { entity ->
+                // Alteração local ainda não enviada vence a versão da nuvem
+                if (remoteStore.isPending("accounts", entity.id)) return@forEach
                 accountDao.insertAccount(entity)
             }
 

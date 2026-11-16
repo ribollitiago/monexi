@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
+import com.moduxi.monexi.data.sync.SyncManager
 import com.moduxi.monexi.domain.repository.AccountRepository
 import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.CategoryRepository
@@ -23,7 +24,8 @@ class LoginViewModel(
     private val categoryRepository: CategoryRepository,
     private val paymentMethodRepository: PaymentMethodRepository,
     private val accountRepository: AccountRepository,
-    private val creditCardRepository: CreditCardRepository
+    private val creditCardRepository: CreditCardRepository,
+    private val syncManager: SyncManager
 ) : ViewModel() {
 
     var uiState by mutableStateOf(LoginUiState())
@@ -49,12 +51,8 @@ class LoginViewModel(
             val result = authRepository.login(uiState.email, uiState.password)
 
             result.onSuccess {
-                categoryRepository.syncFromRemote()
-                paymentMethodRepository.syncFromRemote()
-                accountRepository.syncFromRemote()
-                accountRepository.ensureDefaultAccount()
-                creditCardRepository.syncFromRemote()
-                transactionRepository.syncFromRemote()
+                // Sincronização completa e em ordem (inclui recorrências e a conta padrão)
+                syncManager.syncAll(force = true)
 
                 uiState = uiState.copy(
                     isLoading = false,
@@ -83,7 +81,8 @@ class LoginViewModel(
                     categoryRepository = application.categoryRepository,
                     paymentMethodRepository = application.paymentMethodRepository,
                     accountRepository = application.accountRepository,
-                    creditCardRepository = application.creditCardRepository
+                    creditCardRepository = application.creditCardRepository,
+                    syncManager = application.syncManager
                 )
             }
         }

@@ -10,6 +10,10 @@ import kotlinx.coroutines.flow.first
 import java.util.Calendar
 import java.util.UUID
 
+/** Id do lançamento de uma recorrência em um mês (month = Calendar.MONTH, 0 = janeiro). */
+fun occurrenceId(recurringId: String, year: Int, month: Int): String =
+    "rec_${recurringId}_${year}_${(month + 1).toString().padStart(2, '0')}"
+
 class GenerateRecurringTransactionsUseCase(
     private val recurringTransactionRepository: RecurringTransactionRepository,
     private val transactionRepository: TransactionRepository,
@@ -99,7 +103,8 @@ class GenerateRecurringTransactionsUseCase(
                     val paymentMethod = recurring.resolvePaymentMethod(paymentMethods) ?: return@forEach
 
                     val newTransaction = Transaction(
-                        id = UUID.randomUUID().toString(),
+                        // Id determinístico: dois aparelhos gerando o mesmo mês criam o mesmo documento
+                        id = occurrenceId(recurring.id, currentYear, currentMonth),
                         userId = userId,
                         title = recurring.title,
                         amount = recurring.amount,
