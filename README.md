@@ -16,18 +16,27 @@ Confira a demonstração prática das funcionalidades do Monexi v1.0.1:
 
 ---
 
-## 🚀 Novidades da Versão v1.0.1
+## 🚀 Novidades da Versão v1.1.0
 
-- 🔑 **Recuperação de Senha com Firebase Auth:** Tela de solicitação de e-mail de redefinição de senha (`ForgotPasswordScreen`) conectada ao link *"Esqueceu a senha?"* da tela de Login.
-- 💳 **Gestão Avançada de Faturas e Status de Cartão:**
-  - Status de faturas com badges coloridas: **Aberta** (azul), **Fechada** (laranja), **Parcialmente Paga** (azul claro), **Paga** (verde) e **Futura** (cinza).
-  - Cálculo de ciclo de corte por dia de fechamento (`closingDay`) e vencimento (`dueDay`).
-  - Opções para pagamento de fatura fechada e antecipação de saldo aberto.
-  - Acesso direto à edição do cartão pelo ícone no cabeçalho das faturas.
-- 🗑️ **Exclusão de Compras Parceladas:** Diálogo de confirmação para escolher entre *"Excluir apenas esta parcela"* ou *"Excluir todas as parcelas"* da compra.
-- 📊 **Ajuste Fino nos Gráficos e Extrato:**
-  - Remoção de duplicidade na categoria do gráfico da Home ao quitar faturas.
-  - Correção do tamanho e altura dos cards de lançamentos no extrato (`ExtractScreen`).
+- 👋 **Onboarding Pós-Cadastro:** Tela inicial de configuração exibida logo após o registro.
+- 📅 **Lançamentos Agendados no Extrato:**
+  - Recorrências ainda não lançadas aparecem com a tag **Agendado** no mês atual e nos seguintes.
+  - Card compacto *"Agendados neste mês"* com despesas, receitas e transferências; cada um abre o extrato filtrado.
+- 🔄 **Recorrências Mais Flexíveis:**
+  - Edição da recorrência pela tela de Lançamentos Recorrentes ou por um agendado do extrato.
+  - Ao alterar: *"Alterar apenas este lançamento"* ou *"Alterar este e os próximos"*.
+  - Ao excluir: *"Excluir apenas este lançamento"* ou *"Excluir todos os lançamentos agendados"*.
+- ⇄ **Edição de Transferências:** Abre como transferência (origem, destino, valor e data) e atualiza ou exclui a saída e a entrada juntas.
+- 💳 **Formas de Pagamento Coerentes com a Conta:**
+  - Nova forma **Vale Refeição / Alimentação**, exclusiva das contas de vale-benefício.
+  - *Dinheiro* só com a carteira; *Débito*, *Pix* e *Transferência* só com contas que não são carteira.
+  - Em receitas, a conta escolhida define a forma de pagamento.
+- ☁️ **Sincronização Offline-First:**
+  - Salvar não espera o servidor: grava no Room e entra em uma fila persistente de envio.
+  - Sincronização completa e em ordem no login e na abertura do app, incluindo recorrências.
+  - Ids fixos para categorias e formas de pagamento padrão, com reparo automático de instalações antigas.
+- 🏠 **Home:** Cards de contas bancárias e cartões de crédito clicáveis.
+- 🐞 **Correções:** forma de pagamento das recorrências, lançamentos recorrentes duplicados ou recriados após exclusão, data salva um dia antes e seleção de cartão de crédito.
 
 ---
 
@@ -44,31 +53,38 @@ Projeto em constante evolução. **Recursos já implementados:**
 - 📜 **Tela de Extrato / Lançamentos (`ExtractScreen`):**
   - Lista completa de lançamentos com **Seletor de Mês**.
   - **Busca em tempo real** por descrição, categoria, valor formatado (`R$`) ou número.
-  - **Filtros rápidos:** *Todos*, *Entrada* (Receita) e *Saída* (Despesa).
+  - **Filtros rápidos:** *Todos*, *Entradas*, *Contas*, *Cartões* e *Faturas Pagas*.
+  - **Agendados:** recorrências futuras com a tag *Agendado*, card de resumo e extrato filtrado por tipo.
+  - Cores por situação: verde para receita, vermelho para despesa paga e azul para fatura de cartão e agendados.
   - Formatação de data em português (`dd/MM/yyyy`).
 - 💳 **Lançamentos & Transferências (`TransactionScreen`):**
   - Criação e edição de receitas, despesas e **Transferências entre Contas** com validação em tempo real de saldo disponível na conta de origem.
+  - **Forma de pagamento x conta:** a lista de contas respeita a forma de pagamento escolhida (e, em receitas, a conta define a forma de pagamento).
   - **Validação de Saldo e Limite:** Travas automáticas para impedir despesas acima do saldo da conta bancária ou acima do limite disponível no cartão de crédito.
   - Compras parceladas no Cartão de Crédito (de 1x até 12x com distribuição automática nas faturas).
 - 🏦 **Contas Bancárias e Múltiplas Carteiras (`BankAccountScreen`):**
   - Gestão de contas por tipo (*Conta Corrente*, *Conta Poupança*, *Vale Alimentação/Refeição*, *Investimentos*, *Dinheiro/Carteira*).
-  - Conta padrão `"Carteira"` criada automaticamente na instalação.
+  - Conta padrão `"Carteira"` criada automaticamente para cada usuário e sincronizada com a nuvem.
   - **Extrato Específico da Conta (`BankAccountStatementScreen`):** Histórico de transações exclusivo de cada conta com saldo atualizado e botão de edição rápido no header.
 - 💳 **Cartões de Crédito & Faturas (`CreditCardScreen`):**
   - Cadastro de cartões com controle de limite, dia de fechamento e dia de vencimento.
   - Visualização de Faturas mensais e listagem de lançamentos da fatura.
   - **Pagamento de Fatura:** Diálogo de confirmação para quitar a fatura debitando o saldo de uma conta bancária e registrando na categoria fixa `"Fatura de Cartão"`.
 - 🔄 **Lançamentos Recorrentes & Assinaturas (`RecurringTransactionsScreen`):**
-  - Cadastro de despesas, receitas ou transferências recorrentes mensais (ex: Aluguel, Netflix, Salário).
+  - Cadastro de despesas e receitas recorrentes mensais (ex: Aluguel, Netflix, Salário).
   - Configuração de dia de repetição e duração (Infinito ou até data final).
-  - Geração automática dos lançamentos no extrato e opção avançada de exclusão (*"Apenas as futuras"* vs *"Excluir tudo"*).
+  - Geração automática dos lançamentos no extrato e projeção dos próximos meses como *Agendado*.
+  - Edição da recorrência e escolha do alcance ao alterar ou excluir (*apenas este* ou *este e os próximos*).
 - 🎨 **Categorias com Cores e Ícones Personalizados (`EditCategoriesScreen`):**
   - Tela dedicada para criar e editar categorias.
   - Seletor de cores em paleta de bolinhas e catálogo de ícones do Material Design.
 - 📂 **Arquivamento e Desarquivamento:**
   - Telas de itens arquivados (`ArchivedCategoriesScreen`, `ArchivedBankAccountScreen`, `ArchivedCreditCardScreen`) para restaurar ou consultar itens desativados sem apagar histórico.
-- ☁️ **Sincronização em Nuvem (Firebase Firestore):**
-  - Sincronização em background entre o banco local (Room) e o banco na nuvem (Firestore) por usuário autenticado.
+- 👋 **Onboarding (`OnboardingScreen`):** Configuração inicial da conta logo após o cadastro.
+- ☁️ **Sincronização Offline-First (Firebase Firestore):**
+  - O Room é a fonte de dados do app; o Firestore é o backup e a ponte entre aparelhos, por usuário autenticado.
+  - Escrita sem bloqueio com fila persistente de reenvio (`SyncOutbox` / `RemoteStore`).
+  - Sincronização completa e em ordem no login e na abertura (`SyncManager`); nos lançamentos, vence a edição mais recente.
 - 🌙 **Tema Claro e Escuro:** Gerenciado com `ThemeManager` e persistido via **DataStore Preferences**.
 
 ---
@@ -91,11 +107,13 @@ Projeto em constante evolução. **Recursos já implementados:**
 O projeto segue uma arquitetura inspirada nos princípios do **Clean Architecture** e **MVVM**:
 
 ```text
-UI Compose -> ViewModel -> Repository Interface -> Room Repository / Firestore -> Room Database / Cloud Firestore
+UI Compose -> ViewModel -> Repository Interface -> Room Repository -> Room Database
+                                                        └-> RemoteStore (fila) -> Cloud Firestore
 ```
 
 - **Domain:** Isolar modelos do negócio (`Transaction`, `Category`, `Account`, `CreditCard`, `RecurringTransaction`) livres de anotações do banco de dados.
 - **Data:** Mappers convertem bidirecionalmente entre `Entity` (Room), documentos do Firestore e modelos de `Domain`.
+- **Sync:** `SyncManager` orquestra o download em ordem e o reenvio de pendentes; `RemoteStore` envia ao Firestore sem bloquear a UI.
 - **Presentation:** ViewModels expõem um único `StateFlow<UiState>` imutável reativo para a UI Compose.
 
 ---
@@ -109,8 +127,10 @@ app/src/main/java/com/moduxi/monexi
 ├── data
 │   ├── local
 │   │   ├── MonexiDatabase.kt
+│   │   ├── DefaultData.kt
 │   │   └── dao / entity / mapper
-│   └── repository
+│   ├── repository
+│   └── sync
 ├── domain
 │   ├── model
 │   ├── repository
@@ -120,6 +140,7 @@ app/src/main/java/com/moduxi/monexi
 │   ├── extract
 │   ├── home
 │   ├── navigation
+│   ├── onboarding
 │   ├── settings
 │   │   ├── accounts
 │   │   ├── categories
@@ -127,6 +148,7 @@ app/src/main/java/com/moduxi/monexi
 │   │   └── recurring
 │   └── transaction
 └── ui
+    ├── components
     └── theme
 ```
 
@@ -135,12 +157,15 @@ app/src/main/java/com/moduxi/monexi
 ## 🚦 Rotas de Navegação (`AppNavigation`)
 
 ```text
+splash                                  -> Decide entre login, onboarding e home
 login                                   -> Tela de Login
 forgotPassword                          -> Tela de Recuperação de Senha
 register                                -> Tela de Cadastro
+onboarding                              -> Configuração inicial pós-cadastro
 home                                    -> Resumo financeiro e gráficos
 extract                                 -> Histórico de lançamentos e extrato
 transaction?id={id}                     -> Criar ou editar lançamento / transferência
+recurringEdit?recurringId={id}&...      -> Editar uma recorrência (ou um agendado do extrato)
 settings                                -> Configurações gerais
 categories                              -> Gerenciamento de categorias
 archivedCategories                      -> Categorias arquivadas
@@ -154,7 +179,6 @@ creditCardBills?cardId={cardId}         -> Faturas do cartão de crédito
 creditCardBillDetail?cardId={id}&...    -> Detalhes e pagamento da fatura
 archivedCreditCard                      -> Cartões de crédito arquivados
 editCreditCard?id={id}                  -> Criar/Editar cartão de crédito
-archivedCreditCard                      -> Cartões arquivados
 recurring                               -> Lançamentos recorrentes e assinaturas
 ```
 
@@ -162,7 +186,7 @@ recurring                               -> Lançamentos recorrentes e assinatura
 
 ## 🧪 Testes
 
-O projeto possui testes unitários para casos de uso, repositórios em memória e ViewModels.
+O projeto possui testes unitários para os casos de uso, com repositórios em memória (fakes) como apoio.
 
 Para executar os testes:
 
@@ -193,8 +217,8 @@ applicationId: com.moduxi.monexi
 minSdk: 24 (Android 7.0+)
 targetSdk: 37
 compileSdk: 37
-versionCode: 2
-versionName: 1.0.1
+versionCode: 3
+versionName: 1.1.0
 ```
 
 ---
@@ -206,6 +230,8 @@ versionName: 1.0.1
 - [ ] **Exportação de Relatórios:** Geração de extratos em PDF ou Excel/CSV.
 - [ ] **Leitura de Notificações Bancárias:** Leitura inteligente de notificações de compras (via `NotificationListenerService`).
 - [ ] **Substituição de `fallbackToDestructiveMigration`:** Migrations reais explícitas no Room.
+- [ ] **Logout seguro:** Enviar os pendentes antes de limpar e limpar todos os dados locais do usuário.
+- [ ] **Categoria de sistema para Transferências:** Tirar transferências dos totais de receita e despesa.
 
 ---
 
