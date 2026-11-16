@@ -46,6 +46,13 @@ abstract class MonexiDatabase : RoomDatabase() {
         @Volatile
         private var INSTANCE: MonexiDatabase? = null
 
+        // Id fixo: também é criado na abertura do app para instalações antigas (ver MonexiApplication)
+        val BENEFITS_VOUCHER_PAYMENT_METHOD = PaymentMethodEntity(
+            id = "default_benefits_voucher",
+            name = "Vale Refeição / Alimentação",
+            isDefault = true
+        )
+
         private val databaseCallback = object : RoomDatabase.Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)
@@ -72,7 +79,8 @@ abstract class MonexiDatabase : RoomDatabase() {
                                 PaymentMethodEntity(name = "Dinheiro", isDefault = true),
                                 PaymentMethodEntity(name = "Transferência Bancária", isDefault = true),
                                 PaymentMethodEntity(name = "Cartão de Débito", isDefault = true),
-                                PaymentMethodEntity(name = "Cartão de Crédito", isDefault = true)
+                                PaymentMethodEntity(name = "Cartão de Crédito", isDefault = true),
+                                BENEFITS_VOUCHER_PAYMENT_METHOD
                             )
                         )
                         val accountDao = database.accountDao()

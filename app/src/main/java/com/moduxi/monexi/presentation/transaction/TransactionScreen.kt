@@ -56,6 +56,7 @@ import com.moduxi.monexi.domain.model.creditcard.CreditCard
 import com.moduxi.monexi.domain.model.payment.PaymentMethod
 import com.moduxi.monexi.domain.model.transaction.TransactionType
 import com.moduxi.monexi.domain.usecase.CalculateCreditCardBillsUseCase
+import com.moduxi.monexi.domain.usecase.isCompatibleWith
 import com.moduxi.monexi.ui.components.DropdownField
 import com.moduxi.monexi.ui.theme.CurrencyVisualTransformation
 import com.moduxi.monexi.ui.theme.toCategoryIcon
@@ -110,8 +111,8 @@ fun TransactionScreen(
                     pm.name.contains("Pix", ignoreCase = true) ||
                     pm.name.contains("Transferência", ignoreCase = true)
             val hasCreditCard = uiState.creditCards.isNotEmpty()
-            val hasBankAccount = uiState.accounts.any { it.type != AccountType.CASH }
-            val hasAnyAccount = uiState.accounts.isNotEmpty()
+            val hasBankAccount = uiState.accounts.any { pm.isCompatibleWith(it.type) }
+            val hasAnyAccount = uiState.accounts.any { pm.isCompatibleWith(it.type) }
 
             if (isCredit && !hasCreditCard) {
                 showNoCreditCardsDialog = true
@@ -838,10 +839,10 @@ private fun TransactionContent(
                     }
                 } else if (!isCreditCardSelected) {
                     item {
-                        if (uiState.accounts.isNotEmpty()) {
+                        if (uiState.availableAccounts.isNotEmpty()) {
                             DropdownField(
                                 label = "Conta / Carteira",
-                                options = uiState.accounts,
+                                options = uiState.availableAccounts,
                                 selectedOption = uiState.selectedAccount,
                                 onOptionSelected = onAccountChange,
                                 optionLabel = { it.name },

@@ -28,6 +28,7 @@ import com.moduxi.monexi.domain.repository.TransactionRepository
 import com.moduxi.monexi.domain.usecase.CalculateAccountBalanceUseCase
 import com.moduxi.monexi.domain.usecase.GenerateRecurringTransactionsUseCase
 import com.moduxi.monexi.domain.usecase.firstNonCredit
+import com.moduxi.monexi.domain.usecase.isCompatibleWith
 import com.moduxi.monexi.domain.usecase.isCredit
 import com.moduxi.monexi.domain.usecase.isValidFor
 import com.moduxi.monexi.domain.usecase.resolvePaymentMethod
@@ -102,32 +103,61 @@ class TransactionViewModel(
         val destBalance = selectedDestAcc?.let { calculateBalance(it, transactions) }
 
         val hasCreditCard = creditCards.isNotEmpty()
-        val hasBankAccount = accounts.any { it.type != com.moduxi.monexi.domain.model.account.AccountType.CASH }
-        val hasAnyAccount = accounts.isNotEmpty()
 
+        // Só é elegível a forma de pagamento que tem onde ser usada:
+        // crédito precisa de cartão; as demais, de ao menos uma conta compatível
         val isEligiblePm: (PaymentMethod) -> Boolean = { pm ->
-            when {
-                pm.name.contains("Crédito", ignoreCase = true) -> hasCreditCard
-                pm.name.contains("Débito", ignoreCase = true) ||
-                        pm.name.contains("Pix", ignoreCase = true) ||
-                        pm.name.contains("Transferência", ignoreCase = true) -> hasBankAccount
-                else -> hasAnyAccount
-            }
+            if (pm.isCredit()) hasCreditCard else accounts.any { pm.isCompatibleWith(it.type) }
+        }
+
+        // Receita: quem manda é a conta. Todas as contas ficam disponíveis (para a pessoa
+        // lançar saldo em carteira, vale, etc.) e a forma de pagamento se adapta à conta.
+        // Despesa: quem manda é a forma de pagamento, que filtra as contas.
+        val isIncomeForm = form.type == TransactionType.INCOME && !form.isTransfer
+        val incomeAccount = form.selectedAccount?.takeIf { acc -> accounts.any { it.id == acc.id } }
+            ?: accounts.firstOrNull()
+
+        val paymentOptions = if (isIncomeForm && incomeAccount != null) {
+            filteredPaymentMethods.filter { it.isCompatibleWith(incomeAccount.type) }
+        } else {
+            filteredPaymentMethods
+        }
+
+        val selectedPm = if (isIncomeForm) {
+            form.selectedPaymentMethod?.takeIf { paymentOptions.contains(it) }
+                ?: paymentOptions.firstNonCredit(incomeAccount?.type, TransactionType.INCOME)
+        } else {
+            form.selectedPaymentMethod
+                ?.takeIf { filteredPaymentMethods.contains(it) && isEligiblePm(it) }
+                ?: filteredPaymentMethods.firstOrNull { isEligiblePm(it) }
+                ?: filteredPaymentMethods.firstOrNull()
+        }
+
+        // Contas que fazem sentido para a forma de pagamento (Dinheiro -> carteira; Pix/Débito -> banco...)
+        val availableAccounts = if (isIncomeForm || selectedPm == null || selectedPm.isCredit()) {
+            accounts
+        } else {
+            accounts.filter { selectedPm.isCompatibleWith(it.type) }
+        }
+        val selectedAccount = when {
+            // Na transferência a forma de pagamento não se aplica: vale qualquer conta
+            form.isTransfer -> selectedAcc
+            isIncomeForm -> incomeAccount
+            else -> form.selectedAccount?.takeIf { acc -> availableAccounts.any { it.id == acc.id } }
+                ?: availableAccounts.firstOrNull()
         }
 
         form.copy(
             categories = filteredCategories,
-            paymentMethods = filteredPaymentMethods,
+            paymentMethods = paymentOptions,
             accounts = accounts,
+            availableAccounts = availableAccounts,
             creditCards = creditCards,
             selectedCategory = form.selectedCategory
                 ?.takeIf { it.type == form.type }
                 ?: filteredCategories.firstOrNull(),
-            selectedPaymentMethod = form.selectedPaymentMethod
-                ?.takeIf { filteredPaymentMethods.contains(it) && isEligiblePm(it) }
-                ?: filteredPaymentMethods.firstOrNull { isEligiblePm(it) }
-                ?: filteredPaymentMethods.firstOrNull(),
-            selectedAccount = selectedAcc,
+            selectedPaymentMethod = selectedPm,
+            selectedAccount = selectedAccount,
             selectedDestinationAccount = selectedDestAcc,
             sourceAccountBalance = sourceBalance,
             destinationAccountBalance = destBalance,
@@ -345,12 +375,16 @@ class TransactionViewModel(
 
             // Lançamentos gerados por recorrências antigas ficaram com "Crédito" mesmo
             // saindo de uma conta: corrige para a edição não jogar para o cartão
-            val hasInvalidPaymentMethod =
-                (transaction.creditCardId == null && transaction.paymentMethod.isCredit()) ||
-                        !transaction.paymentMethod.isValidFor(transaction.type)
+            // Também troca a forma que não combina com a conta (ex.: Pix na carteira):
+            // a conta é mantida, pois é ela que afeta o saldo
+            val accountType = accountsList.firstOrNull { it.id == transaction.accountId }?.type
+            val hasInvalidPaymentMethod = transaction.creditCardId == null && (
+                    transaction.paymentMethod.isCredit() ||
+                            !transaction.paymentMethod.isValidFor(transaction.type) ||
+                            (accountType != null && !transaction.paymentMethod.isCompatibleWith(accountType))
+                    )
             val paymentMethod = if (hasInvalidPaymentMethod) {
-                val isCashAccount = accountsList.firstOrNull { it.id == transaction.accountId }?.type == AccountType.CASH
-                paymentMethodRepository.paymentMethods.first().firstNonCredit(isCashAccount, transaction.type)
+                paymentMethodRepository.paymentMethods.first().firstNonCredit(accountType, transaction.type)
                     ?: transaction.paymentMethod
             } else {
                 transaction.paymentMethod
@@ -427,6 +461,18 @@ class TransactionViewModel(
             val accountsList = accountRepository.allAccounts.first()
             val creditCardsList = creditCardRepository.allCreditCards.first()
 
+            val recurringAccountType = accountsList.firstOrNull { it.id == recurring.accountId }?.type
+            val storedPaymentMethod = recurring.resolvePaymentMethod(paymentMethods, recurringAccountType)
+            // Forma salva que não combina com a conta: troca a forma e mantém a conta
+            val recurringPaymentMethod = if (
+                recurring.creditCardId == null && recurringAccountType != null && storedPaymentMethod != null &&
+                !storedPaymentMethod.isCompatibleWith(recurringAccountType)
+            ) {
+                paymentMethods.firstNonCredit(recurringAccountType, recurring.type)
+            } else {
+                storedPaymentMethod
+            }
+
             formState.value = formState.value.copy(
                 editingRecurring = recurring,
                 recurringOccurrenceDate = occurrenceDate,
@@ -439,10 +485,7 @@ class TransactionViewModel(
                 isRecurringInfinite = recurring.endDate == null,
                 recurringEndDateMillis = recurring.endDate,
                 selectedCategory = categories.firstOrNull { it.id == recurring.categoryId },
-                selectedPaymentMethod = recurring.resolvePaymentMethod(
-                    paymentMethods,
-                    isCashAccount = accountsList.firstOrNull { it.id == recurring.accountId }?.type == AccountType.CASH
-                ),
+                selectedPaymentMethod = recurringPaymentMethod,
                 selectedAccount = recurring.accountId?.let { accId -> accountsList.firstOrNull { it.id == accId } },
                 selectedCreditCard = recurring.creditCardId?.let { cardId -> creditCardsList.firstOrNull { it.id == cardId } },
                 totalInstallments = 1,

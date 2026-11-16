@@ -78,6 +78,15 @@ class MonexiApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+
+        // Instalações anteriores à forma de pagamento "Vale Refeição / Alimentação" não a têm no banco
+        CoroutineScope(Dispatchers.IO).launch {
+            val voucher = MonexiDatabase.BENEFITS_VOUCHER_PAYMENT_METHOD
+            val paymentMethodDao = database.paymentMethodDao()
+            if (paymentMethodDao.getPaymentMethodById(voucher.id) == null) {
+                paymentMethodDao.insertPaymentMethod(voucher)
+            }
+        }
         val userId = authRepository.currentUser?.uid
         if (!userId.isNullOrEmpty()) {
             CoroutineScope(Dispatchers.IO).launch {

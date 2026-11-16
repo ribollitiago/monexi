@@ -36,6 +36,8 @@ data class TransactionUiState(
     val categories: List<Category> = emptyList(),
     val paymentMethods: List<PaymentMethod> = emptyList(),
     val accounts: List<Account> = emptyList(),
+    // Contas compatíveis com a forma de pagamento selecionada (ex.: Dinheiro -> só carteira)
+    val availableAccounts: List<Account> = emptyList(),
     val creditCards: List<CreditCard> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null
