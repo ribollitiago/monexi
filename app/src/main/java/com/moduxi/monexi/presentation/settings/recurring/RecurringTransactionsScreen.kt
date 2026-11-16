@@ -1,5 +1,6 @@
 package com.moduxi.monexi.presentation.settings.recurring
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,6 +49,7 @@ import java.util.Locale
 @Composable
 fun RecurringTransactionsScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToEdit: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: RecurringTransactionsViewModel = viewModel(factory = RecurringTransactionsViewModel.Factory)
 ) {
@@ -57,6 +59,7 @@ fun RecurringTransactionsScreen(
         uiState = uiState,
         onNavigateBack = onNavigateBack,
         onDeleteRecurring = viewModel::deleteRecurringTransaction,
+        onRecurringClick = { onNavigateToEdit(it.id) },
         modifier = modifier
     )
 }
@@ -66,6 +69,7 @@ fun RecurringTransactionsContent(
     uiState: RecurringTransactionsUiState,
     onNavigateBack: () -> Unit,
     onDeleteRecurring: (RecurringTransaction, Boolean) -> Unit,
+    onRecurringClick: (RecurringTransaction) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selectedForDelete by remember { mutableStateOf<RecurringTransaction?>(null) }
@@ -125,7 +129,9 @@ fun RecurringTransactionsContent(
                     val isIncome = recurring.type == TransactionType.INCOME
 
                     Card(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onRecurringClick(recurring) }
                     ) {
                         Row(
                             modifier = Modifier
@@ -208,7 +214,7 @@ fun RecurringTransactionsContent(
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Excluir tudo (Apenas histórico e futuras)")
+                        Text("Excluir tudo (histórico e futuras)")
                     }
                 }
             },

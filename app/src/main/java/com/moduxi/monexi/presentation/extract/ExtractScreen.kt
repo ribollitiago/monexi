@@ -1,5 +1,6 @@
 package com.moduxi.monexi.presentation.extract
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -7,14 +8,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Card
@@ -29,6 +33,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,6 +52,7 @@ import com.moduxi.monexi.domain.model.payment.PaymentMethod
 import com.moduxi.monexi.domain.model.transaction.Transaction
 import com.moduxi.monexi.domain.model.transaction.TransactionType
 import com.moduxi.monexi.domain.usecase.CalculateCreditCardBillsUseCase
+import com.moduxi.monexi.domain.usecase.ProjectRecurringTransactionsUseCase
 import com.moduxi.monexi.ui.theme.MonexiTheme
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
@@ -57,18 +63,21 @@ import java.util.Locale
 fun ExtractScreen(
     onNavigateToTransaction: (String?) -> Unit,
     onNavigateToBillDetail: (String, Int, Int) -> Unit = { _, _, _ -> },
+    onNavigateToScheduledRecurring: (String, Long) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
     viewModel: ExtractViewModel = viewModel(factory = ExtractViewModel.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    ExtractContent(
-        uiState = uiState,
-        onSearchChange = viewModel::onSearchChange,
-        onPreviousMonthClick = viewModel::previousMonth,
-        onNextMonthClick = viewModel::nextMonth,
-        onTransactionClick = { transaction ->
-            if (transaction.creditCardId != null && transaction.creditCardBillId == null) {
+    // Tela de agendados aberta a partir do card do extrato (null = extrato normal)
+    var scheduledFilter by rememberSaveable { mutableStateOf<ScheduledFilter?>(null) }
+
+    val onTransactionClick: (Transaction) -> Unit = { transaction ->
+            val recurringId = transaction.recurringTransactionId
+            if (ProjectRecurringTransactionsUseCase.isProjection(transaction) && recurringId != null) {
+                // Projeção de recorrente: ainda não existe lançamento, abre a recorrência
+                onNavigateToScheduledRecurring(recurringId, transaction.date)
+            } else if (transaction.creditCardId != null && transaction.creditCardBillId == null) {
                 val originCard = uiState.creditCards.firstOrNull { it.id == transaction.creditCardId }
                 if (originCard != null) {
                     val cycle = CalculateCreditCardBillsUseCase().getCycleForTimestamp(originCard, transaction.date)
@@ -89,9 +98,32 @@ fun ExtractScreen(
             } else {
                 onNavigateToTransaction(transaction.id)
             }
-        },
-        modifier = modifier
-    )
+    }
+
+    val currentScheduledFilter = scheduledFilter
+    if (currentScheduledFilter != null) {
+        BackHandler { scheduledFilter = null }
+
+        ScheduledContent(
+            filter = currentScheduledFilter,
+            uiState = uiState,
+            onBackClick = { scheduledFilter = null },
+            onPreviousMonthClick = viewModel::previousMonth,
+            onNextMonthClick = viewModel::nextMonth,
+            onTransactionClick = onTransactionClick,
+            modifier = modifier
+        )
+    } else {
+        ExtractContent(
+            uiState = uiState,
+            onSearchChange = viewModel::onSearchChange,
+            onPreviousMonthClick = viewModel::previousMonth,
+            onNextMonthClick = viewModel::nextMonth,
+            onTransactionClick = onTransactionClick,
+            onScheduledClick = { scheduledFilter = it },
+            modifier = modifier
+        )
+    }
 }
 
 @Composable
@@ -101,6 +133,7 @@ fun ExtractContent(
     onPreviousMonthClick: () -> Unit,
     onNextMonthClick: () -> Unit,
     onTransactionClick: (Transaction) -> Unit,
+    onScheduledClick: (ScheduledFilter) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selectedFilter by remember { mutableStateOf("Todos") }
@@ -206,6 +239,15 @@ fun ExtractContent(
             }
         }
 
+        if (ScheduledFilter.entries.any { uiState.transactions.scheduledOf(it).isNotEmpty() }) {
+            item {
+                ScheduledSummaryCard(
+                    transactions = uiState.transactions,
+                    onFilterClick = onScheduledClick
+                )
+            }
+        }
+
         if (filteredTransactions.isEmpty()) {
             item {
                 Box(
@@ -237,6 +279,212 @@ fun ExtractContent(
     }
 }
 
+private fun Transaction.isScheduled(): Boolean =
+    date > System.currentTimeMillis() || ProjectRecurringTransactionsUseCase.isProjection(this)
+
+enum class ScheduledFilter(val shortLabel: String, val title: String) {
+    EXPENSES("Despesas", "Despesas agendadas"),
+    INCOMES("Receitas", "Receitas agendadas"),
+    TRANSFERS("Transferências", "Transferências agendadas")
+}
+
+// Transferência = duas pernas no mesmo grupo, sem número de parcela
+private fun Transaction.isTransferLeg(): Boolean =
+    !installmentGroupId.isNullOrEmpty() && installmentNumber == null
+
+/** Agendados de um tipo. Transferência conta uma vez só (pela perna de saída). */
+private fun List<Transaction>.scheduledOf(kind: ScheduledFilter): List<Transaction> =
+    this.filter { transaction ->
+        transaction.isScheduled() && when (kind) {
+            ScheduledFilter.EXPENSES -> transaction.type == TransactionType.EXPENSE && !transaction.isTransferLeg()
+            ScheduledFilter.INCOMES -> transaction.type == TransactionType.INCOME && !transaction.isTransferLeg()
+            ScheduledFilter.TRANSFERS -> transaction.type == TransactionType.EXPENSE && transaction.isTransferLeg()
+        }
+    }
+
+private fun ScheduledFilter.color(): Color? = when (this) {
+    ScheduledFilter.EXPENSES -> Color(0xFF1565C0)
+    ScheduledFilter.INCOMES -> Color(0xFF1B8A5A)
+    ScheduledFilter.TRANSFERS -> null
+}
+
+/** Card único e compacto: uma coluna por tipo que tiver agendados; cada uma abre a lista filtrada. */
+@Composable
+private fun ScheduledSummaryCard(
+    transactions: List<Transaction>,
+    onFilterClick: (ScheduledFilter) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(modifier = modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = "Agendados neste mês",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                ScheduledFilter.entries.forEach { filter ->
+                    val scheduled = transactions.scheduledOf(filter)
+                    if (scheduled.isNotEmpty()) {
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { onFilterClick(filter) }
+                                .padding(vertical = 6.dp, horizontal = 4.dp)
+                        ) {
+                            Text(
+                                text = "${filter.shortLabel} (${scheduled.size})",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = scheduled.sumOf { it.amount }.toCurrency(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = filter.color() ?: MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Extrato filtrado só com os agendados de um tipo no mês selecionado. */
+@Composable
+private fun ScheduledContent(
+    filter: ScheduledFilter,
+    uiState: ExtractUiState,
+    onBackClick: () -> Unit,
+    onPreviousMonthClick: () -> Unit,
+    onNextMonthClick: () -> Unit,
+    onTransactionClick: (Transaction) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val scheduled = uiState.transactions.scheduledOf(filter).sortedBy { it.date }
+
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBackClick) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Voltar ao extrato"
+                    )
+                }
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = filter.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(modifier = Modifier.size(48.dp))
+            }
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onPreviousMonthClick) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                        contentDescription = "Mês anterior"
+                    )
+                }
+                Text(
+                    text = uiState.selectedMonthName,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                IconButton(onClick = onNextMonthClick) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "Próximo mês"
+                    )
+                }
+            }
+        }
+
+        item {
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = if (scheduled.size == 1) "1 lançamento" else "${scheduled.size} lançamentos",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = scheduled.sumOf { it.amount }.toCurrency(),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = filter.color() ?: MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+        }
+
+        if (scheduled.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Nada agendado neste mês.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        } else {
+            items(scheduled, key = { it.id }) { transaction ->
+                TransactionItem(
+                    transaction = transaction,
+                    originAccount = uiState.accounts.firstOrNull { it.id == transaction.accountId },
+                    originCard = uiState.creditCards.firstOrNull { it.id == transaction.creditCardId },
+                    onClick = { onTransactionClick(transaction) }
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun TransactionItem(
     transaction: Transaction,
@@ -245,13 +493,15 @@ private fun TransactionItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val isScheduled = transaction.date > System.currentTimeMillis()
+    val isScheduled = transaction.isScheduled()
     val isBillPayment = transaction.creditCardBillId != null
+    val isCardEntry = transaction.creditCardId != null && !isBillPayment
 
     // Paleta centralizada
     val incomeGreen = Color(0xFF1B8A5A)     // entrada
-    val billPaymentRed = Color(0xFFC62828)  // pagamento de fatura
-    val cardEntryBlue = Color(0xFF1565C0)   // lançamento na fatura
+    val expenseRed = Color(0xFFC62828)      // despesa já paga (conta ou pagamento de fatura)
+    val billPaymentRed = expenseRed
+    val pendingBlue = Color(0xFF1565C0)     // ainda não saiu da conta: fatura do cartão ou agendado
 
     Card(
         modifier = modifier
@@ -360,8 +610,8 @@ private fun TransactionItem(
 
             val amountColor = when {
                 transaction.type == TransactionType.INCOME -> incomeGreen
-                isBillPayment -> billPaymentRed   // vermelho: pagamento de fatura
-                else -> cardEntryBlue             // azul: lançamento na fatura
+                isCardEntry || isScheduled -> pendingBlue // azul: lançamento na fatura ou agendado
+                else -> expenseRed                        // vermelho: despesa já paga
             }
 
             Text(

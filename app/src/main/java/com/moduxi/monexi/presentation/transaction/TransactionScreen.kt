@@ -78,6 +78,8 @@ fun TransactionScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showDeleteInstallmentsDialog by remember { mutableStateOf(false) }
+    var showDeleteRecurringDialog by remember { mutableStateOf(false) }
+    var showSaveRecurringDialog by remember { mutableStateOf(false) }
     var showNoCreditCardsDialog by remember { mutableStateOf(false) }
     var showNoAccountsDialog by remember { mutableStateOf(false) }
     var showNoBankAccountsDialog by remember { mutableStateOf(false) }
@@ -129,9 +131,16 @@ fun TransactionScreen(
         },
         onDeleteClick = {
             val editingTx = uiState.editingTransaction
-            if (editingTx != null) {
-                if (!editingTx.installmentGroupId.isNullOrEmpty()) {
+            if (uiState.editingRecurring != null) {
+                showDeleteRecurringDialog = true
+            } else if (editingTx != null) {
+                if (uiState.isTransfer) {
+                    // Transferência: exclui a saída e a entrada juntas
+                    viewModel.deleteTransfer(onDone = onTransactionSaved)
+                } else if (!editingTx.installmentGroupId.isNullOrEmpty()) {
                     showDeleteInstallmentsDialog = true
+                } else if (editingTx.recurringTransactionId != null && uiState.hasActiveRecurrence) {
+                    showDeleteRecurringDialog = true
                 } else {
                     viewModel.deleteTransaction(editingTx)
                     onTransactionSaved()
@@ -139,9 +148,14 @@ fun TransactionScreen(
             }
         },
         onSaveClick = {
-            viewModel.saveTransaction(
-                onSaved = onTransactionSaved
-            )
+            // Lançamento de uma recorrência ativa: pergunta o alcance da alteração
+            if (uiState.editingTransaction != null && uiState.hasActiveRecurrence && !uiState.isTransfer) {
+                showSaveRecurringDialog = true
+            } else {
+                viewModel.saveTransaction(
+                    onSaved = onTransactionSaved
+                )
+            }
         },
         onBackClick = onCancel,
         modifier = modifier
@@ -295,6 +309,92 @@ fun TransactionScreen(
         )
     }
 
+    if (showSaveRecurringDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showSaveRecurringDialog = false },
+            title = { Text("Alterar Lançamento Recorrente", fontWeight = FontWeight.Bold) },
+            text = { Text("Este lançamento faz parte de uma recorrência. O que você deseja alterar? Os meses anteriores não mudam.") },
+            confirmButton = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            showSaveRecurringDialog = false
+                            viewModel.saveTransaction(applyToRecurrence = false, onSaved = onTransactionSaved)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Alterar apenas este lançamento")
+                    }
+
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = {
+                            showSaveRecurringDialog = false
+                            viewModel.saveTransaction(applyToRecurrence = true, onSaved = onTransactionSaved)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Alterar este e os próximos")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSaveRecurringDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    if (showDeleteRecurringDialog) {
+        val isScheduledOccurrence = uiState.editingRecurring != null
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showDeleteRecurringDialog = false },
+            title = { Text("Excluir Lançamento Recorrente", fontWeight = FontWeight.Bold) },
+            text = { Text("Este lançamento faz parte de uma recorrência. Como você deseja prosseguir?") },
+            confirmButton = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            showDeleteRecurringDialog = false
+                            viewModel.deleteOnlyThisOccurrence(onDone = onTransactionSaved)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Excluir apenas este lançamento")
+                    }
+
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = {
+                            showDeleteRecurringDialog = false
+                            viewModel.deleteAllScheduledOccurrences(onDone = onTransactionSaved)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = if (isScheduledOccurrence) {
+                                "Excluir todos os lançamentos agendados"
+                            } else {
+                                "Excluir este e todos os agendados"
+                            },
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteRecurringDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
     if (showDeleteInstallmentsDialog && uiState.editingTransaction != null) {
         val editingTx = uiState.editingTransaction!!
         androidx.compose.material3.AlertDialog(
@@ -396,7 +496,7 @@ private fun TransactionContent(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    if (uiState.editingTransaction != null) {
+                    if (uiState.editingTransaction != null || uiState.editingRecurring != null) {
                         IconButton(onClick = onBackClick) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -412,8 +512,12 @@ private fun TransactionContent(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = if (uiState.isTransfer) {
+                            text = if (uiState.isTransfer && uiState.editingTransaction != null) {
+                                "Editar Transferência"
+                            } else if (uiState.isTransfer) {
                                 "Transferência entre Contas"
+                            } else if (uiState.editingRecurring != null) {
+                                "Editar Recorrência"
                             } else if (uiState.editingTransaction == null) {
                                 "Nova Transação"
                             } else {
@@ -424,7 +528,10 @@ private fun TransactionContent(
                         )
                     }
 
-                    if (uiState.editingTransaction != null) {
+                    // Na recorrência aberta pelas configurações a exclusão fica na própria lista
+                    if (uiState.editingTransaction != null ||
+                        (uiState.editingRecurring != null && uiState.recurringOccurrenceDate != null)
+                    ) {
                         IconButton(onClick = onDeleteClick) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
@@ -628,7 +735,8 @@ private fun TransactionContent(
                     )
                 }
 
-                item {
+                // A data de início da recorrência não muda na edição da regra
+                if (uiState.editingRecurring == null) item {
                     OutlinedTextField(
                         value = uiState.dateMillis.toBrazilianDateFormat(),
                         onValueChange = {},
@@ -762,8 +870,22 @@ private fun TransactionContent(
             }
 
             // Opções de Recorrência
-            if (uiState.editingTransaction == null) {
-                item {
+            // Transferência não tem recorrência (a opção aparecia mas era ignorada ao salvar)
+            // Também aparece ao editar um lançamento de recorrência ativa (dia e data final)
+            if ((uiState.editingTransaction == null || uiState.hasActiveRecurrence) && !uiState.isTransfer) {
+                if (uiState.editingTransaction != null) item {
+                    Column {
+                        Text(text = "Recorrência", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            text = "Dia e data final valem se você salvar em \"este e os próximos\"",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // Editando a regra ou um lançamento dela, já é recorrente: esconde o interruptor
+                if (uiState.editingRecurring == null && uiState.editingTransaction == null) item {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()

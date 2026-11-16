@@ -4,6 +4,7 @@ import com.moduxi.monexi.domain.model.account.Account
 import com.moduxi.monexi.domain.model.category.Category
 import com.moduxi.monexi.domain.model.creditcard.CreditCard
 import com.moduxi.monexi.domain.model.payment.PaymentMethod
+import com.moduxi.monexi.domain.model.recurring.RecurringTransaction
 import com.moduxi.monexi.domain.model.transaction.Transaction
 import com.moduxi.monexi.domain.model.transaction.TransactionType
 
@@ -26,6 +27,12 @@ data class TransactionUiState(
     val destinationAccountBalance: Double? = null,
     val selectedCreditCard: CreditCard? = null,
     val editingTransaction: Transaction? = null,
+    // Edição da regra de recorrência (aberta pela tela de Recorrentes ou por um agendado do extrato)
+    val editingRecurring: RecurringTransaction? = null,
+    // Data da ocorrência agendada que o usuário abriu no extrato (null se veio das configurações)
+    val recurringOccurrenceDate: Long? = null,
+    // true quando o lançamento em edição pertence a uma recorrência ainda ativa
+    val hasActiveRecurrence: Boolean = false,
     val categories: List<Category> = emptyList(),
     val paymentMethods: List<PaymentMethod> = emptyList(),
     val accounts: List<Account> = emptyList(),

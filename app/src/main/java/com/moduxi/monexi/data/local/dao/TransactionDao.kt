@@ -119,6 +119,37 @@ interface TransactionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTransactions(transactions: List<TransactionEntity>)
 
+    //Ocorrências de recorrência que o usuário excluiu (para não gerar/projetar de novo)
+    @Query("""
+        SELECT * FROM transactions
+        WHERE userId = :userId
+            AND recurringTransactionId IS NOT NULL
+            AND deletedAt IS NOT NULL
+    """)
+    fun observeDeletedRecurringTransactionsByUser(userId: String): Flow<List<TransactionEntity>>
+
+    //Todos os lançamentos gerados por uma recorrência
+    @Query("""
+        SELECT * FROM transactions
+        WHERE userId = :userId
+            AND recurringTransactionId = :recurringId
+            AND deletedAt IS NULL
+    """)
+    suspend fun getTransactionsByRecurring(userId: String, recurringId: String): List<TransactionEntity>
+
+    //Excluir todos os lançamentos gerados por uma recorrência
+    @Query("""
+        UPDATE transactions
+        SET deletedAt = :deletedAt, syncStatus = :syncStatus
+        WHERE userId = :userId AND recurringTransactionId = :recurringId AND deletedAt IS NULL
+    """)
+    suspend fun softDeleteTransactionsByRecurring(
+        userId: String,
+        recurringId: String,
+        deletedAt: Long,
+        syncStatus: String
+    )
+
     //Verificar se uma transação recorrente já gerou lançamento no mês
     @Query("""
         SELECT * FROM transactions

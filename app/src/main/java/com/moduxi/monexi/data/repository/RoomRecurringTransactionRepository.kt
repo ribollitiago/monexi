@@ -6,6 +6,7 @@ import com.moduxi.monexi.data.local.dao.TransactionDao
 import com.moduxi.monexi.data.local.mapper.toDomain
 import com.moduxi.monexi.data.local.mapper.toEntity
 import com.moduxi.monexi.domain.model.recurring.RecurringTransaction
+import com.moduxi.monexi.domain.model.transaction.SyncStatus
 import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.RecurringTransactionRepository
 import kotlinx.coroutines.flow.Flow
@@ -81,13 +82,25 @@ class RoomRecurringTransactionRepository(
 
         // Se o usuário optar por excluir o histórico passado gerado por essa recorrência:
         if (deletePastHistory) {
-            val pastTransactions = transactionDao.getRecurringTransactionInPeriod(
-                userId = currentUserId,
-                recurringId = recurringTransaction.id,
-                startDate = 0L,
-                endDate = System.currentTimeMillis() + (365L * 24 * 60 * 60 * 1000)
-            )
-            pastTransactions?.let { transactionDao.deleteTransaction(it) }
+            val now = System.currentTimeMillis()
+            val syncStatus = SyncStatus.PENDING_DELETE.name
+            val generated = transactionDao.getTransactionsByRecurring(currentUserId, recurringTransaction.id)
+
+            transactionDao.softDeleteTransactionsByRecurring(currentUserId, recurringTransaction.id, now, syncStatus)
+
+            generated.forEach { entity ->
+                try {
+                    FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(currentUserId)
+                        .collection("transactions")
+                        .document(entity.id)
+                        .update(mapOf<String, Any>("deletedAt" to now, "syncStatus" to syncStatus))
+                        .await()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
 
         try {

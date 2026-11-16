@@ -40,6 +40,18 @@ class RoomTransactionRepository(
         }
     }
 
+    override val deletedRecurringTransactions: Flow<List<Transaction>> = combine(
+        categoryRepository.allCategories,
+        paymentMethodRepository.allPaymentMethods
+    ) { categories, paymentMethods ->
+        Pair(categories, paymentMethods)
+    }.flatMapLatest { (categories, paymentMethods) ->
+        val currentUserId = authRepository.currentUser?.uid ?: ""
+        transactionDao.observeDeletedRecurringTransactionsByUser(currentUserId).map { list ->
+            list.mapNotNull { it.toDomain(categories, paymentMethods) }
+        }
+    }
+
     override fun getTransactionsByAccount(accountId: String): Flow<List<Transaction>> = combine(
         categoryRepository.allCategories,
         paymentMethodRepository.allPaymentMethods

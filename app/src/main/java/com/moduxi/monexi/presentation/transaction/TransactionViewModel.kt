@@ -9,6 +9,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
 import com.moduxi.monexi.domain.model.account.Account
+import com.moduxi.monexi.domain.model.account.AccountType
 import com.moduxi.monexi.domain.model.category.Category
 import com.moduxi.monexi.domain.model.creditcard.CreditCard
 import com.moduxi.monexi.domain.model.payment.PaymentMethod
@@ -26,6 +27,10 @@ import com.moduxi.monexi.domain.repository.RecurringTransactionRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
 import com.moduxi.monexi.domain.usecase.CalculateAccountBalanceUseCase
 import com.moduxi.monexi.domain.usecase.GenerateRecurringTransactionsUseCase
+import com.moduxi.monexi.domain.usecase.firstNonCredit
+import com.moduxi.monexi.domain.usecase.isCredit
+import com.moduxi.monexi.domain.usecase.isValidFor
+import com.moduxi.monexi.domain.usecase.resolvePaymentMethod
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -49,6 +54,9 @@ class TransactionViewModel(
 ) : ViewModel() {
 
     private val formState = MutableStateFlow(TransactionUiState())
+
+    // Pernas (saída, entrada) da transferência em edição
+    private var editingTransferLegs: Pair<Transaction, Transaction>? = null
 
     val uiState = combine(
         categoryRepository.categories,
@@ -136,9 +144,17 @@ class TransactionViewModel(
         if (!transactionId.isNullOrEmpty()) {
             loadTransaction(transactionId)
         }
+
+        val recurringId = savedStateHandle.get<String>("recurringId")
+        if (!recurringId.isNullOrEmpty()) {
+            val occurrenceDate = savedStateHandle.get<Long>("occurrenceDate")?.takeIf { it > 0L }
+            loadRecurring(recurringId, occurrenceDate)
+        }
     }
 
     fun onTypeChange(type: TransactionType) {
+        // Uma transferência em edição não pode virar despesa/receita
+        if (editingTransferLegs != null) return
         formState.value = formState.value.copy(
             type = type,
             isTransfer = false,
@@ -148,6 +164,8 @@ class TransactionViewModel(
     }
 
     fun onIsTransferChange(isTransfer: Boolean) {
+        // Recorrência ou lançamento já existente não pode virar transferência
+        if (formState.value.editingRecurring != null || formState.value.editingTransaction != null) return
         formState.value = formState.value.copy(
             isTransfer = isTransfer,
             error = null
@@ -155,6 +173,7 @@ class TransactionViewModel(
     }
 
     fun onIsRecurringChange(isRecurring: Boolean) {
+        if (formState.value.editingRecurring != null) return
         formState.value = formState.value.copy(
             isRecurring = isRecurring,
             error = null
@@ -177,7 +196,8 @@ class TransactionViewModel(
 
     fun onRecurringEndDateChange(endDateMillis: Long?) {
         formState.value = formState.value.copy(
-            recurringEndDateMillis = endDateMillis,
+            // meio-dia local do dia escolhido (mesmo horário dos lançamentos gerados), para a data final ser inclusiva
+            recurringEndDateMillis = endDateMillis?.let { pickerDateToLocal(it, hour = 12, minute = 0) },
             error = null
         )
     }
@@ -199,11 +219,13 @@ class TransactionViewModel(
     }
 
     fun onDateChange(dateMillis: Long) {
-        val cal = Calendar.getInstance().apply { timeInMillis = dateMillis }
+        // O DatePicker devolve meia-noite em UTC; no Brasil isso cairia no dia anterior
+        val localDateMillis = pickerDateToLocal(dateMillis, hour = 12, minute = 0)
+        val cal = Calendar.getInstance().apply { timeInMillis = localDateMillis }
         val day = cal.get(Calendar.DAY_OF_MONTH)
 
         formState.value = formState.value.copy(
-            dateMillis = dateMillis,
+            dateMillis = localDateMillis,
             recurringDayOfMonth = day,
             error = null
         )
@@ -263,6 +285,40 @@ class TransactionViewModel(
                 allTxs.filter { it.installmentGroupId == transaction.installmentGroupId && it.deletedAt == null }
             } else emptyList()
 
+            // Transferência: duas pernas (saída + entrada) no mesmo grupo, sem número de parcela.
+            // Sem isso ela abria como compra parcelada, com valor dobrado e sem as contas.
+            val expenseLeg = groupTxs.firstOrNull { it.type == TransactionType.EXPENSE }
+            val incomeLeg = groupTxs.firstOrNull { it.type == TransactionType.INCOME }
+            val isTransfer = groupTxs.size == 2 && groupTxs.all { it.installmentNumber == null } &&
+                    expenseLeg != null && incomeLeg != null
+
+            if (isTransfer && expenseLeg != null && incomeLeg != null) {
+                val fromAccount = accountsList.firstOrNull { it.id == expenseLeg.accountId }
+                val toAccount = accountsList.firstOrNull { it.id == incomeLeg.accountId }
+                val titlePrefix = "Transferência para ${toAccount?.name ?: ""}"
+                val extraDescription = if (toAccount != null && expenseLeg.title.startsWith(titlePrefix)) {
+                    expenseLeg.title.removePrefix(titlePrefix).removePrefix(" - ")
+                } else {
+                    expenseLeg.title.substringAfter(" - ", "")
+                }
+
+                editingTransferLegs = expenseLeg to incomeLeg
+                formState.value = formState.value.copy(
+                    editingTransaction = transaction,
+                    isTransfer = true,
+                    isRecurring = false,
+                    type = TransactionType.EXPENSE,
+                    description = extraDescription,
+                    amountDigits = Math.round(expenseLeg.amount * 100).toString(),
+                    selectedAccount = fromAccount,
+                    selectedDestinationAccount = toAccount,
+                    totalInstallments = 1,
+                    dateMillis = expenseLeg.date,
+                    error = null
+                )
+                return@launch
+            }
+
             val cleanDescription = if (isGroup) {
                 transaction.title.replace(Regex("""\s*\(\d+/\d+\)$"""), "")
             } else {
@@ -287,15 +343,38 @@ class TransactionViewModel(
                 transaction.date
             }
 
+            // Lançamentos gerados por recorrências antigas ficaram com "Crédito" mesmo
+            // saindo de uma conta: corrige para a edição não jogar para o cartão
+            val hasInvalidPaymentMethod =
+                (transaction.creditCardId == null && transaction.paymentMethod.isCredit()) ||
+                        !transaction.paymentMethod.isValidFor(transaction.type)
+            val paymentMethod = if (hasInvalidPaymentMethod) {
+                val isCashAccount = accountsList.firstOrNull { it.id == transaction.accountId }?.type == AccountType.CASH
+                paymentMethodRepository.paymentMethods.first().firstNonCredit(isCashAccount, transaction.type)
+                    ?: transaction.paymentMethod
+            } else {
+                transaction.paymentMethod
+            }
+
+            // Regra da recorrência (se ainda ativa): os campos dela aparecem na edição
+            val linkedRecurring = transaction.recurringTransactionId
+                ?.let { recurringTransactionRepository.getRecurringTransactionById(it) }
+                ?.takeIf { it.isActive }
+            val hasActiveRecurrence = linkedRecurring != null
+
             formState.value = formState.value.copy(
                 editingTransaction = transaction,
+                hasActiveRecurrence = hasActiveRecurrence,
                 description = cleanDescription,
                 amountDigits = Math.round(totalGroupAmount * 100).toString(),
                 type = transaction.type,
                 isTransfer = false,
                 isRecurring = transaction.recurringTransactionId != null,
+                recurringDayOfMonth = linkedRecurring?.dayOfMonth ?: formState.value.recurringDayOfMonth,
+                isRecurringInfinite = linkedRecurring?.endDate == null,
+                recurringEndDateMillis = linkedRecurring?.endDate,
                 selectedCategory = transaction.category,
-                selectedPaymentMethod = transaction.paymentMethod,
+                selectedPaymentMethod = paymentMethod,
                 selectedAccount = transaction.accountId?.let { id -> accountsList.firstOrNull { it.id == id } },
                 selectedCreditCard = transaction.creditCardId?.let { id -> creditCardsList.firstOrNull { it.id == id } },
                 totalInstallments = totalInstallmentsCount,
@@ -306,6 +385,7 @@ class TransactionViewModel(
     }
 
     fun cancelEditing() {
+        editingTransferLegs = null
         formState.value = TransactionUiState()
     }
 
@@ -321,9 +401,137 @@ class TransactionViewModel(
         }
     }
 
+    /** Exclui as duas pernas da transferência em edição. */
+    fun deleteTransfer(onDone: () -> Unit) {
+        val groupId = editingTransferLegs?.first?.installmentGroupId
+        viewModelScope.launch {
+            if (!groupId.isNullOrEmpty()) {
+                transactionRepository.deleteInstallmentGroup(groupId)
+            }
+            onDone()
+        }
+    }
+
     fun deleteInstallmentGroup(groupId: String) {
         viewModelScope.launch {
             transactionRepository.deleteInstallmentGroup(groupId)
+        }
+    }
+
+    /** Abre a regra de recorrência para edição. */
+    fun loadRecurring(id: String, occurrenceDate: Long? = null) {
+        viewModelScope.launch {
+            val recurring = recurringTransactionRepository.getRecurringTransactionById(id) ?: return@launch
+            val categories = categoryRepository.allCategories.first()
+            val paymentMethods = paymentMethodRepository.paymentMethods.first()
+            val accountsList = accountRepository.allAccounts.first()
+            val creditCardsList = creditCardRepository.allCreditCards.first()
+
+            formState.value = formState.value.copy(
+                editingRecurring = recurring,
+                recurringOccurrenceDate = occurrenceDate,
+                description = recurring.title,
+                amountDigits = Math.round(recurring.amount * 100).toString(),
+                type = recurring.type,
+                isTransfer = false,
+                isRecurring = true,
+                recurringDayOfMonth = recurring.dayOfMonth,
+                isRecurringInfinite = recurring.endDate == null,
+                recurringEndDateMillis = recurring.endDate,
+                selectedCategory = categories.firstOrNull { it.id == recurring.categoryId },
+                selectedPaymentMethod = recurring.resolvePaymentMethod(
+                    paymentMethods,
+                    isCashAccount = accountsList.firstOrNull { it.id == recurring.accountId }?.type == AccountType.CASH
+                ),
+                selectedAccount = recurring.accountId?.let { accId -> accountsList.firstOrNull { it.id == accId } },
+                selectedCreditCard = recurring.creditCardId?.let { cardId -> creditCardsList.firstOrNull { it.id == cardId } },
+                totalInstallments = 1,
+                dateMillis = recurring.startDate,
+                error = null
+            )
+        }
+    }
+
+    /**
+     * "Excluir apenas este lançamento": remove só a ocorrência aberta.
+     * Para um agendado (que ainda não existe no banco) grava um lançamento já
+     * excluído, que serve de marcador para o mês não ser gerado nem projetado.
+     */
+    fun deleteOnlyThisOccurrence(onDone: () -> Unit) {
+        val state = uiState.value
+        val editingTransaction = state.editingTransaction
+        val recurring = state.editingRecurring
+        val occurrenceDate = state.recurringOccurrenceDate
+
+        viewModelScope.launch {
+            val now = System.currentTimeMillis()
+            if (editingTransaction != null) {
+                transactionRepository.deleteTransaction(
+                    editingTransaction.copy(
+                        deletedAt = now,
+                        updatedAt = now,
+                        syncStatus = SyncStatus.PENDING_DELETE
+                    )
+                )
+            } else if (recurring != null && occurrenceDate != null) {
+                val category = categoryRepository.allCategories.first()
+                    .let { all -> all.firstOrNull { it.id == recurring.categoryId } ?: all.firstOrNull() }
+                val paymentMethod = recurring.resolvePaymentMethod(paymentMethodRepository.allPaymentMethods.first())
+
+                if (category != null && paymentMethod != null) {
+                    transactionRepository.addTransaction(
+                        Transaction(
+                            id = UUID.randomUUID().toString(),
+                            userId = authRepository.currentUser?.uid ?: "",
+                            title = recurring.title,
+                            amount = recurring.amount,
+                            type = recurring.type,
+                            category = category,
+                            paymentMethod = paymentMethod,
+                            date = occurrenceDate,
+                            updatedAt = now,
+                            deletedAt = now,
+                            syncStatus = SyncStatus.PENDING_DELETE,
+                            accountId = recurring.accountId,
+                            creditCardId = recurring.creditCardId,
+                            recurringTransactionId = recurring.id
+                        )
+                    )
+                }
+            }
+            onDone()
+        }
+    }
+
+    /**
+     * "Excluir todos os lançamentos agendados": cancela a recorrência (o histórico
+     * já lançado é mantido). Se o usuário abriu um lançamento já existente, ele
+     * também é excluído.
+     */
+    fun deleteAllScheduledOccurrences(onDone: () -> Unit) {
+        val state = uiState.value
+        val editingTransaction = state.editingTransaction
+
+        viewModelScope.launch {
+            val recurring = state.editingRecurring
+                ?: editingTransaction?.recurringTransactionId
+                    ?.let { recurringTransactionRepository.getRecurringTransactionById(it) }
+
+            if (editingTransaction != null) {
+                val now = System.currentTimeMillis()
+                transactionRepository.deleteTransaction(
+                    editingTransaction.copy(
+                        deletedAt = now,
+                        updatedAt = now,
+                        syncStatus = SyncStatus.PENDING_DELETE
+                    )
+                )
+            }
+
+            if (recurring != null) {
+                recurringTransactionRepository.deleteRecurringTransaction(recurring, deletePastHistory = false)
+            }
+            onDone()
         }
     }
 
@@ -334,7 +542,11 @@ class TransactionViewModel(
         }
     }
 
-    fun saveTransaction(onSaved: () -> Unit) {
+    /**
+     * @param applyToRecurrence ao editar um lançamento recorrente, true = "este e os próximos"
+     * (atualiza também a regra); false = só o lançamento aberto.
+     */
+    fun saveTransaction(applyToRecurrence: Boolean = false, onSaved: () -> Unit) {
         val state = uiState.value
         val amount = (state.amountDigits.toLongOrNull() ?: 0L) / 100.0
         val editingTransaction = state.editingTransaction
@@ -362,8 +574,13 @@ class TransactionViewModel(
                 return
             }
 
+            val editingLegs = editingTransferLegs
+
             viewModelScope.launch {
-                val allTransactions = transactionRepository.transactions.first()
+                // Ao editar, desconsidera a própria transferência no cálculo do saldo
+                val allTransactions = transactionRepository.transactions.first().filter {
+                    it.id != editingLegs?.first?.id && it.id != editingLegs?.second?.id
+                }
                 val calculateBalance = CalculateAccountBalanceUseCase()
                 val availableBalance = calculateBalance(fromAccount, allTransactions)
 
@@ -375,10 +592,11 @@ class TransactionViewModel(
                     return@launch
                 }
 
-                val category = state.categories.firstOrNull { it.name.contains("Transferência", ignoreCase = true) }
+                val category = editingLegs?.first?.category
+                    ?: state.categories.firstOrNull { it.name.contains("Transferência", ignoreCase = true) }
                     ?: state.categories.firstOrNull()
 
-                val paymentMethod = state.paymentMethods.firstOrNull { it.name.contains("Transferência", ignoreCase = true) || it.name.contains("Pix", ignoreCase = true) }
+                val paymentMethod = editingLegs?.first?.paymentMethod ?: state.paymentMethods.firstOrNull { it.name.contains("Transferência", ignoreCase = true) || it.name.contains("Pix", ignoreCase = true) }
                     ?: state.paymentMethods.firstOrNull()
 
                 if (category == null || paymentMethod == null) {
@@ -386,11 +604,12 @@ class TransactionViewModel(
                     return@launch
                 }
 
-                val groupId = UUID.randomUUID().toString()
+                val groupId = editingLegs?.first?.installmentGroupId ?: UUID.randomUUID().toString()
                 val extraDesc = if (state.description.isNotBlank()) " - ${state.description}" else ""
 
                 val sourceTx = Transaction(
-                    id = UUID.randomUUID().toString(),
+                    id = editingLegs?.first?.id ?: UUID.randomUUID().toString(),
+                    remoteId = editingLegs?.first?.remoteId,
                     userId = currentUserId,
                     title = "Transferência para ${toAccount.name}$extraDesc",
                     amount = amount,
@@ -405,7 +624,8 @@ class TransactionViewModel(
                 )
 
                 val destTx = Transaction(
-                    id = UUID.randomUUID().toString(),
+                    id = editingLegs?.second?.id ?: UUID.randomUUID().toString(),
+                    remoteId = editingLegs?.second?.remoteId,
                     userId = currentUserId,
                     title = "Transferência de ${fromAccount.name}$extraDesc",
                     amount = amount,
@@ -419,7 +639,12 @@ class TransactionViewModel(
                     installmentGroupId = groupId
                 )
 
-                transactionRepository.addTransactions(listOf(sourceTx, destTx))
+                if (editingLegs != null) {
+                    transactionRepository.updateTransaction(sourceTx)
+                    transactionRepository.updateTransaction(destTx)
+                } else {
+                    transactionRepository.addTransactions(listOf(sourceTx, destTx))
+                }
                 onSaved()
             }
             return
@@ -452,6 +677,37 @@ class TransactionViewModel(
 
         val isCreditCardPayment = paymentMethod.name.contains("Crédito", ignoreCase = true)
         val installmentsCount = if (isCreditCardPayment) state.totalInstallments else 1
+
+        // Editando a regra de recorrência: atualiza a regra (vale para os próximos lançamentos)
+        val editingRecurring = state.editingRecurring
+        if (editingRecurring != null) {
+            if (isCreditCardPayment && state.selectedCreditCard == null) {
+                formState.value = formState.value.copy(error = "Selecione um cartão de crédito")
+                return
+            }
+            if (!isCreditCardPayment && state.selectedAccount == null) {
+                formState.value = formState.value.copy(error = "Selecione uma conta bancária")
+                return
+            }
+
+            viewModelScope.launch {
+                recurringTransactionRepository.updateRecurringTransaction(
+                    editingRecurring.copy(
+                        title = state.description,
+                        amount = amount,
+                        type = state.type,
+                        categoryId = category.id,
+                        paymentMethodId = paymentMethod.id,
+                        accountId = if (!isCreditCardPayment) state.selectedAccount?.id else null,
+                        creditCardId = if (isCreditCardPayment) state.selectedCreditCard?.id else null,
+                        dayOfMonth = state.recurringDayOfMonth,
+                        endDate = if (state.isRecurringInfinite) null else state.recurringEndDateMillis
+                    )
+                )
+                onSaved()
+            }
+            return
+        }
 
         viewModelScope.launch {
             val allTransactions = transactionRepository.transactions.first()
@@ -535,6 +791,27 @@ class TransactionViewModel(
                 return@launch
             }
 
+            // "Este e os próximos": atualiza a regra, então os agendados passam a refletir a mudança
+            val linkedRecurringId = editingTransaction?.recurringTransactionId
+            val updatesRecurrence = applyToRecurrence && linkedRecurringId != null
+            if (updatesRecurrence && linkedRecurringId != null) {
+                recurringTransactionRepository.getRecurringTransactionById(linkedRecurringId)?.let { rule ->
+                    recurringTransactionRepository.updateRecurringTransaction(
+                        rule.copy(
+                            title = state.description,
+                            amount = amount,
+                            type = state.type,
+                            categoryId = category.id,
+                            paymentMethodId = paymentMethod.id,
+                            accountId = if (!isCreditCardPayment) state.selectedAccount?.id else null,
+                            creditCardId = if (isCreditCardPayment) state.selectedCreditCard?.id else null,
+                            dayOfMonth = state.recurringDayOfMonth,
+                            endDate = if (state.isRecurringInfinite) null else state.recurringEndDateMillis
+                        )
+                    )
+                }
+            }
+
             if (installmentsCount > 1 && isCreditCardPayment) {
                 val totalCents = Math.round(amount * 100)
                 val baseInstallmentCents = totalCents / installmentsCount
@@ -593,7 +870,12 @@ class TransactionViewModel(
                 val cal = Calendar.getInstance().apply { timeInMillis = state.dateMillis }
                 val dayOfMonth = cal.get(Calendar.DAY_OF_MONTH)
                 val isAfterClosing = editingTransaction == null && isCreditCardPayment && card != null && dayOfMonth > card.closingDay
-                val transactionDate = if (isAfterClosing) addMonthsToDate(state.dateMillis, 1) else state.dateMillis
+                val transactionDate = when {
+                    isAfterClosing -> addMonthsToDate(state.dateMillis, 1)
+                    // o lançamento aberto acompanha o novo dia da recorrência
+                    updatesRecurrence -> withDayOfMonth(state.dateMillis, state.recurringDayOfMonth)
+                    else -> state.dateMillis
+                }
 
                 val transaction = Transaction(
                     id = editingTransaction?.id ?: UUID.randomUUID().toString(),
@@ -611,7 +893,9 @@ class TransactionViewModel(
                     accountId = if (!isCreditCardPayment) state.selectedAccount?.id else null,
                     creditCardId = if (isCreditCardPayment) state.selectedCreditCard?.id else null,
                     installmentNumber = if (isCreditCardPayment) 1 else null,
-                    totalInstallments = if (isCreditCardPayment) 1 else null
+                    totalInstallments = if (isCreditCardPayment) 1 else null,
+                    // mantém o vínculo com a recorrência, senão o mês seria gerado de novo
+                    recurringTransactionId = editingTransaction?.recurringTransactionId
                 )
 
                 if (editingTransaction == null || !oldGroupId.isNullOrEmpty()) {
@@ -622,6 +906,23 @@ class TransactionViewModel(
             }
             onSaved()
         }
+    }
+
+    /** Converte a data escolhida no DatePicker (meia-noite UTC) para o mesmo dia no fuso local. */
+    private fun pickerDateToLocal(utcMillis: Long, hour: Int, minute: Int): Long {
+        val utc = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")).apply { timeInMillis = utcMillis }
+        return Calendar.getInstance().apply {
+            clear()
+            set(utc.get(Calendar.YEAR), utc.get(Calendar.MONTH), utc.get(Calendar.DAY_OF_MONTH), hour, minute, 0)
+        }.timeInMillis
+    }
+
+    /** Mesma data, trocando só o dia do mês (limitado ao último dia do mês). */
+    private fun withDayOfMonth(dateMillis: Long, day: Int): Long {
+        return Calendar.getInstance().apply {
+            timeInMillis = dateMillis
+            set(Calendar.DAY_OF_MONTH, day.coerceIn(1, getActualMaximum(Calendar.DAY_OF_MONTH)))
+        }.timeInMillis
     }
 
     private fun addMonthsToDate(baseDateMillis: Long, monthsToAdd: Int): Long {

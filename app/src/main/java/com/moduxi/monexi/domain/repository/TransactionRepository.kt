@@ -6,6 +6,9 @@ import kotlinx.coroutines.flow.Flow
 interface TransactionRepository {
     val transactions: Flow<List<Transaction>>
 
+    /** Lançamentos de recorrências que o usuário excluiu (não devem ser gerados/projetados de novo). */
+    val deletedRecurringTransactions: Flow<List<Transaction>>
+
     fun getTransactionsByAccount(accountId: String): Flow<List<Transaction>>
     fun getTotalIncomeByAccount(accountId: String): Flow<Double>
     fun getTotalExpenseByAccount(accountId: String): Flow<Double>

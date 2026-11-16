@@ -76,6 +76,7 @@ fun AppNavigation(themeManager: ThemeManager) {
         "extract",
         "transaction",
         "transaction?id={id}",
+        "recurringEdit?recurringId={recurringId}&occurrenceDate={occurrenceDate}",
         "settings",
         "categories",
         "archivedCategories",
@@ -219,6 +220,38 @@ fun AppNavigation(themeManager: ThemeManager) {
                     },
                     onNavigateToBillDetail = { cardId, month, year ->
                         navController.navigate("creditCardBillDetail?cardId=$cardId&month=$month&year=$year")
+                    },
+                    onNavigateToScheduledRecurring = { recurringId, occurrenceDate ->
+                        navController.navigate("recurringEdit?recurringId=$recurringId&occurrenceDate=$occurrenceDate")
+                    }
+                )
+            }
+            composable(
+                route = "recurringEdit?recurringId={recurringId}&occurrenceDate={occurrenceDate}",
+                arguments = listOf(
+                    navArgument("recurringId") {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                    navArgument("occurrenceDate") {
+                        type = NavType.LongType
+                        defaultValue = -1L
+                    }
+                )
+            ) {
+                TransactionScreen(
+                    onTransactionSaved = {
+                        navController.popBackStack()
+                    },
+                    onNavigateToCreditCards = {
+                        navController.navigate("editCreditCard")
+                    },
+                    onNavigateToBankAccounts = {
+                        navController.navigate("bankAccounts")
+                    },
+                    onCancel = {
+                        navController.popBackStack()
                     }
                 )
             }
@@ -445,6 +478,9 @@ fun AppNavigation(themeManager: ThemeManager) {
                 RecurringTransactionsScreen(
                     onNavigateBack = {
                         navController.popBackStack()
+                    },
+                    onNavigateToEdit = { recurringId ->
+                        navController.navigate("recurringEdit?recurringId=$recurringId")
                     }
                 )
             }

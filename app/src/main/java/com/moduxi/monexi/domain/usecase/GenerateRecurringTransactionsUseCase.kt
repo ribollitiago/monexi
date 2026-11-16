@@ -54,9 +54,18 @@ class GenerateRecurringTransactionsUseCase(
         val endOfMonthMillis = endOfMonthCal.timeInMillis
         val nowMillis = System.currentTimeMillis()
 
+        // Inclui as ocorrências excluídas pelo usuário, para não recriá-las
+        val existingTransactions = transactionRepository.transactions.first() +
+                transactionRepository.deletedRecurringTransactions.first()
+
         activeRecurring.forEach { recurring ->
             val endDate = recurring.endDate
-            if (endDate != null && nowMillis > endDate) {
+
+            // Recorrência que só começa em um mês futuro ainda não gera lançamento
+            val startCal = Calendar.getInstance().apply { timeInMillis = recurring.startDate }
+            val startsAfterThisMonth = startCal.get(Calendar.YEAR) * 12 + startCal.get(Calendar.MONTH) >
+                    currentYear * 12 + currentMonth
+            if (startsAfterThisMonth) {
                 return@forEach
             }
 
@@ -66,10 +75,18 @@ class GenerateRecurringTransactionsUseCase(
                 set(Calendar.MONTH, currentMonth)
                 set(Calendar.DAY_OF_MONTH, targetDay)
                 set(Calendar.HOUR_OF_DAY, 12)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+
+            // Data final inclusiva: só para de gerar quando a ocorrência passa dela
+            if (endDate != null && targetCal.timeInMillis > endDate) {
+                return@forEach
             }
 
             if (nowMillis >= targetCal.timeInMillis) {
-                val existing = transactionRepository.transactions.first().firstOrNull {
+                val existing = existingTransactions.firstOrNull {
                     it.recurringTransactionId == recurring.id &&
                             it.date >= startOfMonthMillis &&
                             it.date <= endOfMonthMillis
@@ -79,8 +96,7 @@ class GenerateRecurringTransactionsUseCase(
                     val category = categories.firstOrNull { it.id == recurring.categoryId }
                         ?: categories.firstOrNull() ?: return@forEach
 
-                    val paymentMethod = paymentMethods.firstOrNull { it.id == recurring.paymentMethodId }
-                        ?: paymentMethods.firstOrNull() ?: return@forEach
+                    val paymentMethod = recurring.resolvePaymentMethod(paymentMethods) ?: return@forEach
 
                     val newTransaction = Transaction(
                         id = UUID.randomUUID().toString(),

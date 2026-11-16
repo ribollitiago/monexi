@@ -15,6 +15,8 @@ class FakeTransactionRepository(
 
     override val transactions: Flow<List<Transaction>> = transactionsState
 
+    override val deletedRecurringTransactions: Flow<List<Transaction>> = MutableStateFlow(emptyList())
+
     val currentTransactions: List<Transaction>
         get() = transactionsState.value
 
