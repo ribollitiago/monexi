@@ -102,7 +102,8 @@ class TransactionViewModel(
                 ?.takeIf { it.type == form.type }
                 ?: filteredCategories.firstOrNull(),
             selectedPaymentMethod = form.selectedPaymentMethod
-                ?.takeIf { filteredPaymentMethods.contains(it) }
+                ?.takeIf { filteredPaymentMethods.contains(it) && (!it.name.contains("Crédito", ignoreCase = true) || creditCards.isNotEmpty()) }
+                ?: filteredPaymentMethods.firstOrNull { !it.name.contains("Crédito", ignoreCase = true) }
                 ?: filteredPaymentMethods.firstOrNull(),
             selectedAccount = selectedAcc,
             selectedDestinationAccount = selectedDestAcc,

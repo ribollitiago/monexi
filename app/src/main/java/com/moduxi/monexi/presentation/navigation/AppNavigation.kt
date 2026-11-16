@@ -227,6 +227,12 @@ fun AppNavigation(themeManager: ThemeManager) {
                 TransactionScreen(
                     onTransactionSaved = {
                         navController.popBackStack()
+                    },
+                    onNavigateToCreditCards = {
+                        navController.navigate("creditCard")
+                    },
+                    onCancel = {
+                        navController.popBackStack()
                     }
                 )
             }

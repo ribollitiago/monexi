@@ -69,11 +69,14 @@ import java.util.TimeZone
 @Composable
 fun TransactionScreen(
     onTransactionSaved: () -> Unit,
+    onNavigateToCreditCards: () -> Unit = {},
+    onCancel: () -> Unit = onTransactionSaved,
     modifier: Modifier = Modifier,
     viewModel: TransactionViewModel = viewModel(factory = TransactionViewModel.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showDeleteInstallmentsDialog by remember { mutableStateOf(false) }
+    var showNoCreditCardsDialog by remember { mutableStateOf(false) }
 
     TransactionContent(
         uiState = uiState,
@@ -88,7 +91,13 @@ fun TransactionScreen(
         onDateChange = viewModel::onDateChange,
         onInstallmentsChange = viewModel::onInstallmentsChange,
         onCategoryChange = viewModel::onCategoryChange,
-        onPaymentMethodChange = viewModel::onPaymentMethodChange,
+        onPaymentMethodChange = { pm ->
+            if (pm.name.contains("Crédito", ignoreCase = true) && uiState.creditCards.isEmpty()) {
+                showNoCreditCardsDialog = true
+            } else {
+                viewModel.onPaymentMethodChange(pm)
+            }
+        },
         onAccountChange = viewModel::onAccountChange,
         onDestinationAccountChange = viewModel::onDestinationAccountChange,
         onCreditCardChange = viewModel::onCreditCardChange,
@@ -108,9 +117,46 @@ fun TransactionScreen(
                 onSaved = onTransactionSaved
             )
         },
-        onBackClick = onTransactionSaved,
+        onBackClick = onCancel,
         modifier = modifier
     )
+
+    if (showNoCreditCardsDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showNoCreditCardsDialog = false },
+            title = {
+                Text(
+                    text = "Nenhum cartão cadastrado",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "Para usar cartão de crédito como forma de pagamento, é necessário ter ao menos um cartão cadastrado. O que você deseja fazer?"
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.Button(
+                    onClick = {
+                        showNoCreditCardsDialog = false
+                        onNavigateToCreditCards()
+                    }
+                ) {
+                    Text("Cadastrar Cartão")
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        showNoCreditCardsDialog = false
+                        onCancel()
+                    }
+                ) {
+                    Text("Cancelar Lançamento")
+                }
+            }
+        )
+    }
 
     if (showDeleteInstallmentsDialog && uiState.editingTransaction != null) {
         val editingTx = uiState.editingTransaction!!
