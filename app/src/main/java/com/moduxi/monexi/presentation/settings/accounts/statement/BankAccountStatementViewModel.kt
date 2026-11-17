@@ -29,7 +29,7 @@ class BankAccountStatementViewModel(
         transactionRepository.getTransactionsByAccount(accountId)
     ) { accounts, transactions ->
         val account = accounts.firstOrNull { it.id == accountId }
-        val balance = if (account != null) calculateBalanceUseCase(account, transactions) else 0.0
+        val balance = if (account != null) calculateBalanceUseCase(account, transactions, CalculateAccountBalanceUseCase.endOfToday()) else 0.0
 
         BankAccountStatementUiState(
             account = account,

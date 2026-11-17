@@ -29,7 +29,9 @@ class BankAccountViewModel (
         val accountsWithBalance = accounts.map { account ->
             AccountWithBalance(
                 account = account,
-                currentBalance = calculateAccountBalanceUseCase(account, transactions)
+                currentBalance = calculateAccountBalanceUseCase(
+                    account, transactions, CalculateAccountBalanceUseCase.endOfToday()
+                )
             )
         }
         BankAccountUiState(accounts = accountsWithBalance)
