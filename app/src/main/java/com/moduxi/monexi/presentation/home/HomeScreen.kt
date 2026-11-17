@@ -140,6 +140,27 @@ private fun HomeContent(
                         color = if (uiState.netWorth >= 0) Color(0xFF1B8A5A) else Color(0xFFC62828)
                     )
 
+                    // Previsão com os agendados do mês (só aparece se for diferente do saldo atual)
+                    if (kotlin.math.abs(uiState.projectedNetWorth - uiState.netWorth) > 0.005) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Previsto até o fim do mês:",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = uiState.projectedNetWorth.toCurrency(),
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = if (uiState.projectedNetWorth >= 0) Color(0xFF1B8A5A) else Color(0xFFC62828)
+                            )
+                        }
+                    }
+
                     // Exibe benefícios caso haja valor cadastrado
                     if (uiState.benefitsTotal > 0.0) {
                         Spacer(modifier = Modifier.height(8.dp))

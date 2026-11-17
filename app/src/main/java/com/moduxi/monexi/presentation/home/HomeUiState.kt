@@ -7,6 +7,8 @@ import com.moduxi.monexi.presentation.settings.accounts.AccountWithBalance
 data class HomeUiState(
     val netWorth: Double = 0.0,
     val benefitsTotal: Double = 0.0,
+    /** Patrimônio previsto no fim do mês (saldo de hoje + agendados do mês). */
+    val projectedNetWorth: Double = 0.0,
     val accounts: List<AccountWithBalance> = emptyList(),
     val creditCards: List<CreditCard> = emptyList(),
     val totalIncome: Double = 0.0,
