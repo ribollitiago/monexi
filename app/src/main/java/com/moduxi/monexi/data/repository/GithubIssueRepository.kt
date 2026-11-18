@@ -21,7 +21,7 @@ class GithubIssueRepository(
     private val baseUrl: String = "https://apifinance.moduxi.com"
 ) {
 
-    suspend fun createIssue(title: String, body: String? = null): Result<IssueResponse> =
+    suspend fun createIssue(type: String, title: String, body: String? = null): Result<IssueResponse> =
         withContext(Dispatchers.IO) {
             try {
                 val token = authRepository.currentUser
@@ -39,6 +39,7 @@ class GithubIssueRepository(
                 }
 
                 val payload = JSONObject().apply {
+                    put("type", type)
                     put("title", title)
                     if (!body.isNullOrBlank()) put("body", body)
                 }

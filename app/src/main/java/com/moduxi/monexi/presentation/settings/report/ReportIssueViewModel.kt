@@ -19,6 +19,10 @@ class ReportIssueViewModel(
     private val _uiState = MutableStateFlow(ReportIssueUiState())
     val uiState = _uiState.asStateFlow()
 
+    fun onTypeChange(value: ReportType) {
+        _uiState.update { it.copy(type = value, errorMessage = null) }
+    }
+
     fun onTitleChange(value: String) {
         if (value.length <= 256) {
             _uiState.update { it.copy(title = value, errorMessage = null) }
@@ -47,6 +51,7 @@ class ReportIssueViewModel(
 
         viewModelScope.launch {
             val result = githubIssueRepository.createIssue(
+                type = current.type.apiValue,
                 title = current.title.trim(),
                 body = current.body.trim().ifBlank { null }
             )

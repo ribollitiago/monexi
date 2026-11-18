@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.moduxi.monexi.ui.components.DropdownField
 import com.moduxi.monexi.ui.theme.MonexiTheme
 
 @Composable
@@ -61,6 +62,7 @@ fun ReportIssueScreen(
 
     ReportIssueContent(
         uiState = uiState,
+        onTypeChange = viewModel::onTypeChange,
         onTitleChange = viewModel::onTitleChange,
         onBodyChange = viewModel::onBodyChange,
         onSubmit = viewModel::submit,
@@ -73,6 +75,7 @@ fun ReportIssueScreen(
 @Composable
 private fun ReportIssueContent(
     uiState: ReportIssueUiState,
+    onTypeChange: (ReportType) -> Unit,
     onTitleChange: (String) -> Unit,
     onBodyChange: (String) -> Unit,
     onSubmit: () -> Unit,
@@ -119,6 +122,15 @@ private fun ReportIssueContent(
                 text = "Encontrou um bug ou tem uma sugestão? Descreva abaixo e enviaremos para nossa equipe.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            DropdownField(
+                label = "Tipo",
+                options = ReportType.entries,
+                selectedOption = uiState.type,
+                onOptionSelected = onTypeChange,
+                optionLabel = { it.label },
+                modifier = Modifier.fillMaxWidth()
             )
 
             OutlinedTextField(
@@ -176,6 +188,7 @@ private fun ReportIssueScreenPreview() {
     MonexiTheme {
         ReportIssueContent(
             uiState = ReportIssueUiState(),
+            onTypeChange = {},
             onTitleChange = {},
             onBodyChange = {},
             onSubmit = {},
