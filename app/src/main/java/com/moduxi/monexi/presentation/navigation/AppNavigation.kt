@@ -50,6 +50,7 @@ import com.moduxi.monexi.presentation.settings.credit.bills.CreditCardBillDetail
 import com.moduxi.monexi.presentation.settings.credit.bills.CreditCardBillsScreen
 import com.moduxi.monexi.presentation.settings.credit.edit.EditCreditCardScreen
 import com.moduxi.monexi.presentation.settings.recurring.RecurringTransactionsScreen
+import com.moduxi.monexi.presentation.settings.report.ReportIssueScreen
 import kotlinx.coroutines.flow.first
 
 sealed class BottomNavItem(val route: String, val label: String, val icon: ImageVector) {
@@ -293,6 +294,9 @@ fun AppNavigation(themeManager: ThemeManager) {
                     onNavigateToRecurring = {
                         navController.navigate("recurring")
                     },
+                    onNavigateToReportIssue = {
+                        navController.navigate("reportIssue")
+                    },
                     onLogout = {
                         navController.navigate("login") {
                             popUpTo(0) { inclusive = true }
@@ -481,6 +485,13 @@ fun AppNavigation(themeManager: ThemeManager) {
                     },
                     onNavigateToEdit = { recurringId ->
                         navController.navigate("recurringEdit?recurringId=$recurringId")
+                    }
+                )
+            }
+            composable("reportIssue") {
+                ReportIssueScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
                     }
                 )
             }
