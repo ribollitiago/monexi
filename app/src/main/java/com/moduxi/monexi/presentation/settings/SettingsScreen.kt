@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -33,6 +34,7 @@ fun SettingsScreen (
     onNavigateToBankAccount: () -> Unit,
     onNavigateToCreditCard: () -> Unit,
     onNavigateToRecurring: () -> Unit,
+    onNavigateToReportIssue: () -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
 ){
@@ -96,6 +98,17 @@ fun SettingsScreen (
         }
 
         item { HorizontalDivider() }
+        item { SettingsSectionTitle("Suporte") }
+        item {
+            SettingsItem(
+                title = "Reportar Problema",
+                subtitle = "Envie um bug ou sugestão",
+                icon = Icons.Default.BugReport,
+                onClick = onNavigateToReportIssue
+            )
+        }
+
+        item { HorizontalDivider() }
         item { SettingsSectionTitle("Sua Conta") }
         uiState.userEmail?.let { email ->
             item {
@@ -152,6 +165,7 @@ fun SettingsScreenPreview() {
             onNavigateToCreditCard = {},
             onNavigateToBankAccount = {},
             onNavigateToRecurring = {},
+            onNavigateToReportIssue = {},
             onLogout = {}
         )
     }

@@ -1,6 +1,7 @@
 package com.moduxi.monexi.presentation.auth.forgotpassword
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -59,13 +60,13 @@ fun ForgotPasswordContent(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(16.dp)
     ) {
+        // Header fixo no topo
         Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             IconButton(onClick = onNavigateBack) {
                 Icon(
@@ -73,74 +74,86 @@ fun ForgotPasswordContent(
                     contentDescription = "Voltar"
                 )
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Recuperação de Senha",
-            fontSize = 26.sp,
-            fontWeight = FontWeight.Bold
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "Informe o seu e-mail cadastrado. Enviaremos um link de redefinição de senha.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            fontSize = 14.sp
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        OutlinedTextField(
-            value = uiState.email,
-            onValueChange = onEmailChange,
-            label = { Text("E-mail") },
-            singleLine = true,
-            enabled = !uiState.isLoading,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        uiState.errorMessage?.let { error ->
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = error,
-                color = MaterialTheme.colorScheme.error,
-                fontSize = 14.sp
-            )
-        }
-
-        if (uiState.isSuccess) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "✓ E-mail de redefinição enviado com sucesso! Verifique a sua caixa de entrada e os spams.",
-                    color = Color(0xFF1B8A5A),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    modifier = Modifier.padding(16.dp)
+                    text = "Recuperação de Senha",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
                 )
             }
+
+            Spacer(modifier = Modifier.size(48.dp))
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = onSendResetClick,
-            enabled = !uiState.isLoading,
-            modifier = Modifier.fillMaxWidth()
+        // Conteúdo centralizado verticalmente no espaço restante
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (uiState.isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary
+            Text(
+                text = "Informe o seu e-mail cadastrado. Enviaremos um link de redefinição de senha.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 14.sp
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            OutlinedTextField(
+                value = uiState.email,
+                onValueChange = onEmailChange,
+                label = { Text("E-mail") },
+                singleLine = true,
+                enabled = !uiState.isLoading,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            uiState.errorMessage?.let { error ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = error,
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 14.sp
                 )
-            } else {
-                Text("Enviar E-mail de Recuperação")
+            }
+
+            if (uiState.isSuccess) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
+                ) {
+                    Text(
+                        text = "✓ E-mail de redefinição enviado com sucesso! Verifique a sua caixa de entrada e os spams.",
+                        color = Color(0xFF1B8A5A),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = onSendResetClick,
+                enabled = !uiState.isLoading,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (uiState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                } else {
+                    Text("Enviar E-mail de Recuperação")
+                }
             }
         }
     }
