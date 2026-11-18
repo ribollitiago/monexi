@@ -8,7 +8,7 @@ Além de uma ferramenta prática de gestão financeira, o Monexi serve como estu
 
 ## 📱 Demonstração em Vídeo
 
-Confira a demonstração prática das funcionalidades do Monexi v1.0.1:
+Confira a demonstração prática das funcionalidades do Monexi v1.1.2:
 
 [![Demonstração do Monexi no YouTube Shorts](https://img.youtube.com/vi/7M0kxMYyMic/hqdefault.jpg)](https://youtube.com/shorts/7M0kxMYyMic?is=9g5Ray-7U07idqet)
 
@@ -16,27 +16,15 @@ Confira a demonstração prática das funcionalidades do Monexi v1.0.1:
 
 ---
 
-## 🚀 Novidades da Versão v1.1.1
+## 🚀 Novidades da Versão v1.1.2
 
-- 👋 **Onboarding Pós-Cadastro:** Tela inicial de configuração exibida logo após o registro.
-- 📅 **Lançamentos Agendados no Extrato:**
-  - Recorrências ainda não lançadas aparecem com a tag **Agendado** no mês atual e nos seguintes.
-  - Card compacto *"Agendados neste mês"* com despesas, receitas e transferências; cada um abre o extrato filtrado.
-- 🔄 **Recorrências Mais Flexíveis:**
-  - Edição da recorrência pela tela de Lançamentos Recorrentes ou por um agendado do extrato.
-  - Ao alterar: *"Alterar apenas este lançamento"* ou *"Alterar este e os próximos"*.
-  - Ao excluir: *"Excluir apenas este lançamento"* ou *"Excluir todos os lançamentos agendados"*.
-- ⇄ **Edição de Transferências:** Abre como transferência (origem, destino, valor e data) e atualiza ou exclui a saída e a entrada juntas.
-- 💳 **Formas de Pagamento Coerentes com a Conta:**
-  - Nova forma **Vale Refeição / Alimentação**, exclusiva das contas de vale-benefício.
-  - *Dinheiro* só com a carteira; *Débito*, *Pix* e *Transferência* só com contas que não são carteira.
-  - Em receitas, a conta escolhida define a forma de pagamento.
-- ☁️ **Sincronização Offline-First:**
-  - Salvar não espera o servidor: grava no Room e entra em uma fila persistente de envio.
-  - Sincronização completa e em ordem no login e na abertura do app, incluindo recorrências.
-  - Ids fixos para categorias e formas de pagamento padrão, com reparo automático de instalações antigas.
-- 🏠 **Home:** Cards de contas bancárias e cartões de crédito clicáveis.
-- 🐞 **Correções:** forma de pagamento das recorrências, lançamentos recorrentes duplicados ou recriados após exclusão, data salva um dia antes e seleção de cartão de crédito.
+- 💳 **Redirecionamento Direto para Faturas no Extrato:** Clicar em uma compra de cartão pelo extrato abre diretamente a tela de detalhes e pagamento da fatura (`creditCardBillDetail`) daquele ciclo.
+- 📅 **Rolagem Automática Pós-Fechamento:** Compras realizadas após a data de fechamento (`closingDay`) rolam automaticamente para o ciclo e mês da fatura seguinte.
+- ✏️ **Edição de Lançamentos na Fatura:** Ícone de edição (lápis) em cada item da fatura com recálculo automático do grupo de parcelas nas faturas futuras.
+- 🏠 **Home com Cards Clicáveis:** Clicar nos cards de contas bancárias abre o extrato específico da conta (`bankAccountStatement`); clicar nos cards de cartões abre a tela de faturas do cartão (`creditCardBills`).
+- 🛡️ **Validação de Cartão Obrigatório:** Alerta em `AlertDialog` ao tentar selecionar Cartão de Crédito sem possuir cartões cadastrados, oferecendo atalho para criar um novo.
+- 🗑️ **Exclusão Flexível de Recorrentes:** Diálogo ao excluir um lançamento recorrente no extrato com as opções *"Apagar apenas esta transação"* ou *"Apagar agendamento completo"*.
+- 🎨 **Cores Padronizadas no Extrato:** Todas as despesas pagas em conta e lançamentos de fatura exibidos em vermelho (`#C62828`), reservando a cor azul para compras pendentes do cartão.
 
 ---
 
@@ -217,8 +205,8 @@ applicationId: com.moduxi.monexi
 minSdk: 24 (Android 7.0+)
 targetSdk: 37
 compileSdk: 37
-versionCode: 3
-versionName: 1.1.0
+versionCode: 4
+versionName: 1.1.2
 ```
 
 ---
