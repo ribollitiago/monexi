@@ -6,11 +6,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Brightness6
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.CreditCard
+import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.MonetizationOn
-import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -29,7 +30,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.moduxi.monexi.ui.theme.MonexiTheme
 
 @Composable
-fun SettingsScreen (
+fun SettingsScreen(
     onNavigateToCategories: () -> Unit,
     onNavigateToBankAccount: () -> Unit,
     onNavigateToCreditCard: () -> Unit,
@@ -37,7 +38,7 @@ fun SettingsScreen (
     onNavigateToReportIssue: () -> Unit,
     onLogout: () -> Unit,
     modifier: Modifier = Modifier
-){
+) {
     val viewModel: SettingsViewModel = viewModel(
         factory = SettingsViewModel.Factory
     )
@@ -80,7 +81,7 @@ fun SettingsScreen (
         }
         item { HorizontalDivider() }
 
-        item { SettingsSectionTitle("Preferências") }
+        item { SettingsSectionTitle("Preferências & Segurança") }
         item {
             SettingsItem(
                 title = "Tema do App",
@@ -92,6 +93,22 @@ fun SettingsScreen (
                     Switch(
                         checked = uiState.isDarkTheme,
                         onCheckedChange = { viewModel.toggleTheme(it) }
+                    )
+                }
+            )
+        }
+        item {
+            SettingsItem(
+                title = "Autenticação Biométrica",
+                subtitle = "Exigir digital/Face ID ao abrir o app",
+                icon = Icons.Default.Fingerprint,
+                onClick = {
+                    viewModel.toggleBiometric(!uiState.isBiometricEnabled)
+                },
+                trailingContent = {
+                    Switch(
+                        checked = uiState.isBiometricEnabled,
+                        onCheckedChange = { viewModel.toggleBiometric(it) }
                     )
                 }
             )
@@ -140,9 +157,9 @@ fun SettingsItem(
     ListItem(
         headlineContent = { Text(title) },
         supportingContent = subtitle?.let { { Text(it) } },
-        leadingContent = { Icon(icon, contentDescription = null )},
+        leadingContent = { Icon(icon, contentDescription = null) },
         trailingContent = trailingContent,
-        modifier =  Modifier.clickable{ onClick() }
+        modifier = Modifier.clickable { onClick() }
     )
 }
 

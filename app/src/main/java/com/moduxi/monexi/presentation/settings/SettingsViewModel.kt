@@ -6,24 +6,31 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
+import com.moduxi.monexi.data.repository.local.PrivacyManager
 import com.moduxi.monexi.data.repository.local.ThemeManager
 import com.moduxi.monexi.domain.repository.AuthRepository
 import com.moduxi.monexi.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlin.onSuccess
 
 class SettingsViewModel(
     private val themeManager: ThemeManager,
+    private val privacyManager: PrivacyManager,
     private val authRepository: AuthRepository,
-    private val transactionRepository: TransactionRepository) : ViewModel() {
+    private val transactionRepository: TransactionRepository
+) : ViewModel() {
 
-    val uiState = themeManager.isDarkMode.map { isDark ->
+    val uiState = combine(
+        themeManager.isDarkMode,
+        privacyManager.isBiometricEnabled
+    ) { isDark, isBiometric ->
         SettingsUiState(
             isDarkTheme = isDark,
-            userEmail = authRepository.currentUser?.email)
+            isBiometricEnabled = isBiometric,
+            userEmail = authRepository.currentUser?.email
+        )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, SettingsUiState())
 
     fun toggleTheme(isDark: Boolean) {
@@ -32,7 +39,13 @@ class SettingsViewModel(
         }
     }
 
-    fun logout(onLogoutSuccess: () -> Unit){
+    fun toggleBiometric(enabled: Boolean) {
+        viewModelScope.launch {
+            privacyManager.setBiometricEnabled(enabled)
+        }
+    }
+
+    fun logout(onLogoutSuccess: () -> Unit) {
         viewModelScope.launch {
             transactionRepository.clearLocalData()
             authRepository.signOut()
@@ -46,6 +59,7 @@ class SettingsViewModel(
                 val application = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MonexiApplication
                 SettingsViewModel(
                     themeManager = application.themeManager,
+                    privacyManager = application.privacyManager,
                     authRepository = application.authRepository,
                     transactionRepository = application.transactionRepository
                 )

@@ -22,6 +22,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -67,6 +69,7 @@ fun HomeScreen(
         uiState = uiState,
         onPreviousMonthClick = viewModel::previousMonth,
         onNextMonthClick = viewModel::nextMonth,
+        onToggleBalanceVisibility = viewModel::toggleBalanceVisibility,
         onNavigateToBankAccountStatement = onNavigateToBankAccountStatement,
         onNavigateToCreditCardBills = onNavigateToCreditCardBills,
         modifier = modifier
@@ -78,6 +81,7 @@ private fun HomeContent(
     uiState: HomeUiState,
     onPreviousMonthClick: () -> Unit,
     onNextMonthClick: () -> Unit,
+    onToggleBalanceVisibility: () -> Unit = {},
     onNavigateToBankAccountStatement: (String) -> Unit = {},
     onNavigateToCreditCardBills: (String) -> Unit = {},
     modifier: Modifier = Modifier
@@ -89,11 +93,24 @@ private fun HomeContent(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-            Text(
-                text = "Monexi",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Monexi",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                IconButton(onClick = onToggleBalanceVisibility) {
+                    Icon(
+                        imageVector = if (uiState.isBalanceVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                        contentDescription = "Alternar Visibilidade do Saldo"
+                    )
+                }
+            }
         }
 
         item {
@@ -134,13 +151,12 @@ private fun HomeContent(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = uiState.netWorth.toCurrency(),
+                        text = uiState.netWorth.toCurrency(uiState.isBalanceVisible),
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = if (uiState.netWorth >= 0) Color(0xFF1B8A5A) else Color(0xFFC62828)
                     )
 
-                    // Previsão com os agendados do mês (só aparece se for diferente do saldo atual)
                     if (kotlin.math.abs(uiState.projectedNetWorth - uiState.netWorth) > 0.005) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(
@@ -153,7 +169,7 @@ private fun HomeContent(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = uiState.projectedNetWorth.toCurrency(),
+                                text = uiState.projectedNetWorth.toCurrency(uiState.isBalanceVisible),
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.SemiBold,
                                 color = if (uiState.projectedNetWorth >= 0) Color(0xFF1B8A5A) else Color(0xFFC62828)
@@ -161,7 +177,6 @@ private fun HomeContent(
                         }
                     }
 
-                    // Exibe benefícios caso haja valor cadastrado
                     if (uiState.benefitsTotal > 0.0) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(
@@ -174,7 +189,7 @@ private fun HomeContent(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = uiState.benefitsTotal.toCurrency(),
+                                text = uiState.benefitsTotal.toCurrency(uiState.isBalanceVisible),
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -187,13 +202,15 @@ private fun HomeContent(
         item {
             IncomeExpenseChartCard(
                 income = uiState.totalIncome,
-                expense = uiState.totalExpense
+                expense = uiState.totalExpense,
+                isBalanceVisible = uiState.isBalanceVisible
             )
         }
 
         item {
             CategoryChartCard(
-                transactions = uiState.transactions
+                transactions = uiState.transactions,
+                isBalanceVisible = uiState.isBalanceVisible
             )
         }
 
@@ -233,7 +250,7 @@ private fun HomeContent(
                                     }
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
-                                        text = item.currentBalance.toCurrency(),
+                                        text = item.currentBalance.toCurrency(uiState.isBalanceVisible),
                                         style = MaterialTheme.typography.bodySmall,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -281,7 +298,7 @@ private fun HomeContent(
                                     }
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
-                                        text = "Limite: ${card.limitAmount.toCurrency()}",
+                                        text = "Limite: ${card.limitAmount.toCurrency(uiState.isBalanceVisible)}",
                                         style = MaterialTheme.typography.bodySmall,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -292,6 +309,7 @@ private fun HomeContent(
                 }
             }
         }
+
         item {Spacer(modifier = Modifier.height(16.dp))}
     }
 }
@@ -325,6 +343,7 @@ private fun SummaryCard(
 private fun IncomeExpenseChartCard(
     income: Double,
     expense: Double,
+    isBalanceVisible: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val total = income + expense
@@ -360,7 +379,6 @@ private fun IncomeExpenseChartCard(
                     val strokeWidth = 24.dp.toPx()
 
                     if (total > 0) {
-                        // Receitas Arc
                         if (incomeSweep > 0) {
                             drawArc(
                                 color = incomeColor,
@@ -371,7 +389,6 @@ private fun IncomeExpenseChartCard(
                             )
                         }
 
-                        // Despesas Arc
                         if (expenseSweep > 0) {
                             drawArc(
                                 color = expenseColor,
@@ -382,7 +399,6 @@ private fun IncomeExpenseChartCard(
                             )
                         }
                     } else {
-                        // Anel quando sem lançamentos no mês
                         drawArc(
                             color = emptyColor,
                             startAngle = 0f,
@@ -393,7 +409,6 @@ private fun IncomeExpenseChartCard(
                     }
                 }
 
-                // Conteúdo no Centro do Gráfico
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -413,7 +428,6 @@ private fun IncomeExpenseChartCard(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Legenda em Baixo do Gráfico
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -422,14 +436,16 @@ private fun IncomeExpenseChartCard(
                     color = incomeColor,
                     label = "Receitas",
                     amount = income,
-                    percentage = if (total > 0) (incomeRatio * 100).toInt() else 0
+                    percentage = if (total > 0) (incomeRatio * 100).toInt() else 0,
+                    isBalanceVisible = isBalanceVisible
                 )
 
                 LegendItem(
                     color = expenseColor,
                     label = "Despesas",
                     amount = expense,
-                    percentage = if (total > 0) (expenseRatio * 100).toInt() else 0
+                    percentage = if (total > 0) (expenseRatio * 100).toInt() else 0,
+                    isBalanceVisible = isBalanceVisible
                 )
             }
         }
@@ -439,6 +455,7 @@ private fun IncomeExpenseChartCard(
 @Composable
 private fun CategoryChartCard(
     transactions: List<Transaction>,
+    isBalanceVisible: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     var selectedType by remember { mutableStateOf(TransactionType.EXPENSE) }
@@ -447,7 +464,6 @@ private fun CategoryChartCard(
         transaction.type == selectedType && transaction.creditCardBillId == null
     }
 
-    // Agrupa transações por categoria e calcula o total
     val categoryTotals = remember(filteredTransactions) {
         filteredTransactions
             .groupBy { it.category }
@@ -476,7 +492,6 @@ private fun CategoryChartCard(
                 textAlign = TextAlign.Start
             )
 
-            // Seletor de Despesas / Receitas
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -512,7 +527,6 @@ private fun CategoryChartCard(
                 }
             }
 
-            // Gráfico em Rosca das Categorias
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.size(180.dp)
@@ -550,7 +564,7 @@ private fun CategoryChartCard(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = totalAmount.toCurrency(),
+                        text = totalAmount.toCurrency(isBalanceVisible),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -565,7 +579,6 @@ private fun CategoryChartCard(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Lista de Categorias com Ícone, Cor, Nome, % e Valor R$
             if (categoryTotals.isEmpty()) {
                 Text(
                     text = "Nenhum lançamento neste período.",
@@ -621,7 +634,7 @@ private fun CategoryChartCard(
                             }
 
                             Text(
-                                text = amount.toCurrency(),
+                                text = amount.toCurrency(isBalanceVisible),
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -639,7 +652,8 @@ private fun LegendItem(
     color: Color,
     label: String,
     amount: Double,
-    percentage: Int
+    percentage: Int,
+    isBalanceVisible: Boolean = true
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -669,7 +683,7 @@ private fun LegendItem(
         }
 
         Text(
-            text = amount.toCurrency(),
+            text = amount.toCurrency(isBalanceVisible),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = color
@@ -678,7 +692,8 @@ private fun LegendItem(
 }
 
 @Composable
-private fun Double.toCurrency(): String {
+private fun Double.toCurrency(isVisible: Boolean = true): String {
+    if (!isVisible) return "R$ ••••••"
     val formatter = remember {
         NumberFormat.getCurrencyInstance(Locale.forLanguageTag("pt-BR"))
     }
@@ -709,23 +724,6 @@ private fun HomeScreenPreview() {
                             type = TransactionType.EXPENSE,
                             colorHex = "#F57C00",
                             iconName = "Restaurant"
-                        ),
-                        paymentMethod = PaymentMethod(id = "1", name = "Pix"),
-                        date = System.currentTimeMillis()
-                    ),
-                    Transaction(
-                        id = "2",
-                        userId = "1",
-                        title = "Gasolina",
-                        amount = 120.0,
-                        type = TransactionType.EXPENSE,
-                        category = Category(
-                            id = "2",
-                            userId = "1",
-                            name = "Transporte",
-                            type = TransactionType.EXPENSE,
-                            colorHex = "#1565C0",
-                            iconName = "DirectionsCar"
                         ),
                         paymentMethod = PaymentMethod(id = "1", name = "Pix"),
                         date = System.currentTimeMillis()

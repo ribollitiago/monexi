@@ -26,11 +26,14 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.ListAlt
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.fragment.app.FragmentActivity
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.moduxi.monexi.MonexiApplication
 import com.moduxi.monexi.data.repository.local.ThemeManager
+import com.moduxi.monexi.ui.components.showBiometricPrompt
 import com.moduxi.monexi.presentation.auth.forgotpassword.ForgotPasswordScreen
 import com.moduxi.monexi.presentation.auth.login.LoginScreen
 import com.moduxi.monexi.presentation.auth.register.RegisterScreen
@@ -137,6 +140,16 @@ fun AppNavigation(themeManager: ThemeManager) {
                     CircularProgressIndicator()
                 }
 
+                val context = LocalContext.current
+                val activity = remember(context) {
+                    var ctx = context
+                    while (ctx is android.content.ContextWrapper) {
+                        if (ctx is FragmentActivity) return@remember ctx
+                        ctx = ctx.baseContext
+                    }
+                    null
+                }
+
                 LaunchedEffect(Unit) {
                     val user = app.authRepository.currentUser
                     if (user == null) {
@@ -144,15 +157,33 @@ fun AppNavigation(themeManager: ThemeManager) {
                             popUpTo("splash") { inclusive = true }
                         }
                     } else {
+                        val isBiometricEnabled = app.privacyManager.isBiometricEnabled.first()
                         val pending = app.onboardingPrefs.isPending(user.uid).first()
-                        if (pending) {
-                            navController.navigate("onboarding") {
-                                popUpTo("splash") { inclusive = true }
+
+                        val navigateNext = {
+                            if (pending) {
+                                navController.navigate("onboarding") {
+                                    popUpTo("splash") { inclusive = true }
+                                }
+                            } else {
+                                navController.navigate("home") {
+                                    popUpTo("splash") { inclusive = true }
+                                }
                             }
+                        }
+
+                        if (isBiometricEnabled && activity != null) {
+                            showBiometricPrompt(
+                                activity = activity,
+                                onSuccess = {
+                                    navigateNext()
+                                },
+                                onError = {
+                                    // Se falhar ou cancelar, aguarda tentativa
+                                }
+                            )
                         } else {
-                            navController.navigate("home") {
-                                popUpTo("splash") { inclusive = true}
-                            }
+                            navigateNext()
                         }
                     }
                 }

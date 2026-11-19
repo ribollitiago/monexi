@@ -1,18 +1,18 @@
 package com.moduxi.monexi
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.fragment.app.FragmentActivity
 import com.moduxi.monexi.presentation.navigation.AppNavigation
 import com.moduxi.monexi.ui.theme.MonexiTheme
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     private val viewModel: MainViewModel by viewModels { MainViewModel.Factory }
 
     override fun onCreate(savedInstanceState: Bundle?) {

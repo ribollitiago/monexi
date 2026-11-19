@@ -6,7 +6,14 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.moduxi.monexi.MonexiApplication
+import com.moduxi.monexi.data.repository.local.PrivacyManager
 import com.moduxi.monexi.data.sync.SyncManager
+import com.moduxi.monexi.domain.model.account.Account
+import com.moduxi.monexi.domain.model.category.Category
+import com.moduxi.monexi.domain.model.creditcard.CreditCard
+import com.moduxi.monexi.domain.model.payment.PaymentMethod
+import com.moduxi.monexi.domain.model.recurring.RecurringTransaction
+import com.moduxi.monexi.domain.model.transaction.Transaction
 import com.moduxi.monexi.domain.repository.AccountRepository
 import com.moduxi.monexi.domain.repository.CategoryRepository
 import com.moduxi.monexi.domain.repository.CreditCardRepository
@@ -17,10 +24,6 @@ import com.moduxi.monexi.domain.usecase.CalculateAccountBalanceUseCase
 import com.moduxi.monexi.domain.usecase.CalculateExpenseUseCase
 import com.moduxi.monexi.domain.usecase.CalculateIncomeUseCase
 import com.moduxi.monexi.domain.usecase.ProjectRecurringTransactionsUseCase
-import com.moduxi.monexi.domain.model.category.Category
-import com.moduxi.monexi.domain.model.payment.PaymentMethod
-import com.moduxi.monexi.domain.model.recurring.RecurringTransaction
-import com.moduxi.monexi.domain.model.transaction.Transaction
 import com.moduxi.monexi.presentation.settings.accounts.AccountWithBalance
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -39,7 +42,8 @@ class HomeViewModel(
     private val recurringTransactionRepository: RecurringTransactionRepository,
     private val categoryRepository: CategoryRepository,
     private val paymentMethodRepository: PaymentMethodRepository,
-    private val syncManager: SyncManager
+    private val syncManager: SyncManager,
+    private val privacyManager: PrivacyManager
 ) : ViewModel() {
 
     private val calculateIncomeUseCase = CalculateIncomeUseCase()
@@ -74,8 +78,20 @@ class HomeViewModel(
         accountRepository.accounts,
         creditCardRepository.creditCards,
         _selectedCalendar,
-        recurringSources
-    ) { allTransactions, allAccounts, allCreditCards, calendar, sources ->
+        recurringSources,
+        privacyManager.isBalanceVisible
+    ) { flows: Array<Any> ->
+        @Suppress("UNCHECKED_CAST")
+        val allTransactions = flows[0] as List<Transaction>
+        @Suppress("UNCHECKED_CAST")
+        val allAccounts = flows[1] as List<Account>
+        @Suppress("UNCHECKED_CAST")
+        val allCreditCards = flows[2] as List<CreditCard>
+        val calendar = flows[3] as Calendar
+        @Suppress("UNCHECKED_CAST")
+        val sources = flows[4] as RecurringSources
+        val isBalanceVisible = flows[5] as Boolean
+
         val selectedYear = calendar.get(Calendar.YEAR)
         val selectedMonth = calendar.get(Calendar.MONTH)
 
@@ -84,7 +100,6 @@ class HomeViewModel(
             transCal.get(Calendar.YEAR) == selectedYear && transCal.get(Calendar.MONTH) == selectedMonth
         }
 
-        // Saldo real: só o que já aconteceu (até o fim de hoje). Futuros/agendados ficam de fora.
         val now = System.currentTimeMillis()
         val endOfToday = CalculateAccountBalanceUseCase.endOfToday(now)
         val accountsWithBalance = allAccounts.map { account ->
@@ -94,7 +109,6 @@ class HomeViewModel(
             )
         }
 
-        // Previsão: lançamentos até o fim do mês atual + recorrências ainda não lançadas no mês
         val endOfMonth = CalculateAccountBalanceUseCase.endOfMonth(now)
         val nowCal = Calendar.getInstance().apply { timeInMillis = now }
         val currentMonthTransactions = allTransactions.filter {
@@ -132,7 +146,8 @@ class HomeViewModel(
             totalIncome = calculateIncomeUseCase(monthTransactions),
             totalExpense = calculateExpenseUseCase(monthTransactions),
             selectedMonthName = formatMonthYear(calendar.time),
-            transactions = monthTransactions
+            transactions = monthTransactions,
+            isBalanceVisible = isBalanceVisible
         )
     }.stateIn(
         scope = viewModelScope,
@@ -154,6 +169,12 @@ class HomeViewModel(
         _selectedCalendar.value = newCal
     }
 
+    fun toggleBalanceVisibility() {
+        viewModelScope.launch {
+            privacyManager.setBalanceVisible(!uiState.value.isBalanceVisible)
+        }
+    }
+
     private fun formatMonthYear(date: Date): String {
         val formatter = SimpleDateFormat("MMMM 'de' yyyy", Locale.forLanguageTag("pt-BR"))
         val formatted = formatter.format(date)
@@ -162,7 +183,6 @@ class HomeViewModel(
 
     fun syncTransactions() {
         viewModelScope.launch {
-            // Sincronização completa e em ordem; também gera os recorrentes do mês
             syncManager.syncAll()
         }
     }
@@ -178,7 +198,8 @@ class HomeViewModel(
                     application.recurringTransactionRepository,
                     application.categoryRepository,
                     application.paymentMethodRepository,
-                    application.syncManager
+                    application.syncManager,
+                    application.privacyManager
                 )
             }
         }

@@ -14,5 +14,6 @@ data class HomeUiState(
     val totalIncome: Double = 0.0,
     val totalExpense: Double = 0.0,
     val selectedMonthName: String = "",
-    val transactions: List<Transaction> = emptyList()
+    val transactions: List<Transaction> = emptyList(),
+    val isBalanceVisible: Boolean = true
 )
