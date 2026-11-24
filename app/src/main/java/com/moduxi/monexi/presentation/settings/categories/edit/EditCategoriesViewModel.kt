@@ -40,6 +40,13 @@ class EditCategoriesViewModel(
         )
     }
 
+    fun onBudgetDigitsChange(value: String) {
+        _uiState.value = _uiState.value.copy(
+            budgetDigits = value.filter { it.isDigit() }.take(12),
+            error = null
+        )
+    }
+
     fun onTypeChange(type: TransactionType) {
         _uiState.value = _uiState.value.copy(
             selectedType = type,
@@ -65,9 +72,13 @@ class EditCategoriesViewModel(
         viewModelScope.launch {
             val category = categoryRepository.getCategoryById(id)
             category?.let {
+                val budgetCents = Math.round(it.monthlyBudget * 100)
+                val budgetStr = if (budgetCents > 0) budgetCents.toString() else ""
+
                 _uiState.value = _uiState.value.copy(
                     editingCategory = it,
                     categoryName = it.name,
+                    budgetDigits = budgetStr,
                     selectedType = it.type,
                     selectedColorHex = it.colorHex,
                     selectedIconName = it.iconName
@@ -85,12 +96,13 @@ class EditCategoriesViewModel(
             return
         }
 
+        val budgetValue = (state.budgetDigits.toLongOrNull() ?: 0L) / 100.0
+
         viewModelScope.launch {
             val currentUserId = authRepository.currentUser?.uid ?: ""
             val editingCategory = state.editingCategory
 
             if (editingCategory == null) {
-                // Criando nova categoria
                 categoryRepository.addCategory(
                     Category(
                         id = "0",
@@ -99,17 +111,18 @@ class EditCategoriesViewModel(
                         type = state.selectedType,
                         isDefault = false,
                         colorHex = state.selectedColorHex,
-                        iconName = state.selectedIconName
+                        iconName = state.selectedIconName,
+                        monthlyBudget = budgetValue
                     )
                 )
             } else {
-                // Editando categoria existente
                 categoryRepository.updateCategory(
                     editingCategory.copy(
                         name = name,
                         type = state.selectedType,
                         colorHex = state.selectedColorHex,
-                        iconName = state.selectedIconName
+                        iconName = state.selectedIconName,
+                        monthlyBudget = budgetValue
                     )
                 )
             }

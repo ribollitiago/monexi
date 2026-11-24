@@ -13,5 +13,6 @@ data class CategoryEntity (
     val isDefault: Boolean,
     val isArchived: Boolean = false,
     val colorHex: String = "#1B8A5A",
-    val iconName: String = "Category"
+    val iconName: String = "Category",
+    val monthlyBudget: Double = 0.0
 )

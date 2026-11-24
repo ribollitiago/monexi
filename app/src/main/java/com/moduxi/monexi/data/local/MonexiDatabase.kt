@@ -31,7 +31,7 @@ import kotlinx.coroutines.launch
         CreditCardEntity::class,
         RecurringTransactionEntity::class
     ],
-    version = 13,
+    version = 14,
     exportSchema = false
 )
 abstract class MonexiDatabase : RoomDatabase() {

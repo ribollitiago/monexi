@@ -13,8 +13,8 @@ fun CategoryEntity.toDomain(): Category {
         isDefault = isDefault,
         isArchived = isArchived,
         colorHex = colorHex,
-        iconName = iconName
-
+        iconName = iconName,
+        monthlyBudget = monthlyBudget
     )
 }
 
@@ -27,6 +27,7 @@ fun Category.toEntity(): CategoryEntity {
         isDefault = isDefault,
         isArchived = isArchived,
         colorHex = colorHex,
-        iconName = iconName
+        iconName = iconName,
+        monthlyBudget = monthlyBudget
     )
 }

@@ -42,7 +42,8 @@ class RoomCategoryRepository(
                         "isDefault" to false,
                         "isArchived" to entity.isArchived,
                         "colorHex" to entity.colorHex,
-                        "iconName" to entity.iconName
+                        "iconName" to entity.iconName,
+                        "monthlyBudget" to entity.monthlyBudget
                     )
                 )
             }
@@ -97,10 +98,10 @@ class RoomCategoryRepository(
             "isDefault" to false,
             "isArchived" to category.isArchived,
             "colorHex" to category.colorHex,
-            "iconName" to category.iconName
+            "iconName" to category.iconName,
+            "monthlyBudget" to category.monthlyBudget
         )
 
-        // Envia sem esperar o servidor: já está salvo no Room e entra na fila de sincronização
         remoteStore.set("categories", categoryId, categoryData)
     }
 
@@ -119,10 +120,10 @@ class RoomCategoryRepository(
             "isDefault" to false,
             "isArchived" to category.isArchived,
             "colorHex" to category.colorHex,
-            "iconName" to category.iconName
+            "iconName" to category.iconName,
+            "monthlyBudget" to category.monthlyBudget
         )
 
-        // Envia sem esperar o servidor: já está salvo no Room e entra na fila de sincronização
         remoteStore.set("categories", category.id.toString(), categoryData)
     }
 
@@ -143,10 +144,10 @@ class RoomCategoryRepository(
             "isDefault" to archivedCategory.isDefault,
             "isArchived" to true,
             "colorHex" to archivedCategory.colorHex,
-            "iconName" to archivedCategory.iconName
+            "iconName" to archivedCategory.iconName,
+            "monthlyBudget" to archivedCategory.monthlyBudget
         )
 
-        // Envia sem esperar o servidor: já está salvo no Room e entra na fila de sincronização
         remoteStore.set("categories", archivedCategory.id, categoryData)
     }
 
@@ -179,6 +180,7 @@ class RoomCategoryRepository(
                 val isArchived = doc.getBoolean("isArchived") ?: false
                 val colorHex = doc.getString("colorHex") ?: "#1B8A5A"
                 val iconName = doc.getString("iconName") ?: "Category"
+                val monthlyBudget = (doc.get("monthlyBudget") as? Number)?.toDouble() ?: 0.0
 
                 CategoryEntity(
                     id = categoryId,
@@ -188,12 +190,12 @@ class RoomCategoryRepository(
                     isDefault = isDefault,
                     isArchived = isArchived,
                     colorHex = colorHex,
-                    iconName = iconName
+                    iconName = iconName,
+                    monthlyBudget = monthlyBudget
                 )
             }
 
             remoteCategories.forEach { entity ->
-                // Alteração local ainda não enviada vence a versão da nuvem
                 if (remoteStore.isPending("categories", entity.id)) return@forEach
                 categoryDao.insertCategory(entity)
             }
